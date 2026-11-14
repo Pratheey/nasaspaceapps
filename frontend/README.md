@@ -1,6 +1,7 @@
 # frontend/: The Breathing Ground app (owned by the frontend lane)
 
-Static site, no backend (D3). Vite + MapLibre GL JS, plain JavaScript, hand-drawn SVG charts.
+Static single-page app, no backend (D3). React 19 + Vite, Tailwind CSS v4, Lucide icons,
+MapLibre GL JS for the map, hand-built SVG/canvas charts.
 
 ```bash
 cd frontend
@@ -10,33 +11,29 @@ npm run build    # static site in dist/, deployable to GitHub Pages or Vercel
 ```
 
 ## Data
-The app loads the four files from `contracts/app_data.md`:
+Loads the four files from `contracts/app_data.md`:
 1. `public/data/{meta,grid,series,stations}.json`, written by the analysis lane (real NISAR).
-2. If those don't exist, `public/samples/` (synthetic copies of `contracts/samples/`), and a
-   striped "Synthetic data" banner appears at the top. Never record the demo with that banner showing.
+2. If those don't exist, `public/samples/` (synthetic copies of `contracts/samples/`), with a
+   striped "Synthetic data" banner. Never record the demo with that banner showing.
 
-To refresh the samples: `python3 contracts/samples/make_samples.py && cp contracts/samples/*.json frontend/public/samples/`
+Refresh samples: `python3 contracts/samples/make_samples.py && cp contracts/samples/*.json frontend/public/samples/`
 
-## What's in it
-| Feature | Where |
+## Layout of the code
+| File | What it does |
 |---|---|
-| Net change map, same color scale in every view, hatched where there's no reliable measurement | `main.js` `drawGrid` |
-| Two dates: drag A and B on the timeline; "find the two dates that hide the most here" | `main.js`, `data.js` `mostMisleadingPair` |
-| Breathe: play the record pass by pass | `main.js` `play` |
-| What we can say: the four labels from the proposal | `main.js`, `colors.js` |
-| Inspector: leveling rod, key numbers with uncertainty, chart with fit or trend/seasonal split | `rod.js`, `chart.js` |
-| GPS check: station markers, GPS line on the chart, residual table | `main.js` |
-| How we got these numbers (evidence receipt) | `main.js` `renderInspector` |
-| Guided walkthrough, mirrors the 30-second pitch | `tour.js` |
-| Limits panel (text from `docs/pitch/limits.md`) and keyboard shortcuts | `limits.js` |
-| Every pair of dates at a spot: triangle chart, outlined pairs hide the sinking, click to map them | `matrix.js` |
-| Cross-section: draw a line (canal, road, levee), drag its ends, hover to find the spot | `profile.js` |
-| 3D: same values as height, with the exaggeration stated; animates with Breathe | `main.js` `updateRelief` |
-| Compare two spots (Shift-click or the button), listen to a spot, download its numbers as CSV | `main.js`, `extras.js` |
-| Go to a place or station; Share view copies a link that reopens the exact view | `main.js`, `extras.js` |
-| Hover sparkline on the map | `main.js` `hoverReadout` |
+| `src/App.jsx` | State, actions, keyboard, playback, shareable links, layout |
+| `src/components/MapView.jsx` | MapLibre map: data layer, 3D relief, outlines, stations, cross-section ends |
+| `src/components/Inspector.jsx` | Overview (label shares, seasonal-vs-trend scatter) and the selected-spot panel |
+| `src/components/Chart.jsx`, `Gauge.jsx`, `PairMatrix.jsx` | Time series, height gauge, every-pair-of-dates triangle |
+| `src/components/Timeline.jsx` | Pass track: play, scrub, drag A and B |
+| `src/components/Legend.jsx`, `Panels.jsx` | Legend; cross-section, walkthrough, intro, limits |
+| `src/lib/*` | Data loading and contract helpers, colors, formatting, tour steps, CSV/hash/sound |
+
+## Views (keys 1–5)
+Net change, Two dates, Breathe, Radar fringes (one color cycle = 11.9 cm, half NISAR's L-band
+wavelength), What we can say (the four labels). Same color scale in every value view.
 
 ## Design
-USGS topographic quad palette: on those maps purple marks change seen from the air, so purple
-means sinking. Survey teal means rising. Rod red appears only on the leveling rod. Type is
-Barlow Semi Condensed (headings) and Barlow (body), tabular numerals throughout.
+Night graphite background. Still ground stays dark; motion glows: coral for sinking, cyan for
+rising. Gold, from NISAR's reflector antenna, marks everything you can touch. Type: Saira Semi
+Condensed (headings), Public Sans (body), tabular numerals.
