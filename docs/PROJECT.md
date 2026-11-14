@@ -31,6 +31,7 @@ Full hour-by-hour plan: `docs/PLAN.md`.
 |---|---|---|
 | nisar | Pratheek | Earthdata login, open one GUNW (Track 034, Frame 020), confirm its layers |
 | analysis | Ismail | Agree on formats with Ryan, then write and test the pairwise fit |
-| gps | Daniel | Download NGL data for P302–P307, send coordinates, fix the P307 offset |
+| radar | Steven | Find GCOV, descending and Sentinel-1 dates; pick ~30 crop fields; submit HyP3 jobs |
+| gps | Daniel | Download NGL data for P302–P307, send coordinates to Pratheek and Steven, fix the P307 offset |
 | frontend | Avi | App setup with a basemap over Corcoran–Mendota |
 | integrator | Ryan | Repo admin, contracts meeting, fake app files for Avi |

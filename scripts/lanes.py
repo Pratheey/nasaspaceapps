@@ -10,6 +10,7 @@ LANES = {
     "nisar": ["data/**"],                       # Pratheek
     "analysis": ["analysis/**", "frontend/public/data/**"],  # Ismail
     "gps": ["gps/**", "context/**"],            # Daniel
+    "radar": ["radar/**"],                      # Steven
     "frontend": ["frontend/**"],                # Avi
     "story": ["docs/pitch/**"],                 # (unused; Ryan covers story)
     "integrator": ["**"],                       # Ryan

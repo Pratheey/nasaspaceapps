@@ -1,4 +1,4 @@
-# WORKFLOW.md: how five people and five agents share one repo
+# WORKFLOW.md: how six people and six agents share one repo
 
 ## Why merge conflicts happen (and why we will mostly avoid them)
 A conflict only happens when two branches change the **same lines of the same file**.

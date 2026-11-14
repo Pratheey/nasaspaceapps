@@ -1,6 +1,6 @@
 # AGENTS.md: rules for every AI agent (and human) in this repo
 
-You are one of five agents on a NASA Space Apps hackathon team building **The Breathing
+You are one of six agents on a NASA Space Apps hackathon team building **The Breathing
 Ground** (NISAR L-band ground motion over Corcoran–Mendota). Each human owns one **lane**,
 and you work only inside that lane. Before doing anything, read:
 
@@ -41,6 +41,7 @@ have to follow it by hand.
 |---|---|---|---|
 | Pratheek | `nisar` | NISAR data lead | `data/**` |
 | Ismail | `analysis` | Measurement and model | `analysis/**`, `frontend/public/data/**` (the app's data files) |
+| Steven | `radar` | Polarization, coverage comparison, descending track | `radar/**` |
 | Daniel | `gps` | GPS validation and context layers | `gps/**`, `context/**` |
 | Avi | `frontend` | Interactive map app | `frontend/**` except `frontend/public/data/**` |
 | Ryan | `integrator` | Integrator, story and pitch | everything (shared files go in via PR) |

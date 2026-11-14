@@ -28,10 +28,11 @@ evidence behind every result.*
 
 1. **Real NISAR data on the map.** This is the core of the project. Fake data doesn't count.
 2. **Proof it's right.** Compare the satellite with GPS stations it never saw.
-3. **Honest about uncertainty.** Show what we know and what we don't. Never overclaim.
-4. **A demo judges remember.** Two GPS stations that both "breathe" the same amount, but
+3. **Answer the whole brief.** Show what NISAR's polarization reveals, and whether it sees more than older satellites.
+4. **Honest about uncertainty.** Show what we know and what we don't. Never overclaim.
+5. **A demo judges remember.** Two GPS stations that both "breathe" the same amount, but
    one is stable and the other sinks about 6 cm a year.
-5. **Submit early.** Target hour 22, not hour 24.
+6. **Submit early.** Target hour 22, not hour 24.
 
 ## Key moments (everyone)
 
@@ -61,11 +62,13 @@ version to Ismail.
 - **By hour 2:** logged in to NASA Earthdata, opened one real NISAR file, and confirmed it has what we need.
 - **By hour 4:** first pair of dates cleaned up and sent to Daniel to check against GPS.
 - **By hour 10:** all ~26 dates processed and shared with Ismail.
+- **By hour 12:** your scripts can run on a different satellite track, so Steven can reuse them.
 - **By hour 16:** data frozen, every source written down.
 
 **You give:**
 - Daniel: the first pair (hour 4).
 - Ismail: the full dataset (hour 10).
+- Steven: your scripts, ready to run on the second track (hour 12). He runs them, you don't have to.
 
 **You need:** GPS station locations from Daniel (hour 1).
 
@@ -111,6 +114,50 @@ says it's real. Hiding it where it isn't real is the honest answer.
 
 ---
 
+## 📡 Steven: Radar Specialist
+
+**In one sentence:** you handle the other radar products. You show what NISAR's
+polarization reveals about crops, whether NISAR sees more farmland than the older
+Sentinel-1 satellite, and how to split ground motion into up/down vs sideways.
+
+**Why it matters:** the challenge asks about polarization and what's new about NISAR. The
+main map doesn't answer those questions; your work does. Your results go straight into the
+pitch and the "answers to the brief."
+
+**Your 3 projects, in order:**
+1. **Polarization (hours 0–6):** NISAR measures the radar bounce in two ways (HH and HV).
+   You compare them across ~30 crop fields of different types through the season.
+2. **Coverage comparison (hours 6–11):** for the same fields, how often does NISAR get a
+   usable measurement vs Sentinel-1? You pick a clear threshold and report the result,
+   good or bad.
+3. **Up/down vs sideways (hours 12–18):** the satellite also passes over in the opposite
+   direction (descending). You process that second track with Pratheek's scripts, then
+   combine both directions to separate vertical motion from east–west motion, and check
+   it against GPS.
+
+**Your goals:**
+- **By hour 1:** the products found, ~30 crop fields picked, and Sentinel-1 processing jobs requested (they take time).
+- **By hour 6:** polarization result to Ryan.
+- **By hour 11:** coverage comparison to Ryan.
+- **By hour 15:** first descending pair agrees with GPS.
+- **By hour 18:** vertical vs east–west result, checked against GPS.
+
+**You give:** Ryan: all 3 results, each with a chart and a short "what this does and doesn't show" note.
+
+**You need:**
+- Daniel: station locations (hour 1) and cleaned GPS motion (hour 4).
+- Pratheek: his scripts, ready to run on another track (hour 12).
+
+**Watch out for:**
+- Only claim what the crop labels confirm.
+- Report the coverage comparison even if NISAR doesn't win.
+- If the descending track runs late, the first two projects come first. They're core; the third is a bonus.
+- Never edit Pratheek's files. Ask him if you need a change.
+
+**Your folder:** `radar/`
+
+---
+
 ## 📍 Daniel: GPS & Validation
 
 **In one sentence:** you use GPS stations on the ground to check whether the satellite is
@@ -120,14 +167,15 @@ telling the truth.
 "an independent instrument agrees."
 
 **Your goals:**
-- **By hour 1:** GPS data downloaded for 4 stations (P302, P303, P304, P307), locations sent to Pratheek.
+- **By hour 1:** GPS data downloaded for 4 stations (P302, P303, P304, P307), locations sent to Pratheek and Steven.
 - **By hour 2:** the known equipment jump in P307 removed.
 - **By hour 5:** compare the satellite's first pair with GPS. **You make the go/no-go call with Pratheek.**
 - **By hour 10:** map extras gathered (canals, towns, groundwater, older subsidence data).
 - **By hour 11:** the "does it agree?" table done, plus any bad satellite dates flagged.
 
 **You give:**
-- Pratheek: station locations (hour 1).
+- Pratheek and Steven: station locations (hour 1).
+- Steven: cleaned GPS motion (hour 4).
 - Ismail: uncertainty numbers and flagged bad dates (hour 11).
 - Avi: GPS data and map extras.
 
@@ -176,7 +224,7 @@ are the real test. Four stations is a prototype check, not proof for the whole v
 
 **In one sentence:** you keep everyone unblocked and own what the judges read and hear.
 
-**Why it matters:** five people working fast will drift apart without someone holding it
+**Why it matters:** six people working fast will drift apart without someone holding it
 together, and a great project with a weak pitch loses.
 
 **Your goals:**
@@ -184,7 +232,7 @@ together, and a great project with a weak pitch loses.
 - **By hour 2:** a 15-minute meeting to agree how files hand off between people, written down.
 - **By hour 3:** fake data made for Avi.
 - **By hour 5:** run the go/no-go call and write down the result.
-- **By hour 12:** pitch outline done.
+- **By hour 12:** pitch outline done, including Steven's polarization and coverage results.
 - **By hour 18:** Limits panel text, video script, and a check that we never overclaim.
 - **By hour 22:** every number verified, video recorded, **submitted**.
 
@@ -208,16 +256,18 @@ together, and a great project with a weak pitch loses.
 Don't panic. Ryan records the decision, and then:
 - Daniel's older satellite data (Sentinel-1) shows the breathing pattern instead.
 - Pratheek keeps whatever NISAR dates do work, clearly labelled.
+- Steven's polarization and coverage work doesn't depend on this, so he keeps going.
 - Everyone else keeps going. Your tasks don't change.
 
 ## If we get 48 hours instead of 24
 
 | Who | Extra work |
 |---|---|
-| Pratheek | Second satellite track, to separate up/down from sideways motion |
-| Ismail | Combining the two tracks, NISAR vs older satellite comparison, canal profile |
+| Pratheek | Recover areas that got masked out; reprocess with any updated NISAR files |
+| Ismail | Seasonal/trend fit on Steven's vertical motion, canal profile |
+| Steven | Full up/down vs sideways time series, more fields and dates in the coverage comparison |
 | Daniel | Historical data along canals and at the stations |
-| Avi | Canal profile view and history panel in the app |
+| Avi | Canal profile, history panel, up/down toggle, polarization and coverage panels in the app |
 | Ryan | Pitch polish, a second video take, practice for judge questions |
 
 ---
@@ -240,6 +290,7 @@ cd nasaspaceapps
 Then set your lane with the line for your name:
 - Pratheek: `echo nisar > .lane`
 - Ismail: `echo analysis > .lane`
+- Steven: `echo radar > .lane`
 - Daniel: `echo gps > .lane`
 - Avi: `echo frontend > .lane`
 - Ryan: `echo integrator > .lane`

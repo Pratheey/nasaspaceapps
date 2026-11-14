@@ -9,7 +9,7 @@
 
 ```bash
 git clone <repo-url> && cd nasaspaceapps
-echo nisar > .lane    # Pratheek=nisar  Ismail=analysis  Daniel=gps  Avi=frontend  Ryan=integrator
+echo nisar > .lane    # Pratheek=nisar  Ismail=analysis  Steven=radar  Daniel=gps  Avi=frontend  Ryan=integrator
 ```
 
 Then open your agent in the repo folder. It reads `AGENTS.md` (or `CLAUDE.md`) automatically.
@@ -20,6 +20,7 @@ Then open your agent in the repo folder. It reads `AGENTS.md` (or `CLAUDE.md`) a
 |---|---|
 | `data/`: NISAR GUNW access, subsetting, ionosphere, masking, stack | Pratheek (`nisar`) |
 | `analysis/`: net change, seasonal and trend fit, labels, export for the app | Ismail (`analysis`) |
+| `radar/`: GCOV polarization, NISAR vs Sentinel-1 coverage, descending track | Steven (`radar`) |
 | `gps/`, `context/`: GPS validation, canals, groundwater, historical layers | Daniel (`gps`) |
 | `frontend/`: the interactive map | Avi (`frontend`) |
 | `docs/` (incl. pitch), `contracts/`, root files | Ryan (`integrator`) |
