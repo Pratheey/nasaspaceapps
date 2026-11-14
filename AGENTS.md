@@ -32,17 +32,19 @@ missing, ask them which lane they're in and have them run `echo <lane> > .lane`.
 Claude Code enforces this table with a hook (`scripts/guard_lane.py`). Other tools
 have to follow it by hand.
 
-| `.lane` | Role | Owns (may edit) |
-|---|---|---|
-| `data` | Data lead | `data/**`, `requirements.txt` |
-| `backend` | Backend / pipeline | `backend/**`, `requirements.txt` |
-| `frontend` | Frontend / viz | `frontend/**` |
-| `story` | Science / story | `docs/pitch/**` |
-| `integrator` | Integrator / PM | everything (shared files go in via PR) |
+| Person | `.lane` | Role | Owns (may edit) |
+|---|---|---|---|
+| Pratheek | `nisar` | NISAR data lead | `data/**` |
+| Ismail | `analysis` | Measurement and model | `analysis/**`, `frontend/public/data/**` (the app's data files) |
+| Daniel | `gps` | GPS validation and context layers | `gps/**`, `context/**` |
+| Avi | `frontend` | Interactive map app | `frontend/**` except `frontend/public/data/**` |
+| Ryan | `integrator` | Integrator, story and pitch | everything (shared files go in via PR) |
+
+The full task list per person, hour by hour, is in `docs/PLAN.md`.
 
 **Shared files.** Only the Integrator merges changes to these: `AGENTS.md`, `CLAUDE.md`,
 `docs/PROJECT.md`, `docs/DECISIONS.md`, `docs/WORKFLOW.md`, `contracts/**`,
-`.github/**`, `.claude/**`, `scripts/**`, `README.md`.
+`.github/**`, `.claude/**`, `scripts/**`, `requirements.txt`, `README.md`.
 
 ## 3. Stack and conventions
 

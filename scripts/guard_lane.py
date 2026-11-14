@@ -39,7 +39,7 @@ def main() -> int:
     if lane is None:
         print(
             "No lane set. Ask your human which lane they own and have them run "
-            "`echo <lane> > .lane` (data | backend | frontend | story | integrator).",
+            "`echo <lane> > .lane` (nisar | analysis | gps | frontend | integrator).",
             file=sys.stderr,
         )
         return 2

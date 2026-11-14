@@ -7,7 +7,7 @@
 **Version:** 0. **Last updated:** 2026-11-13 by Integrator (repo created, idea not chosen yet)
 
 ## Theme
-**Dancing with the SARS**
+**Dancing with the SARS**. Project: **The Breathing Ground** (NISAR L-band, Corcoran–Mendota, San Joaquin Valley)
 
 ## Dataset
 - **SARS dataset:** _TBD (exact product name, link, and format)_
@@ -25,10 +25,12 @@ _TBD. The one question our project answers, and what a judge sees in a 60-second
 - **Out of scope:** _TBD_
 
 ## Current lane goals (update at every check-in)
+Full hour-by-hour plan: `docs/PLAN.md`.
+
 | Lane | Person | Current goal |
 |---|---|---|
-| data | _name_ | Get the SARS data, open one file, and document it in `data/README.md` |
-| backend | _name_ | _TBD_ |
-| frontend | _name_ | _TBD_ |
-| story | _name_ | Read the challenge and write `docs/pitch/challenge_notes.md` |
-| integrator | _name_ | Set up the GitHub repo, the board and check-ins |
+| nisar | Pratheek | Earthdata login, open one GUNW (Track 034, Frame 020), confirm its layers |
+| analysis | Ismail | Agree on formats with Ryan, then write and test the pairwise fit |
+| gps | Daniel | Download NGL data for P302–P307, send coordinates, fix the P307 offset |
+| frontend | Avi | App setup with a basemap over Corcoran–Mendota |
+| integrator | Ryan | Repo admin, contracts meeting, fake app files for Avi |

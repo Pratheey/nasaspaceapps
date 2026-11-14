@@ -8,20 +8,22 @@
 
 ```bash
 git clone <repo-url> && cd nasaspaceapps
-echo data > .lane     # your lane: data | backend | frontend | story | integrator
+echo nisar > .lane    # Pratheek=nisar  Ismail=analysis  Daniel=gps  Avi=frontend  Ryan=integrator
 ```
 
 Then open your agent in the repo folder. It reads `AGENTS.md` (or `CLAUDE.md`) automatically.
 
 ## Folders and owners
 
-| Folder | Owner lane |
+| Folder | Owner |
 |---|---|
-| `data/`: raw (git-ignored), processed, notebooks, scripts, and the data dictionary | data |
-| `backend/` | backend |
-| `frontend/` | frontend |
-| `docs/pitch/`: pitch, video script, submission | story |
-| `docs/`, `contracts/`, `.github/`, `scripts/`, root files | integrator |
+| `data/`: NISAR GUNW access, subsetting, ionosphere, masking, stack | Pratheek (`nisar`) |
+| `analysis/`: net change, seasonal and trend fit, labels, export for the app | Ismail (`analysis`) |
+| `gps/`, `context/`: GPS validation, canals, groundwater, historical layers | Daniel (`gps`) |
+| `frontend/`: the interactive map | Avi (`frontend`) |
+| `docs/` (incl. pitch), `contracts/`, root files | Ryan (`integrator`) |
+
+**Who does what, hour by hour:** [docs/PLAN.md](docs/PLAN.md)
 
 ## Commands
 | What | Command |

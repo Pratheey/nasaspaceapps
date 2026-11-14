@@ -7,15 +7,16 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parent.parent
 
 LANES = {
-    "data": ["data/**", "requirements.txt"],
-    "backend": ["backend/**", "requirements.txt"],
-    "frontend": ["frontend/**"],
-    "story": ["docs/pitch/**"],
-    "integrator": ["**"],
+    "nisar": ["data/**"],                       # Pratheek
+    "analysis": ["analysis/**", "frontend/public/data/**"],  # Ismail
+    "gps": ["gps/**", "context/**"],            # Daniel
+    "frontend": ["frontend/**"],                # Avi
+    "story": ["docs/pitch/**"],                 # (unused; Ryan covers story)
+    "integrator": ["**"],                       # Ryan
 }
 
 # Paths a lane may NOT touch even if a pattern above matches.
-EXCLUDE: dict = {}
+EXCLUDE = {"frontend": ["frontend/public/data/**"]}
 
 
 def read_lane() -> str | None:
