@@ -5,7 +5,7 @@ import { NasaImage, Starfield, SatelliteArt, IMAGES } from "./art.jsx";
 import Globe from "./Globe.jsx";
 import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
-import { SpotGame, Numbers } from "./Game.jsx";
+import { Numbers } from "./Game.jsx";
 import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
 import { cm, fmtShort, fmtDate } from "../lib/fmt.js";
@@ -34,7 +34,6 @@ export default function Story({ D, onExplore }) {
       <AquiferScene />
       <BreatheScene D={D} demo={demo} />
       <LieScene D={D} st={demo.sink} />
-      <SpotGame D={D} />
       <Numbers D={D} />
       <OrbitScene />
       <InstrumentScene D={D} />
@@ -42,6 +41,7 @@ export default function Story({ D, onExplore }) {
       <GpsScene D={D} />
       <MattersScene />
       <Finale D={D} onExplore={onExplore} />
+      <Team />
       <Credits D={D} />
       {D.synthetic && <PreviewTag />}
     </div>
@@ -57,7 +57,7 @@ function TopBar({ D, onExplore }) {
         <Mark />
         <span className="font-display font-semibold text-[17px] tracking-wide max-sm:hidden">The Breathing Ground</span>
         <nav className="ml-auto hidden md:flex items-center gap-7 text-[14px] text-ink/75">
-          {[["Story", "#breathe"], ["The radar", "#radar"], ["Why it matters", "#matters"]].map(([t, h]) => (
+          {[["Story", "#breathe"], ["The radar", "#radar"], ["Why it matters", "#matters"], ["Team", "#team"]].map(([t, h]) => (
             <a key={t} href={h} onClick={(e) => { e.preventDefault(); document.querySelector(h)?.scrollIntoView({ behavior: "smooth" }); }} className="hover:text-accent-2 transition-colors">{t}</a>
           ))}
         </nav>
@@ -540,6 +540,57 @@ function Finale({ D, onExplore }) {
             </div>
           ))}
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+const TEAM = [
+  ["Ryan Jian", "rjian", "Team lead. Integration, story and pitch"],
+  ["Pratheek Danam", "pratheey", "NISAR data: radar pairs, ionosphere correction, masking"],
+  ["Ismail Churaev", "ischur", "Measurement and model: net change, seasonal fit, uncertainty"],
+  ["Tsz Liang", "s1evenl_", "Radar products: polarization, coverage, descending track"],
+  ["Daniel Li", "danielli", "GPS validation and context layers"],
+  ["Avinash Lee", "avilee", "Interactive map and app"],
+];
+
+function Team() {
+  const [ref, seen] = useInView(0.2);
+  return (
+    <section id="team" ref={ref} className="relative py-[14vh] border-t border-hair">
+      <div className="px-6 md:px-14 max-w-[1400px] mx-auto grid lg:grid-cols-[1fr_1.3fr] gap-14">
+        <div className={`transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">The team</p>
+          <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Six people, one valley, one weekend.</h2>
+          <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
+            We are tech enthusiasts with backgrounds in software, data analysis and engineering, driven by curiosity about real-world
+            science. We work fast, talk openly and iterate quickly, turning complex data into something anyone can explore.
+          </p>
+          <div className="mt-10 rounded-xl border border-hair-2 bg-deck/60 p-6">
+            <p className="font-serif italic text-[20px] text-accent-2 leading-none">The challenge</p>
+            <p className="font-display text-[22px] font-semibold mt-3">Dancing with the SARs, NASA Space Apps 2026</p>
+            <p className="text-[15.5px] leading-relaxed text-ink/80 mt-3">
+              Earth's surface is always changing, through natural processes and human activity, and those changes are hard to see,
+              understand and explain. The challenge: build an interactive application that uses radar data from the NASA-ISRO NISAR
+              mission to track and visualize surface change. We chose farmland that breathes and sinks with groundwater pumping.
+            </p>
+          </div>
+        </div>
+        <ul className="grid sm:grid-cols-2 gap-3 self-center">
+          {TEAM.map(([name, handle, role], n) => (
+            <li key={handle} className={`rounded-xl border border-hair bg-deck/60 p-5 flex gap-4 items-start transition-all duration-700 hover:border-accent/50 hover:bg-deck ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`} style={{ transitionDelay: `${n * 90}ms` }}>
+              <span className="shrink-0 grid place-items-center w-12 h-12 rounded-full border border-accent/40 bg-[radial-gradient(circle_at_30%_30%,rgba(111,168,255,.35),rgba(15,20,32,.9))] font-display font-bold text-[16px]" aria-hidden="true">
+                {name.split(" ").map((w) => w[0]).join("")}
+              </span>
+              <div className="min-w-0">
+                <p className="font-display text-[19px] font-semibold leading-tight">{name}</p>
+                <p className="font-mono text-[12px] text-mute mt-0.5">@{handle}</p>
+                <p className="text-[14px] text-ink/80 mt-2 leading-snug">{role}</p>
+              </div>
+            </li>
+          ))}
+        </ul>
       </div>
     </section>
   );
