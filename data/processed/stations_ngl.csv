@@ -1,0 +1,5 @@
+station,lat,lon,height_m,source
+P302,36.6347271,-120.6185799,122.637,NGL IGS20 tenv3 (last epoch) via Daniel 2026-11-14
+P303,37.0543829,-120.7053006,-2.451,NGL IGS20 tenv3 (last epoch) via Daniel 2026-11-14
+P304,36.7390040,-120.3566036,16.847,NGL IGS20 tenv3 (last epoch) via Daniel 2026-11-14
+P307,36.9472697,-120.0579247,48.598,NGL IGS20 tenv3 (last epoch) via Daniel 2026-11-14

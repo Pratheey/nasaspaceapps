@@ -1,0 +1,5 @@
+# Per-pair files, the stack and run logs: rebuilt by the scripts, shared through Drive.
+interim/
+# Local Python environment for the data scripts.
+.venv/
+.pytest_cache/
