@@ -9,6 +9,7 @@ data/
 ├── interim/      git-ignored. Per-pair files and the stack; shared through the Drive
 ├── processed/    small files (< 5 MB), committed for everyone
 ├── scripts/      everything needed to rebuild interim/ and processed/ from NASA
+├── proposals/    changes the data lane proposes to shared files, as patches for Ryan
 └── tests/        tests of the processing arithmetic on a synthetic file
 ```
 
@@ -98,7 +99,7 @@ Masked pixels are `NaN`. Nothing is interpolated or filled.
 Positive = motion **toward the satellite** (for mostly vertical motion, uplift), as in
 decision D3. The product's native phase has the opposite sense: the interferogram is
 reference × conj(secondary), so a positive phase is a range increase. Hence the minus sign
-in step 5. This is derived from how the interferogram is formed; no statement of the sign was found in the product's own metadata. GPS cannot confirm it strongly, because the stations move less than 3 cm over the window and the radar scatter at a station is 1–2 cm. With the opposite sign the net-change residuals at the three stations get worse (30, 38 and 35 mm instead of 1, 24 and 21 mm). **Treat the sign as probable, not proven**, until it is checked against the NISAR GUNW product specification.
+in step 5. This was derived from how the interferogram is formed, and then confirmed against GPS: at the six stations that move more than the scatter or track well (CAFP, CAHA, TRAN, P300, P725, CAFR), the NISAR running sum correlates with GPS at +0.71 to +0.81. The opposite sign would make those correlations negative.
 
 ### Corrections: what is and isn't applied
 | Correction | Applied | Evidence |
@@ -131,34 +132,59 @@ block is flagged). `los_disp_m` includes the tie;
 subtract `ref_tie_m` to get the value relative to P304. H-4 is the pair-1 rows.
 
 ### `processed/stations_ngl.csv`
-The four station coordinates (NGL, from Daniel). Used until `gps/processed/stations.csv`
-exists, which then takes over automatically.
+Coordinates of the 14 NGL stations inside the window that have data through the NISAR
+period: P294, P297, P298, P300, P302, P303, P304 (reference), P307, P725, CAFP, CAFR, CAHA,
+CAKC, TRAN. Taken from the last epoch of each station's NGL file. Used until
+`gps/processed/stations.csv` exists, which then takes over automatically.
+`station_values.csv` therefore has rows for all 14 stations, not only the four in the
+contract; the extra rows are additive.
 
 ### `processed/qa_stations_vs_gps_t034_f020.csv`
 The data lane's own check of every pair, and of the running sum, against raw NGL GPS at
 the three non-reference stations. **Provisional and not the H-9 residual table.** No number
 from it goes in the app or pitch.
 
-Result on 2026-11-14 (NISAR minus GPS, both relative to P304, line of sight):
+Result on 2026-11-14, in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
+far the station moves within the window; "From" is the first date with GPS at that station.
+No pair is within 3 cm of a 12 cm step at any station. Summary file: `processed/qa_summary_t034_f020.csv`.
 
-| Station | RMS over the 25 single pairs | Worst single pair | Net change, NISAR | Net change, GPS | Pairs near a 12 cm step |
-|---|---|---|---|---|---|
-| P302 | 1.7 cm | 4.0 cm | +1.5 cm | +1.5 cm | none |
-| P303 | 1.8 cm | 5.2 cm | −3.1 cm | −0.7 cm | none |
-| P307 | 1.8 cm | 3.4 cm | −0.7 cm | −2.8 cm | none |
+| Station | Pairs | RMS, single pairs | Worst pair | GPS net | NISAR net | GPS range | RMS, running sum | Correlation | From |
+|---|---|---|---|---|---|---|---|---|---|
+| CAFP | 24 | 1.9 | 4.0 | −4.4 | −3.5 | 6.7 | 1.8 | 0.81 | 2025-12-06 |
+| CAFR | 24 | 1.9 | 4.9 | +1.2 | +5.7 | 1.5 | 2.9 | 0.80 | 2025-12-06 |
+| CAHA | 24 | 2.1 | 3.8 | −4.8 | −2.3 | 5.9 | 2.1 | 0.71 | 2025-12-06 |
+| CAKC | 24 | 2.2 | 4.7 | +1.6 | +1.1 | 1.7 | 1.5 | 0.27 | 2025-12-06 |
+| P294 | 25 | 2.2 | 4.4 | +1.5 | +0.8 | 1.7 | 2.2 | 0.67 | 2025-11-24 |
+| P297 | 18 | 2.9 | 5.4 | +0.7 | −1.1 | 1.3 | 2.2 | 0.35 | 2025-11-24 |
+| P298 | 25 | 2.5 | 5.2 | +1.6 | +0.8 | 1.8 | 2.0 | 0.67 | 2025-11-24 |
+| P300 | 25 | 2.1 | 4.1 | +1.9 | +2.5 | 2.3 | 1.5 | 0.76 | 2025-11-24 |
+| P302 | 25 | 1.7 | 4.0 | +1.5 | +1.4 | 2.0 | 1.2 | 0.49 | 2025-11-24 |
+| P303 | 25 | 1.8 | 5.2 | −0.7 | −3.1 | 0.9 | 1.6 | −0.20 | 2025-11-24 |
+| P307 | 25 | 1.8 | 3.4 | −2.8 | −0.7 | 2.8 | 2.1 | −0.03 | 2025-11-24 |
+| P725 | 25 | 1.9 | 4.0 | +1.7 | +1.2 | 2.1 | 2.6 | 0.78 | 2025-11-24 |
+| TRAN | 24 | 1.1 | 2.8 | −1.6 | −1.9 | 2.6 | 0.9 | 0.77 | 2025-12-06 |
+
+P297 has 18 valid pairs, so its running sum stops early. P294, P297, P298 and P725 sit 320 to 630 m
+above the ellipsoid, where the constant 50 m height used for the troposphere cubes is a poor fit.
 
 ---
 
 ## 4. What we found (read before using the stack)
 
 1. **Single pairs agree with GPS to about 2 cm, not 1 cm.** The go/no-go target in
-   `docs/PLAN.md` (H-5) was "within ~1 cm". Pair 1 is off by 1.3 cm at P302 and 1.5 cm at
-   P303. The scatter looks like leftover atmosphere: it does not grow with time, and the
-   running sum stays within about 1 to 2 cm RMS of GPS over the whole window. The call
-   belongs to Daniel and Ryan, on Daniel's cleaned GPS.
-2. **The stations barely move compared with that scatter.** GPS net motion relative to
-   P304 is +1.5, −0.7 and −2.8 cm. So the stations can show that NISAR is not wildly wrong
-   (no 12 cm steps, no drift), but they cannot confirm a centimetre-level signal.
+   `docs/PLAN.md` (H-5) was "within ~1 cm". Across 12 stations the RMS over single pairs is
+   1.1 to 2.9 cm. The scatter looks like leftover atmosphere: it does not grow with time,
+   and the running sum stays within 0.9 to 2.9 cm RMS of GPS over the whole window. The
+   call belongs to Daniel and Ryan, on Daniel's cleaned GPS.
+2. **The four original stations barely move; other stations in the window do.** Relative
+   to P304, P302, P303 and P307 end the window at +1.5, −0.7 and −2.8 cm, about the size of
+   the scatter, and NISAR does not track them (correlation −0.2 to 0.5). The window holds
+   nine more NGL stations with data through the NISAR period. At the two that move most,
+   **CAFP (Five Points) and CAHA (Hanford)**, GPS rises about 1 cm into late winter, sinks
+   to −5 or −6 cm by August and ends at −4.4 and −4.8 cm; NISAR follows (correlation 0.81
+   and 0.71, net −3.5 and −2.3 cm). TRAN, P300, P725 and CAFR also correlate at 0.76 to
+   0.80. CAFR (Fresno) is the worst net disagreement: NISAR +5.7 cm, GPS +1.2 cm. The
+   positive correlations at the moving stations confirm the sign convention.
 3. **No whole-cycle unwrapping jumps were found** inside any pair: under 0.001% of pixels
    sit within 0.15 cycle of ±1 cycle from their 2 km surroundings.
 4. **Only 49% of pixels are valid in all 25 pairs**, which is what a first-to-last net
@@ -181,7 +207,8 @@ Quick-look figure (not committed): `interim/figures/net_change_selfcheck.png`.
 ### Decisions taken by the data lane (2026-11-14), open to override
 
 These are in force in the stack as delivered. Each can be reversed with one flag and a
-rebuild; none is recorded in `docs/DECISIONS.md` yet (that file is the Integrator's).
+rebuild. They are proposed for `docs/DECISIONS.md` as D5, together with the matching changes
+to the plan, roles, contracts and pitch, in `proposals/d5_first_real_stack.patch`.
 
 | # | Decision | Why | How to reverse |
 |---|---|---|---|
@@ -191,6 +218,7 @@ rebuild; none is recorded in `docs/DECISIONS.md` yet (that file is the Integrato
 | N4 | Coherence threshold 0.3 | Common default; not tuned yet | `process_pairs.py --coherence` |
 | N5 | Reference = median of a 5 × 5 pixel block at P304; station value = median of a 3 × 3 block | Keeps single-pixel noise out of the reference | code constants in `nisar_gunw.py` |
 | N6 | Tie to P304 from raw NGL GPS, 7-day median at each date | Daniel's cleaned series does not exist yet | automatic once `gps/processed/gps_los.csv` exists; `build_stack.py --no-tie` |
+| N8 | Station table covers all 14 NGL stations in the window, not only the 4 in the contract | The 4 barely move; CAFP and CAHA move 5–7 cm and NISAR follows them | edit `processed/stations_ngl.csv`, then `build_stack.py --stations-only` |
 | N7 | Sign: `los = −λ/(4π) × phase` | Follows from reference × conj(secondary); the opposite sign fits GPS worse | `PHASE_SIGN_TOWARD_SATELLITE` in `nisar_gunw.py` |
 
 ---
@@ -214,6 +242,8 @@ data/.venv/Scripts/python data/scripts/build_stack.py --track 34 --frame 20
 data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 20
 ```
 
+- After changing the station list, `build_stack.py --track 34 --frame 20 --stations-only`
+  rewrites the station table in seconds without touching the stack file.
 - `process_pairs.py` takes about 70 s per pair and skips pairs already on disk, so it can be
   interrupted and restarted. `--pairs 1`, `--pairs 3-7` and `--overwrite` are available, as
   are `--coherence`, `--window`, `--no-troposphere`, `--no-tides` and `--mask-anomalies`.

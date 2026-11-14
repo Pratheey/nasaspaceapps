@@ -1,0 +1,550 @@
+diff --git a/ROLES.md b/ROLES.md
+index 11418c0..e07dbfd 100644
+--- a/ROLES.md
++++ b/ROLES.md
+@@ -30,8 +30,8 @@ evidence behind every result.*
+ 2. **Proof it's right.** Compare the satellite with GPS stations it never saw.
+ 3. **Answer the whole brief.** Show what NISAR's polarization reveals, and whether it sees more than older satellites.
+ 4. **Honest about uncertainty.** Show what we know and what we don't. Never overclaim.
+-5. **A demo judges remember.** Two GPS stations that both "breathe" the same amount, but
+-   one is stable and the other sinks about 6 cm a year.
++5. **A demo judges remember.** Two GPS stations, Five Points and Hanford, where the ground
++   rises about 1 cm over winter and then sinks 5–6 cm by August, and the satellite sees it.
+ 6. **Submit early.** Target hour 22, not hour 24.
+ 
+ ## Key moments (everyone)
+@@ -40,7 +40,7 @@ evidence behind every result.*
+ |---|---|
+ | **0** | Kickoff. Everyone clones the repo and sets their lane. |
+ | **2** | Check-in 1. File formats agreed. Everyone can work without waiting on anyone. |
+-| **5** | 🚦 **Go/no-go.** Does the satellite agree with GPS within about 1 cm? If yes, we're on. If not, we switch to the backup plan. |
++| **5** | 🚦 **Go/no-go.** Does the satellite agree with GPS? First result: within about 2 cm, with no jumps. Proposed call: go (Daniel confirms). |
+ | **6** | Check-in 2. Show what works. |
+ | **12** | Check-in 3. Real data should be flowing all the way to the map. |
+ | **18** | Check-in 4. 🧊 **Feature freeze.** No new features, only fixes. |
+@@ -72,6 +72,10 @@ version to Ismail.
+ 
+ **You need:** GPS station locations from Daniel (hour 1).
+ 
++**Where you are (14 Nov):** all 25 date pairs are processed and the scripts work on any
++track. Left to do: upload the big file to the shared Drive, get terrain heights to improve
++the weather correction in the hills, and help Steven run the second track.
++
+ **Watch out for:**
+ - Don't download the whole 54 GB. Read only our small area.
+ - If you're stuck for more than 30 minutes, tell Ryan right away. Everyone is waiting on you.
+@@ -107,8 +111,13 @@ sank, how much it "breathed", how sure we are, and the label for each spot.
+ - Pratheek: the satellite data (hour 10; partial earlier).
+ - Daniel: the uncertainty numbers (hour 11).
+ 
+-**Watch out for:** the yearly "breathing" is tiny (millimetres). Only show it where the math
+-says it's real. Hiding it where it isn't real is the honest answer.
++**Watch out for:**
++- The yearly "breathing" is small and the satellite wobbles about 2 cm per date. Only show
++  it where the math says it's real. Hiding it where it isn't real is the honest answer.
++- Don't use single pixels. Use the middle value (median) of all the pixels in each 1 km map
++  square. Single pixels have gaps and pick up wet-field effects that look like sinking.
++- The usual significance test finds "breathing" even on solid rock. Set the bar using
++  ground that shouldn't move.
+ 
+ **Your folders:** `analysis/` and `frontend/public/data/`
+ 
+@@ -167,8 +176,8 @@ telling the truth.
+ "an independent instrument agrees."
+ 
+ **Your goals:**
+-- **By hour 1:** GPS data downloaded for 4 stations (P302, P303, P304, P307), locations sent to Pratheek and Steven.
+-- **By hour 2:** the known equipment jump in P307 removed.
++- **By hour 1:** GPS data downloaded for 14 stations (the list is in `data/processed/stations_ngl.csv`).
++- **By hour 2:** equipment jumps checked and removed at every station.
+ - **By hour 5:** compare the satellite's first pair with GPS. **You make the go/no-go call with Pratheek.**
+ - **By hour 10:** map extras gathered (canals, towns, groundwater, older subsidence data).
+ - **By hour 11:** the "does it agree?" table done, plus any bad satellite dates flagged.
+@@ -181,8 +190,8 @@ telling the truth.
+ 
+ **You need:** Pratheek's first pair (hour 4).
+ 
+-**Watch out for:** one station is the "reference" and doesn't count as a check. The other 3
+-are the real test. Four stations is a prototype check, not proof for the whole valley.
++**Watch out for:** one station (P304) is the "reference" and doesn't count as a check. The
++other 12 are the real test. That is still a prototype check, not proof for the whole valley.
+ 
+ **Your folders:** `gps/` and `context/`
+ 
+@@ -199,7 +208,7 @@ are the real test. Four stations is a prototype check, not proof for the whole v
+ - **By hour 6:** the map shows colored labels, using fake data Ryan gives you.
+ - **By hour 10:** click any spot to see a chart of its movement.
+ - **By hour 14:** running on **real** data from Ismail.
+-- **By hour 16:** the demo animation for stations P302 vs P307.
++- **By hour 16:** the demo animation for stations CAFP (Five Points) and CAHA (Hanford), with P300 as the calm one.
+ - **By hour 18:** everything in, then feature freeze.
+ - **By hour 20:** live on a public link that works on laptop and phone.
+ 
+@@ -207,7 +216,7 @@ are the real test. Four stations is a prototype check, not proof for the whole v
+ - the map with labels and a legend
+ - click to see a chart for any spot
+ - a "GPS reveal" button that shows whether GPS agrees
+-- the P302 vs P307 animation
++- the Five Points and Hanford animation (CAFP, CAHA), with P300 as the calm comparison
+ - a "breathing vs sinking" scatter plot
+ - a "Limits" panel (Ryan writes the text)
+ 
+diff --git a/contracts/README.md b/contracts/README.md
+index 4217dd1..8720508 100644
+--- a/contracts/README.md
++++ b/contracts/README.md
+@@ -1,10 +1,11 @@
+ # contracts/: agreed interfaces between lanes (owned by the Integrator)
+ 
+-**Version 1** (D3 in `docs/DECISIONS.md`). Conventions for every file below:
++**Version 1.1** (D3, plus the additive changes proposed in D5, in `docs/DECISIONS.md`). Conventions for every file below:
+ 
+ - Positive LOS = toward the satellite (≈ uplift). Negative = away (≈ sinking).
+ - Lengths in metres, keys end in `_m` (rates `_m_per_yr`). Display in cm is the frontend's job.
+-- Reference station **P304**. Held out: P302, P303, P307.
++- Reference station **P304**. Held out (D5): P294, P297, P298, P300, P302, P303, P307, P725, CAFP, CAFR, CAHA, CAKC, TRAN.
++  Demo stations: CAFP and CAHA, with P300 as the calm comparison.
+ - Dates ISO 8601 (UTC). Missing = `null` (JSON) / empty (CSV) / `NaN` (NetCDF). Never `-999`.
+ - `snake_case` everywhere.
+ 
+diff --git a/contracts/app_data.md b/contracts/app_data.md
+index b1ae623..3dbdab3 100644
+--- a/contracts/app_data.md
++++ b/contracts/app_data.md
+@@ -1,6 +1,6 @@
+ # Contract: app data files (analysis → frontend)
+ 
+-Produced by Ismail into `frontend/public/data/`. Read by Avi's app. Version 1.
++Produced by Ismail into `frontend/public/data/`. Read by Avi's app. Version 1.1 (D5: station list and how cells are made; no shape change).
+ Samples in exactly this shape: `contracts/samples/`. Four files, all JSON.
+ 
+ ## Grid
+@@ -8,6 +8,10 @@ Row-major, **north to south, then west to east**. Cell `(row, col)` has centre
+ `lat = lat_max − (row + 0.5)·step`, `lon = lon_min + (col + 0.5)·step`. Index
+ `i = row·ncols + col`. All per-cell arrays have length `nrows·ncols`, `null` = no value.
+ 
++**How a cell gets its value (D5).** For each pair, a cell is the median of the valid NISAR
++pixels inside it. The chain is then summed per cell. A cell with too few valid pixels in a
++pair is missing for that pair, and for every later cumulative value.
++
+ ## 1. `meta.json`
+ ```json
+ {
+@@ -20,7 +24,8 @@ Row-major, **north to south, then west to east**. Cell `(row, col)` has centre
+   "sign_convention": "positive toward satellite (≈ uplift); negative ≈ sinking",
+   "units": "m",
+   "reference_station": "P304",
+-  "held_out_stations": ["P302", "P303", "P307"],
++  "held_out_stations": ["P294", "P297", "P298", "P300", "P307", "CAFP", "CAFR", "CAHA", "CAKC", "TRAN"],
++  "demo_stations": {"sinking": ["CAFP", "CAHA"], "calm": "P300"},
+   "grid": {"lat_max": 36.95, "lon_min": -120.60, "step_deg": 0.01, "nrows": 100, "ncols": 120},
+   "dates": ["2025-11-24", "..."],
+   "pairs": [{"pair": 1, "ref_date": "2025-11-24", "sec_date": "2025-12-06",
+@@ -76,7 +81,7 @@ date (first value is always 0 or null).
+ {
+   "is_synthetic": false,
+   "stations": [{
+-    "station": "P307", "lat": 0.0, "lon": 0.0, "role": "held_out", "cell_index": 0,
++    "station": "CAHA", "lat": 0.0, "lon": 0.0, "role": "held_out", "cell_index": 0,
+     "gps": {"dates": ["2025-11-24", "..."], "los_m": [...], "sigma_m": [...]},
+     "nisar": {"dates": ["..."], "los_m": [...]},
+     "gps_fit":   {"trend_m_per_yr": 0.0, "trend_sigma_m_per_yr": 0.0, "amp_m": 0.0, "amp_sigma_m": 0.0, "peak_month": 1},
+@@ -88,6 +93,8 @@ date (first value is always 0 or null).
+ ```
+ GPS `los_m` is absolute LOS (tied to P304, like NISAR), daily, decimated to the NISAR dates
+ or weekly to keep the file small. The reference station's residuals are `null` (it is not a check).
++`stations.json` lists only stations inside the app bbox; P302, P303 and P725 are held out
++too but lie outside it, so they appear only in `gps/processed/residuals.csv`.
+ 
+ ## Size
+ Keep every file under 5 MB. At 0.01° the grid is 12,000 cells; round values to 4 decimals
+diff --git a/contracts/gps.md b/contracts/gps.md
+index cd57eba..c7548db 100644
+--- a/contracts/gps.md
++++ b/contracts/gps.md
+@@ -1,14 +1,14 @@
+ # Contract: GPS outputs (gps → analysis, frontend)
+ 
+-Produced by Daniel (`gps/`). Version 1. All files in `gps/processed/` (small, in git).
++Produced by Daniel (`gps/`). Version 1.1 (D5: more stations). All files in `gps/processed/` (small, in git).
+ 
+ ## `stations.csv` (H-1)
+ | Column | Meaning |
+ |---|---|
+-| `station` | P302, P303, P304, P307 |
++| `station` | The 14 stations in `data/processed/stations_ngl.csv` (D5) |
+ | `lat`, `lon` | WGS84 decimal degrees |
+ | `height_m` | Ellipsoidal height |
+-| `role` | `reference` (P304) or `held_out` |
++| `role` | `reference` (P304) or `held_out` (every other station) |
+ | `steps_removed` | Short note, e.g. `2025-11-xx antenna/receiver offset removed` (P307) |
+ 
+ ## `gps_los.csv`
+@@ -51,10 +51,10 @@ first-to-last net change.
+ {
+   "sigma_pair_m": 0.0,
+   "sigma_net_m": 0.0,
+-  "n_stations": 3,
++  "n_stations": 12,
+   "n_pairs_used": 0,
+   "method": "RMS of held-out residuals in LOS, flagged pairs excluded",
+-  "note": "4 stations: a prototype check, not a valley-wide accuracy claim"
++  "note": "12 held-out stations in one frame: a prototype check, not a valley-wide accuracy claim"
+ }
+ ```
+ Ismail uses `sigma_net_m` for the 2σ test on net change.
+diff --git a/contracts/stack.md b/contracts/stack.md
+index eb7fb4c..65a0b13 100644
+--- a/contracts/stack.md
++++ b/contracts/stack.md
+@@ -1,6 +1,6 @@
+ # Contract: NISAR pair stack (nisar → analysis, gps, radar)
+ 
+-Produced by Pratheek (`data/`). Version 1.
++Produced by Pratheek (`data/`). Version 1.1 (additive, D5).
+ 
+ ## 1. Pair stack: `stack_t034_f020.nc` (shared Drive, `data/interim/`)
+ NetCDF4 readable with `xarray.open_dataset`. One pair per entry, sequential chain
+@@ -22,7 +22,14 @@ Global attributes: `crs` (EPSG code), `coherence_threshold`, `reference_station
+ `sign_convention = "positive toward satellite"`, `product_maturity = "provisional"`,
+ `created_utc`, `notes` (any pair corrected for unwrapping, by how many cycles).
+ 
+-Subset to the app bbox (lon −120.60 to −119.40, lat 35.95 to 36.95) plus a small margin.
++Extra variables (additive): `anomaly` (pair, y, x; 1 = the product flags an input-data
++anomaly; such pixels stay in `valid`), `cmr_concept_id`, `tropo_applied`, `set_applied`,
++`anomalies_masked`, `ref_tie_m`, `valid_fraction` (all per pair). `los_disp_m` is also
++corrected with the product's troposphere and solid Earth tide screens when `tropo_applied`
++and `set_applied` are 1.
++
++Window: lon −120.80 to −119.40, lat 35.95 to 37.12. That is the app bbox widened west and
++north so that P302, P303 and P725 are covered.
+ 
+ ## 2. Values at the stations: `data/processed/station_values.csv` (in git)
+ One row per pair per station. Read from the pixel nearest each station (or a 3×3 median;
+@@ -32,10 +39,14 @@ say which in `data/README.md`).
+ |---|---|---|
+ | `pair` | int | Pair number |
+ | `ref_date`, `sec_date` | ISO date | |
+-| `station` | str | P302, P303, P304, P307 |
++| `station` | str | Every station in `data/processed/stations_ngl.csv` (14 as of D5) |
+ | `los_disp_m` | float | Pair LOS displacement at the station (empty if masked) |
+ | `coherence` | float | 0–1 |
+ | `valid` | 0/1 | Same rule as the stack |
+ | `los_east`, `los_north`, `los_up` | float | LOS unit vector at the station (ground to satellite) |
++| `n_valid_px` | int | Valid pixels in the 3 × 3 block (0–9) |
++| `los_disp_iono_only_m` | float | Same as `los_disp_m` with only the ionosphere corrected |
++| `ref_tie_m` | float | P304's GPS LOS motion over the pair, already added to `los_disp_m` |
++| `anomaly` | 0/1 | 1 if any pixel of the block is anomaly-flagged |
+ 
+-H-4 is the first row set of this file (pair 1, all four stations).
++H-4 is the first row set of this file (pair 1, all stations).
+diff --git a/docs/DECISIONS.md b/docs/DECISIONS.md
+index 3d23815..63546be 100644
+--- a/docs/DECISIONS.md
++++ b/docs/DECISIONS.md
+@@ -77,3 +77,45 @@ then, build against it.
+ - **Impact per lane:** frontend: build on `frontend/src/`, don't restart; next jobs are deploy,
+   context layers (H-8) and polish. / analysis: no change, the app reads exactly
+   `contracts/app_data.md`. / others: no change.
++
++## D5: 2026-11-14: First real stack: more GPS stations, new demo stations, 1 km cell medians
++**Status: proposed by the nisar lane (Pratheek) from the first real results. Ryan confirms
++or overrides at the next check-in.** Evidence and numbers: `data/README.md` sections 3–4.
++- **Decision:**
++  - **Claim and method are unchanged.** NISAR Track 034 / Frame 020, 25 pairs, P304 as the
++    reference, sign and units as in D3. The sign is now confirmed against GPS.
++  - **Held-out GPS stations: 12 instead of 3.** The stack window holds 14 NGL stations with
++    data through the NISAR period. P304 stays the reference. Held out: P294, P297, P298, P300, P302, P303, P307, P725, CAFP, CAFR, CAHA, CAKC, TRAN.
++    P302, P303 and P725 are outside the app bbox, so they appear in the residual table but
++    not on the app map.
++  - **Demo stations: CAFP (Five Points) and CAHA (Hanford), with P300 as the calm
++    comparison.** They replace P302 and P307. Why: relative to P304, P302 and P307 move
++    only 1.5 and 2.8 cm over the window, about the size of the radar scatter, and NISAR
++    does not track them. CAFP and CAHA move 6–7 cm: GPS rises about 1 cm into late winter,
++    then sinks to −5 or −6 cm by August, and NISAR follows (correlation 0.81 and 0.71).
++  - **Go/no-go (H-5): the measured agreement is about 2 cm per pair, not 1 cm.** RMS over
++    single pairs is 1.1–2.9 cm at the 12 stations (raw NGL GPS, data-lane self-check). No
++    12 cm unwrapping steps and no drift. Proposed call: **go**, with the uncertainty stated
++    as measured. Daniel confirms on cleaned GPS.
++  - **App grid cells are medians.** Each 1 km app cell is the median of its valid NISAR
++    pixels in each pair, and the chain is summed per cell. Why: only 49% of single pixels
++    are valid in all 25 pairs, and the pixel-level net change has field-shaped patches of
++    apparent sinking that are probably soil moisture, not ground motion.
++  - **Seasonal significance needs an empirical threshold.** The joint F-test flags a
++    "seasonal" signal on bedrock that should not move, so its p-value alone is not enough.
++    Calibrate the threshold on stable ground before showing amplitude or timing.
++  - **Data-lane processing choices** N1–N8 in `data/README.md` are accepted: wider read
++    window, troposphere and solid Earth tide screens applied as well as the ionosphere,
++    "sample slip" anomaly pixels kept and flagged, coherence threshold 0.3.
++- **Why:** The first real stack shows the claim holds where the ground moves, and that the
++  four original stations are too quiet to show it.
++- **Impact per lane:** nisar: stack and station table delivered (H-4, H-7, H-11 ready);
++  next, a DEM for the troposphere heights and coherence tuning. / analysis: build cells as
++  medians, fit per cell, calibrate the seasonal threshold on stable ground, export CAFP,
++  CAHA and P300 for the demo. / gps: clean and fit all 13 stations (coordinates in
++  `data/processed/stations_ngl.csv`), residual table for the 12 held out, confirm the
++  go/no-go. / frontend: demo and tour use CAFP, CAHA and P300 instead of P307 and P302
++  (`src/lib/tour.jsx`, `src/story/Story.jsx`); "four stations" wording in
++  `src/components/Inspector.jsx`. / radar: unchanged; check the descending track against
++  the same 13 stations. / story: 12 held-out stations, not 3; Hanford and Five Points are
++  the demo; say "about 2 cm" wherever the pitch states agreement.
+diff --git a/docs/PLAN.md b/docs/PLAN.md
+index 8127cdf..99d845e 100644
+--- a/docs/PLAN.md
++++ b/docs/PLAN.md
+@@ -3,6 +3,11 @@
+ **Project:** The Breathing Ground (NISAR, Corcoran–Mendota).
+ **Team:** 6 people. **Format:** 24 hours. The 48-hour extras are at the bottom.
+ 
++> **Updated by D5 (proposed, 2026-11-14).** The first real stack is done. The check now uses
++> 13 GPS stations (P304 reference, 12 held out), the demo stations are CAFP and CAHA with
++> P300 as the calm comparison, and app cells are medians of pixels. Rows changed by D5 are
++> marked **(D5)**. Evidence: `data/README.md` section 4.
++
+ Every deliverable has **one owner**. Nobody edits another person's folder. Work moves
+ between people only through the **handoffs** below: a file the owner produces and others
+ only read.
+@@ -22,17 +27,17 @@ only read.
+ 
+ | # | What | From → To | Where | Due |
+ |---|---|---|---|---|
+-| H-1 | GPS station coordinates (P302, P303, P304, P307) | Daniel → Pratheek, Steven | `gps/README.md` | hour 1 |
++| H-1 | GPS station coordinates. **(D5)** 14 stations, already in `data/processed/stations_ngl.csv`; Daniel copies them to `gps/processed/stations.csv` with roles | Daniel → Pratheek, Steven | `gps/processed/stations.csv` | done / hour 1 |
+ | H-2 | Agreed file formats (stack, GPS outputs, app files), reference station, sign convention | Ryan → everyone | `contracts/`, `docs/DECISIONS.md` | hour 2 |
+ | H-3 | Fake app data files in the agreed format | Ryan → Avi | `contracts/samples/` | hour 3 |
+-| H-4 | First pair, corrected and referenced, with values at the 4 stations and the LOS geometry | Pratheek → Daniel | `data/README.md` + shared Drive | hour 4 |
+-| H-5 | **Go/no-go:** first pair vs GPS in LOS, within ~1 cm? | Daniel + Pratheek → Ryan | `docs/DECISIONS.md` | hour 5 |
++| H-4 | First pair, corrected and referenced, with values at the stations and the LOS geometry. **(D5)** Delivered for all 25 pairs and 14 stations | Pratheek → Daniel | `data/processed/station_values.csv` | done |
++| H-5 | **Go/no-go.** **(D5)** Measured: about 2 cm RMS per pair at 12 stations, no 12 cm steps, no drift (self-check on raw GPS). Proposed call: go. Daniel confirms on cleaned GPS | Daniel + Pratheek → Ryan | `docs/DECISIONS.md` | hour 5 |
+ | H-6 | Polarization result (HH/HV per field and crop type) | Steven → Ryan | `radar/` | hour 6 |
+-| H-7 | Full stack of all pairs | Pratheek → Ismail, Daniel, Steven | shared Drive (`data/interim/`, too big for git) | hour 10 |
++| H-7 | Full stack of all pairs. **(D5)** Built (25 pairs, 424 MB); upload pending | Pratheek → Ismail, Daniel, Steven | shared Drive (`data/interim/`, too big for git) | hour 10 |
+ | H-8 | Context layers (canals, communities, groundwater, historical) | Daniel → Avi | `context/` | hour 10 |
+-| H-9 | Held-out residual table, measured uncertainty, list of pairs with ~12 cm steps | Daniel → Ismail, Pratheek | `gps/` | hour 11 |
++| H-9 | Held-out residual table for the 12 held-out stations, measured uncertainty, list of pairs with ~12 cm steps | Daniel → Ismail, Pratheek | `gps/` | hour 11 |
+ | H-10 | NISAR vs Sentinel-1 coverage comparison | Steven → Ryan | `radar/` | hour 11 |
+-| H-11 | Pratheek's processing scripts runnable with track/frame as inputs (read and run, never edit) | Pratheek → Steven | `data/README.md` | hour 12 |
++| H-11 | Pratheek's processing scripts runnable with track/frame as inputs (read and run, never edit). **(D5)** Ready: `data/README.md` section 5 | Pratheek → Steven | `data/README.md` | hour 12 |
+ | H-12 | Real app data files | Ismail → Avi | `frontend/public/data/` | hour 14 |
+ | H-13 | Vertical vs east–west result (descending + ascending), checked against GPS | Steven → Ryan | `radar/` | hour 18 |
+ | H-14 | Every number shown in the app or pitch, with its source | Pratheek, Ismail, Steven, Daniel → Ryan | `docs/pitch/numbers.md` | hour 19 |
+@@ -52,10 +57,10 @@ You're the critical path. If you're blocked, tell Ryan right away.
+ | 2–4 | Read only the Corcoran–Mendota window for the first pair. Apply the ionosphere screen, mask by coherence and by connected components linked to the reference, reference to the agreed station, and convert phase to LOS metres using the agreed sign. **Write it so the track and frame are inputs**, because Steven reuses it later. | **H-4** sent to Daniel |
+ | 4–5 | Go/no-go with Daniel. If the result is off, check the sign, the units (one cycle ≈ 12 cm) and the reference. | **H-5** recorded |
+ | 5–10 | Script the same steps for every pair and build the full stack (subset reads only, never the 54 GiB). | **H-7**: stack on Drive, documented |
+-| 10–12 | Fix the pairs Daniel flags as ~12 cm unwrapping steps (correct by whole cycles or mask them; never guess). Re-export the stack. Write down how to run your scripts for another track. | Updated stack + **H-11** |
++| 10–12 | Fix the pairs Daniel flags as ~12 cm unwrapping steps (correct by whole cycles or mask them; never guess). Re-export the stack. Write down how to run your scripts for another track. **(D5)** Also: get a DEM so the troposphere screens use real heights (matters for the hill stations P294, P297, P298, P725). | Updated stack + **H-11** |
+ | 12–16 | Walk Steven through running your scripts on Track 042. Re-run anything Ismail needs. Tune the coherence mask if too much farmland drops out. | Steven's first descending pair is processed |
+ | 16–18 | Data freeze. Record exact granule IDs, versions and "provisional" status. | `data/README.md` final |
+-| 18–22 | Check that 3 random pixels and the 4 stations in the app match your stack. Send your numbers for H-14. | Ryan signs off |
++| 18–22 | Check that 3 random cells and the demo stations (CAFP, CAHA, P300) in the app match your stack. Send your numbers for H-14. | Ryan signs off |
+ | 22–24 | Buffer. Fixes only. | |
+ 
+ ## Ismail: measurement and model (`analysis/`)
+@@ -64,11 +69,11 @@ You turn measurements into what the app shows. Follow sections 5 and 7 of the pr
+ | Hours | Task | Done when |
+ |---|---|---|
+ | 0–2 | With Ryan, agree on the stack format and the app file formats (H-2). Write the pairwise fit, u(tⱼ) − u(tᵢ) = B·Δt + a·Δsin + b·Δcos, and check it on a fake series with known B, a and b. | The fit recovers the known values |
+-| 2–6 | Add net change (first to last date, with missing staying missing), uncertainties for B, a and b, the joint significance test on (a, b), A = √(a² + b²), the peak month, and the 4 map labels. Test on a small fake stack. | All 4 labels appear correctly on fake data |
+-| 6–10 | Run on the real pairs as Pratheek produces them. Make a draft net-change map and the series at P302 and P307. | Draft map shared at the hour-6 check-in |
+-| 10–12 | Plug in Daniel's measured uncertainty (H-9) for the 2σ test, drop the flagged pairs from the fit, and hide A and timing where they aren't significant. | Final labels |
++| 2–6 | **(D5)** Build each 1 km app cell as the median of its valid pixels in each pair, then sum the chain per cell (single pixels: only 49% survive all 25 pairs, and they carry field-shaped soil-moisture patches). Add net change (first to last date, with missing staying missing), uncertainties for B, a and b, the joint significance test on (a, b), A = √(a² + b²), the peak month, and the 4 map labels. Test on a small fake stack. | All 4 labels appear correctly on fake data |
++| 6–10 | Run on the real pairs as Pratheek produces them. Make a draft net-change map and the series at CAFP, CAHA and P300. | Draft map shared at the hour-6 check-in |
++| 10–12 | Plug in Daniel's measured uncertainty (H-9) for the 2σ test, drop the flagged pairs from the fit, and hide A and timing where they aren't significant. **(D5)** The F-test alone over-fires: it finds a "seasonal" signal on bedrock. Calibrate the amplitude threshold on stable ground (hill cells at the window's north-east and south-west corners) and require both. | Final labels |
+ | 12–14 | Export the app files in the agreed format: net-change grid, label grid, per-pixel series and fits, station data. | **H-12** delivered to Avi |
+-| 14–18 | Data for the amplitude-vs-trend plot and the station fits for the P302/P307 demo. Fix anything Avi finds. | Avi's app runs on real data |
++| 14–18 | Data for the amplitude-vs-trend plot and the station fits for the CAFP/CAHA demo (P300 as the calm comparison). Fix anything Avi finds. | Avi's app runs on real data |
+ | 18–22 | Send every number the app or pitch shows, with its source (H-14). | Ryan signs off |
+ | 22–24 | Buffer. Fixes only. | |
+ 
+@@ -98,15 +103,15 @@ Clear, well-defined tasks, and the proof that the radar is right.
+ 
+ | Hours | Task | Done when |
+ |---|---|---|
+-| 0–1 | Download the NGL time series for P302, P303, P304 and P307, plus the NGL steps file. Send the station coordinates to Pratheek and Steven. | **H-1** |
+-| 1–2 | Find and remove the P307 antenna/receiver offset from November 2025. | P307 series without the jump, with a before/after plot |
++| 0–1 | Download the NGL time series for the 14 stations in `data/processed/stations_ngl.csv` (P304 reference; 12 held out; D5), plus the NGL steps file. Write `gps/processed/stations.csv`. | **H-1** |
++| 1–2 | Check every station for equipment offsets inside or near the NISAR window and remove them. The P307 change was on 12 Nov 2025, before the first NISAR date. **(D5)** CAFP, CAFR, CAHA, CAKC and TRAN have no solution near 2025-11-24; start their series at 2025-12-06. | Clean series, with a before/after plot where an offset was removed |
+ | 2–4 | Refit every station over **the NISAR window** (not calendar 2025): seasonal amplitude and trend, with uncertainties. Save the cleaned east/north/up motion so Steven can use it too. | Table that replaces the "preliminary 2025" one |
+ | 4–5 | Project each station's east, north and up motion into NISAR's line of sight using Pratheek's geometry. Compare it with his first pair, referenced to the same station. | **H-5** go/no-go with Pratheek |
+ | 5–10 | Context layers, kept small and clipped to the study area: canals and aqueducts, communities, groundwater levels, and OPERA DISP-S1 (**unfiltered** layer) and DWR/TRE for historical context. Write down each source and release. | **H-8** in `context/` with a README |
+ | 10–12 | Held-out residual table in LOS, for every pair and for the net change. Flag pairs off by ~12 cm (unwrapping). Report the measured uncertainty. | **H-9** delivered |
+-| 12–16 | GPS series for the app in the agreed format (P302 and P307 for the demo, every station for the GPS reveal). Help Avi wire them in. | GPS shows in the app |
++| 12–16 | GPS series for the app in the agreed format (CAFP, CAHA and P300 for the demo, every station inside the app bbox for the GPS reveal). Help Avi wire them in. | GPS shows in the app |
+ | 16–18 | Re-run the residual table on Pratheek's final stack. | Final table |
+-| 18–22 | Send GPS numbers (H-14). Write the note that 4 stations make a prototype check, not a valley-wide accuracy claim, for Ryan's limits text. | Ryan signs off |
++| 18–22 | Send GPS numbers (H-14). Write the note that 12 held-out stations in one frame make a prototype check, not a valley-wide accuracy claim, for Ryan's limits text. | Ryan signs off |
+ | 22–24 | Buffer. Fixes only. | |
+ 
+ ## Avi: the app (`frontend/`)
+@@ -119,7 +124,7 @@ You build against Ryan's fake files first, so you're never waiting on data.
+ | 6–10 | Click to inspect: observation dates, measured points, the fitted curve, uncertainty, and "seasonal term not significant here" where that's true. | Clicking any pixel works |
+ | 10–12 | GPS stations on the map and a "GPS reveal" toggle that overlays GPS and shows residuals. | Toggle works on the fake files |
+ | 12–14 | Switch to Ismail's real files (H-12). | Real data on screen |
+-| 14–16 | The P302/P307 demo: animate the measured motion at each, then split it into seasonal and trend parts. | Demo runs start to finish |
++| 14–16 | **(D5)** The CAFP/CAHA demo: animate the measured motion at each, then split it into seasonal and trend parts, with P300 as the calm comparison. Replace the hard-coded P307/P302 in `src/lib/tour.jsx` and `src/story/Story.jsx`, and the "four stations" text in `src/components/Inspector.jsx`. | Demo runs start to finish |
+ | 16–18 | Amplitude-vs-trend plot, the limits panel (text from Ryan), and the context layers from Daniel (H-8). | **Feature freeze** |
+ | 18–20 | Deploy a public link (GitHub Pages or Vercel) and test it on a laptop and a phone. | Link works for the judges |
+ | 20–24 | Fixes only. Help Ryan record the demo. | |
+@@ -132,7 +137,7 @@ You keep everyone unblocked and own what the judges read and hear.
+ | 0–1 | Add collaborators, protect `main`, create a shared Drive folder for big files, and check that everyone has set `.lane`. Fill in `docs/PROJECT.md` from `docs/PROPOSAL.md`. | Everyone can push branches |
+ | 1–2 | 15-minute contracts meeting. Write the formats in `contracts/`, and record in `docs/DECISIONS.md`: the reference station (one station; the rest held out), the LOS sign convention, metres vs cm, and the app's stack. | **H-2**, check-in 1 |
+ | 2–3 | Hand-make small fake app files in the agreed format for Avi. | **H-3** |
+-| 3–6 | Turn this plan into GitHub issues, one per task. Merge PRs. Run the go/no-go at hour 5 and record the result. | Board live, **H-5** logged |
++| 3–6 | Turn this plan into GitHub issues, one per task. Merge PRs. Run the go/no-go at hour 5 and record the result. **(D5)** Confirm or override D5; regenerate `contracts/samples/` with the new station list. | Board live, **H-5** logged |
+ | 6 | Check-in 2: demos from `main`, update lane goals in `PROJECT.md`. | |
+ | 6–12 | Pitch outline. Answers to the brief: physical drivers, polarization (Steven, H-6), human drivers, future NISAR use. Add Steven's coverage comparison (H-10). | `docs/pitch/pitch.md` draft |
+ | 12 | Check-in 3: is real data running end to end? If not, apply the fallback below. | |
+diff --git a/docs/PROJECT.md b/docs/PROJECT.md
+index 679764e..ce693f6 100644
+--- a/docs/PROJECT.md
++++ b/docs/PROJECT.md
+@@ -4,7 +4,7 @@
+ > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
+ > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
+ 
+-**Version:** 1. **Last updated:** 2026-11-14 by Integrator (idea chosen, contracts v1, see D2–D3)
++**Version:** 2 (proposed). **Last updated:** 2026-11-14, proposed by the nisar lane after the first real stack, pending Integrator confirmation (see D5)
+ 
+ ## Theme
+ **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
+@@ -14,7 +14,9 @@ Pitch theme: *"The ground lies twice a year."*
+ - **Primary:** NISAR L2 GUNW (geocoded unwrapped interferograms), **provisional**, Track 034
+   ascending, Frame 020, ~26 dates, 24 Nov 2025 – 14 Oct 2026. Accessed from ASF (Vertex /
+   Earthdata) by HTTPS subset reads. Never mixed with other maturity levels.
+-- **Independent check:** NGL GPS stations P302, P303, P304, P307.
++- **Independent check:** 13 NGL GPS stations inside the stack window. P304 is the reference.
++  Held out (12): P294, P297, P298, P300, P302, P303, P307, P725, CAFP, CAFR, CAHA, CAKC, TRAN.
++  Demo stations: CAFP (Five Points) and CAHA (Hanford), with P300 as the calm comparison (D5).
+ - **Context only:** OPERA DISP-S1 (unfiltered layer), DWR/TRE Altamira InSAR, groundwater
+   levels, canals/aqueducts/communities. Full table: `docs/PROPOSAL.md` §3.
+ 
+@@ -33,15 +35,23 @@ looks stable. We measure ~11 months of NISAR displacement over Corcoran–Mendot
+ ionosphere, check it against held-out GPS, and let anyone click a point to see the
+ measurement, the fitted seasonal and trend parts, their uncertainty, and whether GPS agrees.
+ 
++**What the first real stack showed (D5):** at Five Points and Hanford, GPS rises about
++1 cm into late winter, then sinks 5–6 cm by August, and NISAR follows. NISAR and GPS agree
++to about 2 cm per date, so the app shows where the signal clears that and says so where
++it doesn't.
++
+ **60-second demo a judge sees:** the Corcoran story → two dates that "look fine" → the full
+ series reveals the sinking → click a pixel → GPS agrees (or the app says it doesn't).
+ 
+ ## Scope
+ - **Region / time range:** Corcoran–Mendota, San Joaquin Valley, CA. App bounding box
+-  lon −120.60 to −119.40, lat 35.95 to 36.95 (confirm against Frame 020 coverage at hour 2).
++  lon −120.60 to −119.40, lat 35.95 to 36.95 (inside Frame 020, confirmed). The NISAR stack
++  is read over a wider window (lon −120.80 to −119.40, lat 35.95 to 37.12) so that P302,
++  P303 and P725 are covered; those three are outside the app bbox.
+   NISAR window 2025-11-24 to 2026-10-14.
+ - **In scope (core, 24 h):** net-change map with the 4 labels; click to inspect; GPS reveal
+-  with residuals; P302/P307 demo; amplitude-vs-trend plot; limits panel. Everything in
++  with residuals; CAFP/CAHA demo (P300 as the calm comparison); amplitude-vs-trend plot;
++  limits panel. Everything in
+   `docs/PROPOSAL.md` §8 except the canal profile.
+ - **Proposed additions (confirm at check-in 1; no new data needed, all built from the
+   contract files):**
+@@ -65,9 +75,9 @@ Full hour-by-hour plan: `docs/PLAN.md`.
+ 
+ | Lane | Person | Current goal |
+ |---|---|---|
+-| nisar | Pratheek | Earthdata login, open one GUNW (Track 034, Frame 020), confirm its layers and the sign convention in D3 |
+-| analysis | Ismail | Read `contracts/app_data.md`, then write and test the pairwise fit on fake data |
++| nisar | Pratheek | Done: 25-pair stack, station table, scripts (H-4, H-7, H-11). Next: upload the stack, DEM heights for the troposphere, coherence tuning, help Steven run Track 042 |
++| analysis | Ismail | Build 1 km cells as medians of valid pixels, fit per cell, calibrate the seasonal threshold on stable ground, export CAFP/CAHA/P300 for the demo |
+ | radar | Steven | Find GCOV, descending and Sentinel-1 dates; pick ~30 crop fields; submit HyP3 jobs |
+-| gps | Daniel | Download NGL data for P302–P307, send coordinates to Pratheek and Steven (H-1), fix the P307 offset |
+-| frontend | Avi | App setup (D3 stack) with a basemap over the bbox, load `contracts/samples/` |
+-| integrator | Ryan | Repo admin, confirm D3 at check-in 1, pitch draft in `docs/pitch/` |
++| gps | Daniel | Clean and fit all 13 stations (`data/processed/stations_ngl.csv`), residual table for the 12 held out, confirm the go/no-go at about 2 cm |
++| frontend | Avi | Switch the demo and tour to CAFP, CAHA and P300; show 12 held-out stations; then deploy and context layers |
++| integrator | Ryan | Confirm D5, make the go/no-go call with Daniel, update the pitch and samples to the new stations |
+diff --git a/docs/pitch/data_story.md b/docs/pitch/data_story.md
+index 53db1a0..2792778 100644
+--- a/docs/pitch/data_story.md
++++ b/docs/pitch/data_story.md
+@@ -5,7 +5,8 @@
+ | Where is the ground sinking over the NISAR window? | NISAR L2 GUNW, T034 asc F020, provisional | First-to-last net LOS change | Main map |
+ | Does it breathe with the seasons? | Same | Pairwise fit, seasonal term where significant | Click to inspect, breathing animation |
+ | Can two dates mislead? | Same | Any-pair differences from the cumulative series | Pick Two Dates |
+-| Is the radar right? | NGL GPS P302, P303, P307 (held out), P304 (reference) | LOS projection, residual table | GPS reveal, evidence receipts |
++| Is the radar right? | NGL GPS: 12 held-out stations, P304 as the reference (D5) | LOS projection, residual table | GPS reveal, evidence receipts |
++| Does rebound hide sinking? | NGL GPS CAFP (Five Points) and CAHA (Hanford) with NISAR at the same spots | Winter rise of about 1 cm, then 5–6 cm of sinking by August | Demo, Pick Two Dates |
+ | Why does it move? | Groundwater levels [source TBD by Daniel] | Mechanism only, not validation | Context layer |
+ | Why does it matter? | Canals, aqueducts, communities [sources TBD] | Screening context | Context layers |
+ | Is this new? | OPERA DISP-S1 (unfiltered), DWR/TRE | Historical context only | Historical panel (48 h) |
+diff --git a/docs/pitch/limits.md b/docs/pitch/limits.md
+index 8f3215f..73aa70c 100644
+--- a/docs/pitch/limits.md
++++ b/docs/pitch/limits.md
+@@ -20,13 +20,19 @@
+ - "Insufficient evidence" means we could not tell, not that the ground is stable.
+ 
+ **How we checked it**
+-- GPS stations P302, P303 and P307 were never used to calibrate the radar. Their
+-  disagreement with NISAR is shown in the GPS reveal.
+-- Three check stations make a prototype check, not a valley-wide accuracy claim.
++- Twelve GPS stations were never used to calibrate the radar. Their disagreement with
++  NISAR is shown in the GPS reveal, including the one that disagrees most.
++- NISAR and GPS agree to about 2 cm per date [replace with Daniel's measured value].
++  Motion smaller than that is not resolved at a single spot.
++- Twelve check stations in one radar frame make a prototype check, not a valley-wide
++  accuracy claim.
+ 
+ **About the data**
+ - NISAR data here is provisional. NASA and ISRO will release reprocessed, validated
+   versions in 2027.
+-- Corrected for the ionosphere using the product's own correction layer.
++- Corrected for the ionosphere, the troposphere and solid Earth tides using the product's
++  own correction layers.
++- Each map cell is the median of the radar pixels inside it. Single pixels on farmland can
++  show soil-moisture effects that look like sinking.
+ - Published figures (levee heights, canal capacity, valley-wide subsidence) are other
+   people's measurements, credited where shown.
+diff --git a/docs/pitch/numbers.md b/docs/pitch/numbers.md
+index f6259c5..9269b3f 100644
+--- a/docs/pitch/numbers.md
++++ b/docs/pitch/numbers.md
+@@ -11,7 +11,7 @@ No number goes on screen or in the video unless it is here.
+ | 4 | Number of NISAR dates used | App legend | `meta.json` → `dates` | Ismail | [ ] |
+ | 5 | Held-out residual (net), per station | GPS reveal | `gps/processed/residuals.csv` | Daniel | [ ] |
+ | 6 | σ used for 2σ test | Limits / legend | `gps/processed/uncertainty.json` → `sigma_net_m` | Daniel | [ ] |
+-| 7 | P302 / P307 net change and trend | Demo, video | `stations.json` | Ismail | [ ] |
++| 7 | CAFP / CAHA (and P300) net change, winter rise and trend | Demo, video | `stations.json` | Ismail | [ ] |
+ | 8 | Granule IDs and versions | Evidence receipts | `data/README.md` | Pratheek | [ ] |
+ | 9 | Polarization result (HH/HV by crop type) | Brief answers, project page | `radar/` (H-6) | Steven | [ ] |
+ | 10 | % of fields usable, NISAR vs Sentinel-1, and threshold used | Project page | `radar/` (H-10) | Steven | [ ] |
+diff --git a/docs/pitch/pitch.md b/docs/pitch/pitch.md
+index 157cdf9..3844722 100644
+--- a/docs/pitch/pitch.md
++++ b/docs/pitch/pitch.md
+@@ -16,7 +16,9 @@ only: no mockups, no synthetic sample data on screen.
+ | 26–30 s | Title card | "We don't tell you the ground is fine. We show you how sure we are." |
+ 
+ **Fill after real data (hour 18):** pick the two "fine-looking" dates from the real
+-date-pair results. If the real data doesn't show a misleading pair at a significant level,
++date-pair results. Candidate from the first stack (D5): Hanford (CAHA), 2025-12-06 to
++2026-02-04, where GPS and NISAR both show a rise of about 1 cm while the full record ends
++near −5 cm in GPS. If the real data doesn't show a misleading pair at a significant level,
+ change line 2 to what the data does show. Never stage it.
+ 
+ ## Story beats for the project page
+@@ -48,7 +50,7 @@ All figures in beat 1 and 4 are published figures, not our measurements. Say so
+ ## Claims review (Ryan signs off at hour 18, before recording)
+ - [ ] No "only NISAR can do this" (ALOS-2, SAOCOM also fly L-band).
+ - [ ] No "permanent", "irreversible" or "storage loss" on anything fitted.
+-- [ ] No "validated" unless the held-out residual table exists; then quote it with n = 3 stations.
++- [ ] No "validated" unless the held-out residual table exists; then quote it with n = 12 stations and the measured agreement (about 2 cm, not "centimetre-level").
+ - [ ] No amplitude or timing shown where the seasonal term isn't significant.
+ - [ ] 14 km³, 30 cm/yr, levee and canal figures labelled as published, with source.
+ - [ ] Reference station (P304) and "provisional NISAR" named on the map legend.
+diff --git a/gps/README.md b/gps/README.md
+index c59f0bf..60b06ae 100644
+--- a/gps/README.md
++++ b/gps/README.md
+@@ -1,3 +1,3 @@
+ # gps/: owned by Daniel (gps lane)
+ 
+-GPS stations P302, P303, P304, P307 from the Nevada Geodetic Laboratory, used as an independent check on NISAR. See `docs/PLAN.md`.
++GPS stations from the Nevada Geodetic Laboratory, used as an independent check on NISAR. As of D5: P304 is the reference and 12 stations are held out (P294, P297, P298, P300, P302, P303, P307, P725, CAFP, CAFR, CAHA, CAKC, TRAN); coordinates are in `data/processed/stations_ngl.csv`. See `docs/PLAN.md`.

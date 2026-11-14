@@ -72,3 +72,29 @@ def parse_pairs(spec: str, n: int) -> list[int]:
     if bad:
         raise ValueError(f"pair numbers out of range 1..{n}: {sorted(bad)}")
     return sorted(out)
+
+
+def sample_stations(ds, stations: list[dict]) -> list[dict | None]:
+    """Values of one per-pair file (an open xarray Dataset) at each station.
+
+    Sampling is done here, from the grids, so the station list can grow without reading
+    the granules again. Returns one dict per station (see nisar_gunw.sample_station), or
+    None for a station outside the window.
+    """
+    from pyproj import Transformer
+
+    import nisar_gunw as ng
+
+    names = ["valid", "anomaly", "coherence", "los_disp_ref_m", "los_disp_iono_only_ref_m",
+             "los_east", "los_north", "los_up"]
+    pair = {name: ds[name].values for name in names}
+    pair["x"], pair["y"] = ds.x.values, ds.y.values
+    tr = Transformer.from_crs(4326, int(ds.attrs["epsg"]), always_xy=True)
+    out = []
+    for st in stations:
+        sx, sy = tr.transform(st["lon"], st["lat"])
+        try:
+            out.append(ng.sample_station(pair, sx, sy))
+        except ValueError:
+            out.append(None)
+    return out
