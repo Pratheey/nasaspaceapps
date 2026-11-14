@@ -3,17 +3,27 @@ import { reduceMotion, useInView } from "./hooks.js";
 
 /* NASA media is public domain unless noted (credit NASA). Each item lists a local copy first
    (public/media/), then NASA's own servers, so the site keeps working offline once saved. */
+const PJ = (id) => [`./media/${id}.jpg`, `https://images-assets.nasa.gov/image/${id}/${id}~large.jpg`, `https://photojournal.jpl.nasa.gov/jpeg/${id}.jpg`];
+const SVS = "https://svs.gsfc.nasa.gov/vis/";
 export const MEDIA = {
-  heroVideo: [
-    "./media/nisar-spiral.mp4",
-    "https://svs.gsfc.nasa.gov/vis/a030000/a031300/a031367/spiral_path_with_nisar-horizontall-28-07-26b-1080p.mp4",
-  ],
-  orbitVideo: [
-    "./media/nisar-orbit.mp4",
-    "https://svs.gsfc.nasa.gov/vis/a030000/a031300/a031367/nisar-solor-no-spiral-still-bg.3-3-26a-1080p.mp4",
-  ],
-  northDakota: ["./media/PIA26615.jpg", "https://images-assets.nasa.gov/image/PIA26615/PIA26615~large.jpg", "https://photojournal.jpl.nasa.gov/jpeg/PIA26615.jpg"],
-  maine: ["./media/PIA26614.jpg", "https://images-assets.nasa.gov/image/PIA26614/PIA26614~large.jpg", "https://photojournal.jpl.nasa.gov/jpeg/PIA26614.jpg"],
+  heroVideo: ["./media/nisar-spiral.mp4", SVS + "a030000/a031300/a031367/spiral_path_with_nisar-horizontall-28-07-26b-1080p.mp4"],
+  orbitVideo: ["./media/nisar-orbit.mp4", SVS + "a030000/a031300/a031367/nisar-solor-no-spiral-still-bg.3-3-26a-1080p.mp4"],
+  fleetVideo: ["./media/nisar-fleet.mp4", SVS + "a000000/a005600/a005615/nisar_orbit_1080p60.mp4"],
+  fleetStill: ["./media/nisar-fleet.jpg", SVS + "a000000/a005600/a005615/nisar_orbit.02415.jpg"],
+  forestRiverVideo: ["./media/nisar-forestriver.mp4", SVS + "a030000/a031300/a031357/nisar-forestriver-1080p.mp4"],
+  forestRiverStill: ["./media/nisar-forestriver.png", SVS + "a030000/a031300/a031357/nisar-forestriver-still.png"],
+  maineVideo: ["./media/nisar-mountdesert.mp4", SVS + "a030000/a031300/a031357/nisar-mountdesert-1080p.mp4"],
+  explainer: ["./media/nisar-explainer.mp4", SVS + "a010000/a014300/a014377/NISAR_EIC_16x9_FINAL.mp4"],
+  explainerPoster: SVS + "a010000/a014300/a014377/NISAR_EIC_16x9_FINAL.00050_print.jpg",
+  northDakota: PJ("PIA26615"),
+  amazonFlood: PJ("PIA26112"),
+  antarctica: PJ("PIA26493"),
+  india: PJ("PIA26496"),
+  fairing: PJ("PIA26611"),
+  arrives: PJ("PIA26500"),
+  shipped: PJ("PIA25568"),
+  reflector: PJ("PIA26613"),
+  california: PJ("PIA26285"),
 };
 
 /** Plays the first source that loads; renders `fallback` if none do. */
