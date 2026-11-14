@@ -66,3 +66,14 @@ then, build against it.
   against `contracts/samples/`, never against data you invent. / radar: reference the descending
   track to P304 too, same sign and units. / story: legend and pitch name P304 as the
   reference.
+
+## D4: 2026-11-14: Frontend stack is React + Tailwind + Lucide
+- **Decision:** The app in `frontend/` is React 19 + Vite, Tailwind CSS v4 and Lucide icons,
+  with MapLibre GL JS for the map (refines D3, which left the framework open). Dark theme:
+  sinking glows coral, rising glows cyan, gold marks interactive controls. New view: Radar
+  fringes (one color cycle = 11.9 cm, half NISAR's L-band wavelength).
+- **Why:** The integrator built the first full version so the frontend lane starts from a
+  working app instead of a blank page.
+- **Impact per lane:** frontend: build on `frontend/src/`, don't restart; next jobs are deploy,
+  context layers (H-8) and polish. / analysis: no change, the app reads exactly
+  `contracts/app_data.md`. / others: no change.
