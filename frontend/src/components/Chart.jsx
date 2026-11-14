@@ -100,7 +100,7 @@ export function ChartKey({ split, gps, seasonalSig, compare }) {
           {seasonalSig && <Item cls="w-4 border-t-2 border-rise">Seasonal part (×3 to be visible)</Item>}
         </>
       ) : <Item cls="w-4 border-t-2 border-sink">Fitted curve</Item>}
-      {gps && <Item cls="w-4 border-t-2 border-gold-2">GPS</Item>}
+      {gps && <Item cls="w-4 border-t-2 border-ink">GPS</Item>}
       {compare && <Item cls="w-4 border-t-2 border-dashed border-violet">{compare.label}</Item>}
     </div>
   );

@@ -63,7 +63,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
                 </g>
               );
             })}
-            {read && <line x1={X(read.km)} x2={X(read.km)} y1={PP.t} y2={PH - PP.b} stroke="#E2B04A" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+            {read && <line x1={X(read.km)} x2={X(read.km)} y1={PP.t} y2={PH - PP.b} stroke="#6FA8FF" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
           </svg>
         </>
       );
@@ -73,7 +73,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
     <section aria-label="Cross-section" className="relative border-t border-hair bg-deck px-4 pt-3 pb-2">
       <button onClick={onClose} aria-label="Close cross-section" className="absolute right-3 top-2.5 p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2"><X size={16} /></button>
       <h3 className="font-display text-[16px] font-semibold flex items-center gap-2 mb-1 pr-10">
-        <Route size={16} className="text-gold" />
+        <Route size={16} className="text-accent" />
         Cross-section{smp ? `, ${distKm(P.a, P.b).toFixed(1)} km` : ""}
       </h3>
       {body}
@@ -86,16 +86,16 @@ export function TourCard({ step, k, n, onPrev, onNext, onClose }) {
   if (!step) return null;
   return (
     <div role="dialog" aria-label="Guided walkthrough"
-      className="absolute top-16 left-4 z-20 w-[380px] max-w-[calc(100%-2rem)] rounded-xl border border-gold/40 bg-space/95 backdrop-blur p-5 shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(226,176,74,.08)]">
-      <div className="flex items-center gap-2 text-[12.5px] text-gold-2">
+      className="absolute top-16 left-4 z-20 w-[380px] max-w-[calc(100%-2rem)] rounded-xl border border-accent/40 bg-space/95 backdrop-blur p-5 shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(111,168,255,.08)]">
+      <div className="flex items-center gap-2 text-[12.5px] text-accent-2">
         <span className="font-display font-semibold">Step {k + 1} of {n}</span>
-        <span className="flex gap-1 ml-1" aria-hidden="true">{Array.from({ length: n }, (_, j) => <span key={j} className={`h-1 w-5 rounded-full ${j <= k ? "bg-gold" : "bg-hair-2"}`} />)}</span>
+        <span className="flex gap-1 ml-1" aria-hidden="true">{Array.from({ length: n }, (_, j) => <span key={j} className={`h-1 w-5 rounded-full ${j <= k ? "bg-accent" : "bg-hair-2"}`} />)}</span>
       </div>
       <h2 className="font-display text-[23px] font-semibold leading-tight mt-2">{step.title}</h2>
       <div className="mt-2 text-[14.5px] leading-relaxed text-ink/90 space-y-2.5">{step.body}</div>
       <div className="flex items-center gap-2 mt-4">
         <button onClick={onPrev} disabled={k === 0} className="inline-flex items-center gap-1 text-sm text-mute hover:text-ink disabled:opacity-30 px-2 py-1.5"><ChevronLeft size={15} /> Back</button>
-        <button onClick={onNext} autoFocus className="inline-flex items-center gap-1 rounded-md bg-gold text-space font-semibold text-sm px-3.5 py-1.5 hover:bg-gold-2">
+        <button onClick={onNext} autoFocus className="inline-flex items-center gap-1 rounded-md bg-accent text-space font-semibold text-sm px-3.5 py-1.5 hover:bg-accent-2">
           {k === n - 1 ? "Explore on your own" : <>Next <ChevronRight size={15} /></>}
         </button>
         <button onClick={onClose} className="ml-auto text-sm text-mute hover:text-ink px-2 py-1.5">Close</button>
@@ -109,15 +109,15 @@ export function Intro({ D, onStart, onTour }) {
   return (
     <div className="absolute inset-0 z-30 grid place-items-center bg-space/80 backdrop-blur-[3px] intro-scan overflow-hidden">
       <div className="intro-in max-w-[640px] px-8 text-center">
-        <p className="font-display text-gold-2 text-[15px] tracking-wide flex items-center justify-center gap-2"><Radar size={16} /> NISAR L-band radar over California's San Joaquin Valley</p>
+        <p className="font-display text-accent-2 text-[15px] tracking-wide flex items-center justify-center gap-2"><Radar size={16} /> NISAR L-band radar over California's San Joaquin Valley</p>
         <h1 className="font-display font-bold text-[clamp(44px,7vw,84px)] leading-[0.95] mt-3 bg-gradient-to-b from-ink to-ink/65 bg-clip-text text-transparent">The Breathing Ground</h1>
         <p className="text-[17px] leading-relaxed text-ink/85 mt-5">
           Every winter the valley rises a little. Every summer it settles. Underneath that breathing, parts of it keep sinking,
           and two well-chosen dates can hide it. {D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, checked against GPS.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button onClick={onTour} className="rounded-lg bg-gold text-space font-semibold px-5 py-2.5 hover:bg-gold-2 shadow-[0_0_30px_rgba(226,176,74,.4)]">Walk me through it</button>
-          <button onClick={onStart} className="rounded-lg border border-hair-2 text-ink px-5 py-2.5 hover:border-gold/60 hover:text-gold-2">Explore the map</button>
+          <button onClick={onTour} className="rounded-lg bg-accent text-space font-semibold px-5 py-2.5 hover:bg-accent-2 shadow-[0_0_30px_rgba(111,168,255,.4)]">Walk me through it</button>
+          <button onClick={onStart} className="rounded-lg border border-hair-2 text-ink px-5 py-2.5 hover:border-accent/60 hover:text-accent-2">Explore the map</button>
         </div>
       </div>
     </div>
@@ -138,11 +138,11 @@ export function Limits({ D, onClose }) {
           ["How we checked it", `GPS stations ${D.meta.held_out_stations.join(", ")} were never used to calibrate the radar. Their disagreement with NISAR is shown when GPS check is on. Three check stations make a prototype check, not a valley-wide accuracy claim.`],
           ["About the data", "NISAR data here is provisional. NASA and ISRO will release reprocessed, validated versions in 2027. Each pair is corrected for the ionosphere using the product's own correction layer. Published figures (levee heights, canal capacity) are other people's measurements and are credited where shown."],
         ].map(([h, p]) => (
-          <div key={h}><h3 className="font-display text-[18px] font-semibold mt-5 mb-1 text-gold-2">{h}</h3><p className="text-ink/90">{p}</p></div>
+          <div key={h}><h3 className="font-display text-[18px] font-semibold mt-5 mb-1 text-accent-2">{h}</h3><p className="text-ink/90">{p}</p></div>
         ))}
-        <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-gold-2">Keyboard</h3>
+        <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-accent-2">Keyboard</h3>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[14px]">
-          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["D", "3D"], ["P", "Cross-section"], ["W", "Walkthrough"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
+          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
             <li key={k} className="flex items-center gap-2"><kbd className="font-sans text-[12px] font-semibold border border-hair-2 border-b-2 rounded px-1.5 py-0.5 bg-space">{k}</kbd><span className="text-ink/85">{d}</span></li>
           ))}
         </ul>

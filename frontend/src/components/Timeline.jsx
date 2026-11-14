@@ -47,7 +47,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
       <div className="flex items-center gap-2 px-2">
         <button onClick={() => onStep(-1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2" aria-label="Previous pass"><StepBack size={16} /></button>
         <button onClick={onPlay} aria-pressed={S.playing}
-          className="flex items-center gap-1.5 rounded-md bg-gold text-space font-semibold text-sm px-3 py-1.5 hover:bg-gold-2 shadow-[0_0_18px_rgba(226,176,74,.35)]">
+          className="flex items-center gap-1.5 rounded-md bg-accent text-space font-semibold text-sm px-3 py-1.5 hover:bg-accent-2 shadow-[0_0_18px_rgba(111,168,255,.35)]">
           {S.playing ? <Pause size={15} /> : <Play size={15} />} {S.playing ? "Pause" : "Play"}
         </button>
         <button onClick={() => onStep(1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2" aria-label="Next pass"><StepForward size={16} /></button>
@@ -72,7 +72,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
           const now = S.mode !== "pair" && k === S.cursor && (S.mode === "breathe" || S.playing);
           return (
             <span key={k} title={fmtDate(d)} style={{ left: left(k) }}
-              className={`absolute -translate-x-1/2 rounded-full transition-all ${now ? "top-[19px] w-[5px] h-[17px] bg-gold shadow-[0_0_10px_#E2B04A]" : inPair ? "top-[22px] w-[3px] h-[11px] bg-gold-2" : "top-[23px] w-[2px] h-[9px] bg-ink/45"}`} />
+              className={`absolute -translate-x-1/2 rounded-full transition-all ${now ? "top-[19px] w-[5px] h-[17px] bg-accent shadow-[0_0_10px_#6FA8FF]" : inPair ? "top-[22px] w-[3px] h-[11px] bg-accent-2" : "top-[23px] w-[2px] h-[9px] bg-ink/45"}`} />
           );
         })}
         {months.map((k) => (
@@ -84,7 +84,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
           <span key={key} role="slider" tabIndex={0} style={{ left: left(S[key]) }}
             aria-label={`Date ${name}`} aria-valuemin={0} aria-valuemax={N - 1} aria-valuenow={S[key]} aria-valuetext={fmtDate(D.dates[S[key]])}
             onKeyDown={(e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); e.stopPropagation(); onPair(key, S[key] + d); } }}
-            className="absolute top-[2px] -translate-x-1/2 bg-gold text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(226,176,74,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-gold">
+            className="absolute top-[2px] -translate-x-1/2 bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(111,168,255,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-accent">
             {name}
           </span>
         ))}

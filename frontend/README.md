@@ -33,7 +33,17 @@ Refresh samples: `python3 contracts/samples/make_samples.py && cp contracts/samp
 Net change, Two dates, Breathe, Radar fringes (one color cycle = 11.9 cm, half NISAR's L-band
 wavelength), What we can say (the four labels). Same color scale in every value view.
 
+## Story page (`src/story/`)
+Scroll story in front of the explorer: NASA/JPL hero image, the 1925–1977 subsidence pole,
+an aquifer you can pump and recharge (concept diagram), the breathing record, draggable two
+dates, a globe with NISAR's orbit, how radar measures a centimetre, radar fringes, GPS check,
+why it matters. Glossary terms pop up on hover. Smooth scrolling with Lenis.
+
+## Extra explorer tools
+Swipe (date A left, date B right), year-as-a-circle chart, "Where to look first" leaderboards,
+cross-section, 3D, compare, listen, CSV, share links.
+
 ## Design
 Night graphite background. Still ground stays dark; motion glows: coral for sinking, cyan for
-rising. Gold, from NISAR's reflector antenna, marks everything you can touch. Type: Saira Semi
+rising. Azure marks everything you can touch. Type: Saira Semi
 Condensed (headings), Public Sans (body), tabular numerals.

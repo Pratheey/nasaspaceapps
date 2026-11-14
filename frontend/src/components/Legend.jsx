@@ -11,7 +11,7 @@ export default function Legend({ D, S, domain }) {
   const prov = D.synthetic ? "Synthetic data" : `${D.meta.product_maturity[0].toUpperCase()}${D.meta.product_maturity.slice(1)} NISAR data`;
   return (
     <div className="w-[300px] max-md:w-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur px-3.5 py-3 text-[13px] shadow-[0_10px_40px_rgba(0,0,0,.45)]">
-      <h3 className="font-display text-[15.5px] font-semibold mb-2">{viewTitle(D, S, fmtShort)}</h3>
+      <h3 className="font-display text-[15.5px] font-semibold mb-2">{S.swipe != null ? `Ground on ${fmtShort(D.dates[S.k1])} (left) and ${fmtShort(D.dates[S.k2])} (right)` : viewTitle(D, S, fmtShort)}</h3>
       {S.mode === "labels" ? (
         <ul className="space-y-1.5">
           {["1", "2", "3"].map((k) => (

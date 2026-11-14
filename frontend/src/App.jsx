@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick } from "lucide-react";
+import { SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick } from "lucide-react";
 import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
@@ -61,7 +61,7 @@ function Explorer({ D, onStory, startTour }) {
     set((s) => ({ sel: i, listenK: null, pin: s.pin === i ? -1 : s.pin }));
     if (fly && i >= 0) { const b = cellBounds(D, i); mapRef.current?.flyTo([b.lng, b.lat], 10); }
   }, [D, set]);
-  const setMode = useCallback((m) => set((s) => ({ mode: m, playing: m === "breathe" ? s.playing : false })), [set]);
+  const setMode = useCallback((m) => set((s) => ({ mode: m, playing: m === "breathe" ? s.playing : false, swipe: m === "pair" ? s.swipe : null })), [set]);
   const actions = useMemo(() => ({
     select,
     clearSel: () => { stopListening(); set({ sel: -1, listenK: null }); },
@@ -139,6 +139,7 @@ function Explorer({ D, onStory, startTour }) {
       else if ("12345".includes(k) && k) setMode(MODES[+k - 1].id);
       else if (k === "g") set({ gps: !s.gps });
       else if (k === "d") set({ relief: !s.relief });
+      else if (k === "s") set(s.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false });
       else if (k === "p") set(s.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true });
       else if (k === "w") goStep(0);
       else if (k === "arrowright") step(1);
@@ -163,7 +164,7 @@ function Explorer({ D, onStory, startTour }) {
   return (
     <div className="h-full flex flex-col">
       {D.synthetic && (
-        <div className="shrink-0 text-[12.5px] font-semibold text-[#2A1E06] px-5 py-1.5 bg-[repeating-linear-gradient(-45deg,#E2B04A_0_14px,#D9A33E_14px_28px)]">
+        <div className="shrink-0 text-[12.5px] font-semibold text-[#0B1830] px-5 py-1.5 bg-[repeating-linear-gradient(-45deg,#6FA8FF_0_14px,#4F8BEA_14px_28px)]">
           Synthetic data for building the app. These are not NASA measurements.
         </div>
       )}
@@ -181,16 +182,16 @@ function Explorer({ D, onStory, startTour }) {
             const Icon = MODE_ICONS[m.id], on = S.mode === m.id;
             return (
               <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
-                className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 font-display text-[15px] font-medium transition-colors ${on ? "text-gold-2 bg-gold/10" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
+                className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 font-display text-[15px] font-medium transition-colors ${on ? "text-accent-2 bg-accent/10" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
                 <Icon size={15} /> {m.name}
-                {on && <span className="absolute left-3 right-3 -bottom-[11px] h-[2px] bg-gold shadow-[0_0_10px_#E2B04A] max-lg:hidden" />}
+                {on && <span className="absolute left-3 right-3 -bottom-[11px] h-[2px] bg-accent shadow-[0_0_10px_#6FA8FF] max-lg:hidden" />}
               </button>
             );
           })}
         </nav>
         <div className="flex items-center gap-1.5">
           <button onClick={() => set({ gps: !S.gps })} aria-pressed={S.gps}
-            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-[14px] border ${S.gps ? "border-gold/60 text-gold-2 bg-gold/10" : "border-hair text-ink/85 hover:border-hair-2"}`}>
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-[14px] border ${S.gps ? "border-accent/60 text-accent-2 bg-accent/10" : "border-hair text-ink/85 hover:border-hair-2"}`}>
             <Satellite size={15} /> GPS check
           </button>
           <button onClick={onStory} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
@@ -206,11 +207,11 @@ function Explorer({ D, onStory, startTour }) {
         <div className="min-h-0 flex flex-col">
           <div className="relative flex-1 min-h-[420px] overflow-hidden">
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
-              onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} />
+              onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} />
 
             <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] overflow-x-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur shadow-[0_8px_30px_rgba(0,0,0,.4)]">
               <label className="relative flex items-center">
-                <MapPin size={15} className="absolute left-3 text-gold pointer-events-none" />
+                <MapPin size={15} className="absolute left-3 text-accent pointer-events-none" />
                 <select aria-label="Go to a place" value="" onChange={(e) => {
                   const v = e.target.value;
                   if (v[0] === "p") { const p = PLACES[+v.slice(1)]; if (!p.ll) mapRef.current?.fitAll(); else { mapRef.current?.flyTo(p.ll, p.z); const i = cellAt(D, ...p.ll); if (i >= 0) select(i); } }
@@ -223,21 +224,22 @@ function Explorer({ D, onStory, startTour }) {
               </label>
               {[
                 { icon: Route, label: "Cross-section", on: !!S.profile, act: () => set(S.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true }), key: "P" },
+                { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: () => set(S.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }), key: "S" },
                 { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief }), key: "D" },
                 { icon: Share2, label: "Share view", on: false, act: share },
               ].map(({ icon: Icon, label, on, act, key }) => (
                 <button key={label} onClick={act} aria-pressed={key ? on : undefined} title={key ? `${label} (${key})` : label}
-                  className={`inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] ${on ? "bg-gold text-space font-semibold" : "text-ink/90 hover:bg-deck-2"}`}>
+                  className={`inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] ${on ? "bg-accent text-space font-semibold" : "text-ink/90 hover:bg-deck-2"}`}>
                   <Icon size={15} className="shrink-0" /> <span className="whitespace-nowrap max-sm:sr-only">{label}</span>
                 </button>
               ))}
-              <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-gold-2 hover:bg-deck-2">
+              <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-accent-2 hover:bg-deck-2">
                 <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap max-sm:sr-only">Walkthrough</span>
               </button>
             </div>
 
             {S.drawing && !S.profile?.a && (
-              <p className="absolute top-[66px] left-4 z-10 rounded-md bg-gold text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
+              <p className="absolute top-[66px] left-4 z-10 rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
             )}
 
             <div className="absolute left-4 bottom-4 z-10 max-md:left-2 max-md:right-2 max-md:bottom-2">
@@ -256,10 +258,10 @@ function Explorer({ D, onStory, startTour }) {
               <TourCard step={steps[S.tour]} k={S.tour} n={steps.length}
                 onPrev={() => goStep(S.tour - 1)} onNext={() => (S.tour >= steps.length - 1 ? endTour() : goStep(S.tour + 1))} onClose={endTour} />
             )}
-            {S.sel < 0 && S.tour < 0 && !S.drawing && (
-              <div className="pointer-events-none absolute left-1/2 top-[68px] -translate-x-1/2 z-10 flex items-center gap-2.5 rounded-full border border-gold/40 bg-space/85 backdrop-blur px-4 py-2 text-[13.5px] shadow-[0_0_30px_rgba(226,176,74,.18)] [animation:rise-in_.6s_.4s_both] max-md:hidden">
-                <span className="relative flex w-2.5 h-2.5"><span className="absolute inset-0 rounded-full bg-gold animate-ping opacity-60" /><span className="relative w-2.5 h-2.5 rounded-full bg-gold" /></span>
-                <MousePointerClick size={15} className="text-gold" /> Click any spot to open its record
+            {S.sel < 0 && S.tour < 0 && !S.drawing && S.swipe == null && (
+              <div className="pointer-events-none absolute left-1/2 top-[68px] -translate-x-1/2 z-10 flex items-center gap-2.5 rounded-full border border-accent/40 bg-space/85 backdrop-blur px-4 py-2 text-[13.5px] shadow-[0_0_30px_rgba(111,168,255,.18)] [animation:rise-in_.6s_.4s_both] max-md:hidden">
+                <span className="relative flex w-2.5 h-2.5"><span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-60" /><span className="relative w-2.5 h-2.5 rounded-full bg-accent" /></span>
+                <MousePointerClick size={15} className="text-accent" /> Click any spot to open its record
               </div>
             )}
           </div>
@@ -280,7 +282,7 @@ function Explorer({ D, onStory, startTour }) {
       </main>
 
       {limits && <Limits D={D} onClose={() => setLimits(false)} />}
-      {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-gold text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(226,176,74,.45)]">{flash}</div>}
+      {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(111,168,255,.45)]">{flash}</div>}
     </div>
   );
 }
@@ -288,7 +290,7 @@ function Explorer({ D, onStory, startTour }) {
 function initialState(D) {
   const N = D.dates.length;
   const S = { mode: "net", sel: -1, pin: -1, k1: 0, k2: N - 1, cursor: N - 1, gps: false, split: false, playing: false,
-    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null };
+    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, swipe: null };
   const h = readHash();
   const int = (x, lo, hi) => { const n = parseInt(x, 10); return isNaN(n) ? null : Math.max(lo, Math.min(hi, n)); };
   if (MODES.some((m) => m.id === h.mode)) S.mode = h.mode;

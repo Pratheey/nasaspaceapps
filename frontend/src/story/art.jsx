@@ -45,7 +45,7 @@ export function Starfield({ className = "", density = 260 }) {
       x.clearRect(0, 0, W, H);
       stars.forEach((s) => {
         const a = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * s.s + s.p));
-        x.fillStyle = s.gold ? `rgba(245,207,122,${a})` : `rgba(220,230,255,${a * 0.8})`;
+        x.fillStyle = s.gold ? `rgba(169,203,255,${a})` : `rgba(220,230,255,${a * 0.8})`;
         x.beginPath(); x.arc(s.x, s.y, s.r, 0, 6.283); x.fill();
       });
       if (!reduceMotion) raf = requestAnimationFrame(draw);
@@ -72,7 +72,7 @@ export function SatelliteArt({ className = "" }) {
           <stop offset="0" stopColor="#1C2A4A" /><stop offset="1" stopColor="#2E4A7A" />
         </linearGradient>
         <linearGradient id="beam" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#E2B04A" stopOpacity="0.35" /><stop offset="1" stopColor="#E2B04A" stopOpacity="0" />
+          <stop offset="0" stopColor="#6FA8FF" stopOpacity="0.35" /><stop offset="1" stopColor="#6FA8FF" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points="250,250 120,420 470,420" fill="url(#beam)" />

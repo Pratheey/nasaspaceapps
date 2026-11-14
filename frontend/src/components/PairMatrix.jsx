@@ -4,7 +4,7 @@ import { fmtShort, cm } from "../lib/fmt.js";
 
 // Every pair of dates at one spot. Row = later date, column = earlier date.
 // Outlined squares hide the sinking: stable or rising while the trend over the same span
-// sank by more than 2σ. The gold square is the pair shown on the map.
+// sank by more than 2σ. The blue square is the pair shown on the map.
 const CELL = 13, PL = 40, PB = 30, PT = 4;
 
 export default function PairMatrix({ D, i, k1, k2, onPick }) {
@@ -46,7 +46,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
     x.strokeStyle = "#E6EAF2"; x.lineWidth = 1.4;
     cells.forEach((k) => k.lie && x.strokeRect(px(k.a) + 0.7, py(k.b) + 0.7, CELL - 2.4, CELL - 2.4));
     if (k2 > k1) {
-      x.strokeStyle = "#E2B04A"; x.lineWidth = 2.5;
+      x.strokeStyle = "#6FA8FF"; x.lineWidth = 2.5;
       x.strokeRect(px(k1) - 1, py(k2) - 1, CELL + 1, CELL + 1);
     }
     x.fillStyle = "#8D97AB"; x.font = "11px 'Public Sans', sans-serif";
@@ -74,7 +74,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
   return (
     <div>
       <p className="text-[13px] text-mute mb-2">
-        {nLie ? `${nLie} outlined pair${nLie > 1 ? "s" : ""} make this spot look stable or rising while the trend says it sank.` : "No pair here hides the sinking."} The gold square is the pair on the map.
+        {nLie ? `${nLie} outlined pair${nLie > 1 ? "s" : ""} make this spot look stable or rising while the trend says it sank.` : "No pair here hides the sinking."} The blue square is the pair on the map.
       </p>
       <canvas
         ref={ref}
@@ -88,7 +88,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
       <p className="text-[13.5px] min-h-[2.6em] mt-1.5 text-ink/90">
         {!read ? "Point at a square to read it. Click to compare those two dates on the map."
           : read.d == null ? `${fmtShort(D.dates[read.a])} to ${fmtShort(D.dates[read.b])}: no measurement on one of the dates.`
-          : <>{fmtShort(D.dates[read.a])} to {fmtShort(D.dates[read.b])}: <strong>{cm(read.d)}</strong>{read.exp != null && `, trend says ${cm(read.exp)}`}.{read.lie && <span className="text-gold-2"> This pair hides the sinking.</span>}</>}
+          : <>{fmtShort(D.dates[read.a])} to {fmtShort(D.dates[read.b])}: <strong>{cm(read.d)}</strong>{read.exp != null && `, trend says ${cm(read.exp)}`}.{read.lie && <span className="text-accent-2"> This pair hides the sinking.</span>}</>}
       </p>
     </div>
   );

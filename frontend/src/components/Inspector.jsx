@@ -3,6 +3,7 @@ import { ArrowLeft, Download, GitCompareArrows, Satellite, Volume2, VolumeX, Spa
 import Chart, { ChartKey } from "./Chart.jsx";
 import Gauge from "./Gauge.jsx";
 import PairMatrix from "./PairMatrix.jsx";
+import SeasonClock from "./SeasonClock.jsx";
 import { cellBounds, fitAt, pairDiff, mostMisleadingPair } from "../lib/data.js";
 import { cm, mm, pm, fmtShort, MONTH_NAMES } from "../lib/fmt.js";
 import { LABEL_COLORS, rgb } from "../lib/colors.js";
@@ -22,8 +23,8 @@ function Section({ title, children, aside }) {
 }
 
 const Tool = ({ icon: Icon, children, ...p }) => (
-  <button {...p} className="inline-flex items-center gap-1.5 text-[13.5px] text-ink/85 hover:text-gold-2 px-2 py-1 rounded-md hover:bg-deck-2 border border-transparent hover:border-hair">
-    <Icon size={14} className="text-gold" /> {children}
+  <button {...p} className="inline-flex items-center gap-1.5 text-[13.5px] text-ink/85 hover:text-accent-2 px-2 py-1 rounded-md hover:bg-deck-2 border border-transparent hover:border-hair">
+    <Icon size={14} className="text-accent" /> {children}
   </button>
 );
 
@@ -76,11 +77,11 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
 
   return (
     <div key={i} className="[animation:rise-in_.45s_cubic-bezier(.2,.7,.2,1)_both]">
-      <button onClick={actions.clearSel} className="inline-flex items-center gap-1.5 text-[13px] text-mute hover:text-gold-2 mb-3">
+      <button onClick={actions.clearSel} className="inline-flex items-center gap-1.5 text-[13px] text-mute hover:text-accent-2 mb-3">
         <ArrowLeft size={14} /> Back to the overview
       </button>
       <p className="text-[13px] text-mute flex items-center gap-1.5">
-        {st && <><Satellite size={13} className="text-gold" /> GPS station {st.station}{st.role === "reference" ? " (reference)" : ""}, </>}
+        {st && <><Satellite size={13} className="text-accent" /> GPS station {st.station}{st.role === "reference" ? " (reference)" : ""}, </>}
         {cb.lat.toFixed(3)}° N, {Math.abs(cb.lng).toFixed(3)}° W
       </p>
       <h2 className={`font-display text-[25px] leading-tight font-semibold mt-1 ${LABEL_TEXT[L]}`}>{D.meta.labels[String(L)]}</h2>
@@ -113,9 +114,9 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
         {TABS.map(([id, name, Icon]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className={`relative inline-flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-gold-2" : "text-mute hover:text-ink"}`}>
+            className={`relative inline-flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
             <Icon size={14} /> {name}
-            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold shadow-[0_0_8px_#E2B04A]" />}
+            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-accent shadow-[0_0_8px_#6FA8FF]" />}
           </button>
         ))}
       </div>
@@ -124,7 +125,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       {tab === "record" && <>
       <Section title="Every measurement here" aside={
         <label className="inline-flex items-center gap-2 text-[13px] text-ink/85 cursor-pointer">
-          <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#E2B04A] w-4 h-4" />
+          <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#6FA8FF] w-4 h-4" />
           Split trend and seasonal
         </label>}>
         <Chart dates={D.dates} values={v} tYears={D.tYears} fit={(t) => fitAt(D, i, t)} split={S.split} gps={gps} compare={compare}
@@ -138,8 +139,11 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             : <Tool icon={GitCompareArrows} onClick={() => set({ awaitPin: true })}>Compare with another spot</Tool>}
           <Tool icon={Download} onClick={actions.csv}>Download the numbers</Tool>
         </div>
-        {S.awaitPin && <p className="mt-2 text-[13.5px] rounded-md border border-gold/40 bg-gold/10 px-3 py-2">Now click another spot on the map to compare it with this one.</p>}
+        {S.awaitPin && <p className="mt-2 text-[13.5px] rounded-md border border-accent/40 bg-accent/10 px-3 py-2">Now click another spot on the map to compare it with this one.</p>}
         <p className="text-[13px] text-mute mt-3">Click the chart to jump the map to that date.</p>
+      </Section>
+      <Section title="The year as a circle">
+        <SeasonClock D={D} i={i} />
       </Section>
       </>}
 
@@ -150,11 +154,11 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           {expected != null && <> The fitted trend over the same {days} days is {cm(expected)}.</>}
         </p>
         {lie ? (
-          <div className="mt-3 rounded-lg border border-gold/35 bg-gradient-to-br from-gold/10 to-transparent p-3.5">
+          <div className="mt-3 rounded-lg border border-accent/35 bg-gradient-to-br from-accent/10 to-transparent p-3.5">
             <p className="text-[14.5px] leading-relaxed">
               Pick the wrong two dates and this spot looks {lie.diff >= 0 ? "like it rose" : "stable"}: {fmtShort(D.dates[lie.k1])} to {fmtShort(D.dates[lie.k2])} shows <strong>{cm(lie.diff)}</strong>, while the trend says {cm(lie.expected)}.
             </p>
-            <button onClick={() => actions.showPair(lie.k1, lie.k2)} className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-gold text-space font-semibold text-sm px-3 py-1.5 hover:bg-gold-2">
+            <button onClick={() => actions.showPair(lie.k1, lie.k2)} className="mt-2.5 inline-flex items-center gap-1.5 rounded-md bg-accent text-space font-semibold text-sm px-3 py-1.5 hover:bg-accent-2">
               <Sparkles size={14} /> Show me those two dates
             </button>
           </div>
@@ -169,7 +173,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
 
       {st && (
         <Section title="GPS check">
-          {!S.gps && <button onClick={() => set({ gps: true })} className="text-[13.5px] text-gold-2 hover:underline mb-2">Show GPS on the chart</button>}
+          {!S.gps && <button onClick={() => set({ gps: true })} className="text-[13.5px] text-accent-2 hover:underline mb-2">Show GPS on the chart</button>}
           {st.role === "reference"
             ? <p className="text-[14.5px]">{st.station} is the reference station. All radar values are tied to it, so it can't check itself.</p>
             : st.residuals && (
@@ -188,7 +192,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       )}
 
       <details open className="mt-6 rounded-lg border border-hair-2 bg-deck/60 open:bg-deck group">
-        <summary className="cursor-pointer px-4 py-3 font-display text-[15.5px] font-semibold marker:text-gold">How we got these numbers</summary>
+        <summary className="cursor-pointer px-4 py-3 font-display text-[15.5px] font-semibold marker:text-accent">How we got these numbers</summary>
         <dl className="px-4 pb-4 text-[13px] space-y-2">
           {[
             ["Satellite product", `${D.meta.product}, ${D.meta.product_maturity}. Track ${D.meta.track} ${D.meta.direction}, frame ${D.meta.frame}.`],
@@ -207,6 +211,50 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </>}
       </div>
     </div>
+  );
+}
+
+function Spark({ v, color }) {
+  const ok = v.filter((x) => x != null);
+  if (ok.length < 3) return null;
+  const lo = Math.min(...ok), hi = Math.max(...ok), sp = hi - lo || 1;
+  const pts = v.map((x, k) => (x == null ? null : `${((k / (v.length - 1)) * 76 + 2).toFixed(1)},${(2 + (1 - (x - lo) / sp) * 18).toFixed(1)}`)).filter(Boolean).join(" ");
+  return <svg viewBox="0 0 80 22" className="w-20 h-[22px]" aria-hidden="true"><polyline points={pts} fill="none" stroke={color} strokeWidth="1.5" /></svg>;
+}
+
+// Where to look first: the fastest-sinking spots and the strongest seasonal breathing.
+function Leaders({ D, actions }) {
+  const [tab, setTab] = useState("sink");
+  const G = D.grid;
+  const name = (i) => { const st = D.stations.find((s) => s.cell_index === i); const b = cellBounds(D, i); return st ? `GPS ${st.station}` : `${b.lat.toFixed(2)}° N, ${Math.abs(b.lng).toFixed(2)}° W`; };
+  const rows = [];
+  for (let i = 0; i < D.n; i++) {
+    if (tab === "sink" && G.net_change_m[i] != null && (G.label[i] === 1 || G.label[i] === 3)) rows.push([i, G.net_change_m[i]]);
+    if (tab === "breathe" && G.seasonal_significant[i] === true && G.amp_m[i] != null) rows.push([i, G.amp_m[i]]);
+  }
+  rows.sort((x, y) => (tab === "sink" ? x[1] - y[1] : y[1] - x[1]));
+  return (
+    <Section title="Where to look first" aside={
+      <div className="flex rounded-md border border-hair overflow-hidden text-[12.5px]">
+        {[["sink", "Sinking fastest"], ["breathe", "Breathing most"]].map(([id, t]) => (
+          <button key={id} onClick={() => setTab(id)} className={`px-2.5 py-1 ${tab === id ? "bg-accent/15 text-accent-2" : "text-mute hover:text-ink"}`}>{t}</button>
+        ))}
+      </div>}>
+      <ol className="divide-y divide-hair">
+        {rows.slice(0, 5).map(([i, val], n) => (
+          <li key={i}>
+            <button onClick={() => actions.select(i, { fly: true })} className="w-full flex items-center gap-3 py-2 text-left hover:bg-deck-2/60 rounded px-1 -mx-1 group">
+              <span className="font-display text-[15px] text-mute w-4">{n + 1}</span>
+              <span className="flex-1 text-[13.5px] group-hover:text-accent-2">{name(i)}</span>
+              <Spark v={D.values[i] || []} color={tab === "sink" ? "#F0705A" : "#5FC9E0"} />
+              <span className={`font-display text-[16px] font-semibold w-[72px] text-right ${tab === "sink" ? "text-sink" : "text-rise"}`}>{tab === "sink" ? cm(val) : mm(val)}</span>
+            </button>
+          </li>
+        ))}
+        {!rows.length && <li className="py-2 text-[13.5px] text-mute">Nothing here passes the significance test yet.</li>}
+      </ol>
+      <p className="text-[12.5px] text-mute mt-2">{tab === "sink" ? "Change over the whole record, among spots where the sinking is beyond 2σ." : "Size of the yearly cycle, among spots where it is significant."}</p>
+    </Section>
   );
 }
 
@@ -273,6 +321,7 @@ function Overview({ D, actions }) {
           </div>
         ))}
       </div>
+      <Leaders D={D} actions={actions} />
       <Section title="Seasonal size against trend">
         <canvas ref={ref} width="760" height="440" onClick={click} className="w-full h-auto cursor-pointer" aria-label="Scatter of seasonal size against trend. Click a dot to open that spot." />
         <p className="text-[13px] text-mute mt-1">Only spots where the seasonal cycle is significant. Click a dot to open it.</p>

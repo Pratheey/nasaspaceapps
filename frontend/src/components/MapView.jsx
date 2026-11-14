@@ -1,4 +1,5 @@
-import { forwardRef, useEffect, useImperativeHandle, useRef } from "react";
+import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
+import { fmtShort } from "../lib/fmt.js";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { cellAt, cellBounds } from "../lib/data.js";
@@ -13,7 +14,8 @@ const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 const box = (b) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: [[[b.w, b.n], [b.e, b.n], [b.e, b.s], [b.w, b.s], [b.w, b.n]]] } });
 
 /** The map. Imperative inside (MapLibre), declarative outside (props in, events out). */
-const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation }, ref) {
+const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onSwipe }, ref) {
+  const [, setTick] = useState(0); // re-render the swipe handle when the camera moves
   const el = useRef(null);
   const map = useRef(null);
   const ready = useRef(false);
@@ -32,7 +34,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       if (!ll) { probe.current?.remove(); probe.current = null; return; }
       if (!probe.current) {
         const d = document.createElement("div");
-        d.className = "w-3 h-3 rounded-full bg-gold ring-2 ring-space shadow-[0_0_12px_#E2B04A]";
+        d.className = "w-3 h-3 rounded-full bg-accent ring-2 ring-space shadow-[0_0_12px_#6FA8FF]";
         probe.current = new maplibregl.Marker({ element: d }).setLngLat(ll).addTo(map.current);
       } else probe.current.setLngLat(ll);
     },
@@ -73,23 +75,23 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       m.addLayer({ id: "grid", type: "raster", source: "grid", paint: { "raster-opacity": 0.9, "raster-resampling": "nearest", "raster-fade-duration": 0 } });
       m.addLayer({ id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.75 } });
       m.addSource("frame", { type: "geojson", data: { type: "Feature", geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } } });
-      m.addLayer({ id: "frame", type: "line", source: "frame", paint: { "line-color": "#E2B04A", "line-width": 1, "line-opacity": 0.55, "line-dasharray": [4, 3] } });
+      m.addLayer({ id: "frame", type: "line", source: "frame", paint: { "line-color": "#6FA8FF", "line-width": 1, "line-opacity": 0.55, "line-dasharray": [4, 3] } });
       m.addSource("relief", { type: "geojson", data: emptyFC() });
       m.addLayer({ id: "relief", type: "fill-extrusion", source: "relief", layout: { visibility: "none" },
         paint: { "fill-extrusion-color": ["get", "c"], "fill-extrusion-height": ["get", "h"], "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.96, "fill-extrusion-vertical-gradient": true } });
       for (const id of ["sel", "pin"]) m.addSource(id, { type: "geojson", data: emptyFC() });
-      m.addLayer({ id: "sel-glow", type: "line", source: "sel", paint: { "line-color": "#E2B04A", "line-width": 7, "line-opacity": 0.35, "line-blur": 4 } });
-      m.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#F5CF7A", "line-width": 2 } });
+      m.addLayer({ id: "sel-glow", type: "line", source: "sel", paint: { "line-color": "#6FA8FF", "line-width": 7, "line-opacity": 0.35, "line-blur": 4 } });
+      m.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#A9CBFF", "line-width": 2 } });
       m.addLayer({ id: "pin", type: "line", source: "pin", paint: { "line-color": "#A98BF0", "line-width": 2, "line-dasharray": [2, 1.5] } });
       m.addSource("prof", { type: "geojson", data: emptyFC() });
-      m.addLayer({ id: "prof-glow", type: "line", source: "prof", paint: { "line-color": "#E2B04A", "line-width": 8, "line-opacity": 0.25, "line-blur": 5 } });
-      m.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#F5CF7A", "line-width": 2.2 } });
+      m.addLayer({ id: "prof-glow", type: "line", source: "prof", paint: { "line-color": "#6FA8FF", "line-width": 8, "line-opacity": 0.25, "line-blur": 5 } });
+      m.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#A9CBFF", "line-width": 2.2 } });
 
       stationEls.current = D.stations.map((st) => {
         const btn = document.createElement("button");
         btn.className = "group flex items-center gap-1 -translate-x-1.5";
         btn.setAttribute("aria-label", `GPS station ${st.station}${st.role === "reference" ? ", reference" : ""}`);
-        btn.innerHTML = `<span class="block w-3 h-3 ${st.role === "reference" ? "rotate-45" : "rounded-full"} border-2 border-gold-2 bg-space group-hover:bg-gold shadow-[0_0_10px_rgba(226,176,74,.6)]"></span>
+        btn.innerHTML = `<span class="block w-3 h-3 ${st.role === "reference" ? "rotate-45" : "rounded-full"} border-2 border-accent-2 bg-space group-hover:bg-accent shadow-[0_0_10px_rgba(111,168,255,.6)]"></span>
           <span class="font-display text-[12px] font-semibold tracking-wide text-ink bg-space/85 px-1.5 py-0.5 rounded border border-hair-2">${st.station}</span>`;
         btn.onclick = (ev) => { ev.stopPropagation(); latest.current.onStation(st); };
         new maplibregl.Marker({ element: btn, anchor: "left" }).setLngLat([st.lon, st.lat]).addTo(m);
@@ -111,6 +113,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       latest.current.onHover(i >= 0 ? { i, x: e.point.x, y: e.point.y } : null);
     });
     m.on("mouseout", () => latest.current.onHover(null));
+    m.on("move", () => latest.current.S.swipe != null && setTick((t) => t + 1));
     return () => m.remove();
   }, [D]);
 
@@ -129,6 +132,12 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       for (let i = 0; i < D.n; i++) {
         let col = null;
         if (S.mode === "labels") col = LABEL_COLORS[D.grid.label[i]] || null;
+        else if (S.swipe != null) {
+          // swipe: left of the divider shows the ground on date A, right shows date B
+          const left = g.lon_min + ((i % g.ncols) + 0.5) * g.step_deg < S.swipe;
+          const v = D.values[i]?.[left ? S.k1 : S.k2];
+          if (v != null) col = diverging(v, domain);
+        }
         else { const v = cellValue(D, S, i); if (v != null) col = S.mode === "fringe" ? fringe(v) : diverging(v, domain); }
         if (!col) { if (D.grid.n_valid_dates[i] > 0 || D.grid.label[i] === 0) hatch.push(i); continue; }
         const r0 = Math.floor(i / g.ncols) * PX, c0 = (i % g.ncols) * PX;
@@ -162,7 +171,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       }
     };
     if (ready.current) draw(); else m.once("bg:ready", draw);
-  }, [D, S.mode, S.k1, S.k2, S.cursor, S.relief, domain]);
+  }, [D, S.mode, S.k1, S.k2, S.cursor, S.relief, S.swipe, domain]);
 
   // camera for 3D
   useEffect(() => {
@@ -197,7 +206,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
         let mk = profMarkers.current.find((x) => x._key === key);
         if (!mk) {
           const d = document.createElement("div");
-          d.className = "w-6 h-6 rounded-full bg-gold text-space font-display font-bold text-[13px] grid place-items-center ring-2 ring-space cursor-grab shadow-[0_0_14px_#E2B04A]";
+          d.className = "w-6 h-6 rounded-full bg-accent text-space font-display font-bold text-[13px] grid place-items-center ring-2 ring-space cursor-grab shadow-[0_0_14px_#6FA8FF]";
           d.textContent = String(n + 1);
           mk = new maplibregl.Marker({ element: d, draggable: true }).setLngLat(P[key]).addTo(m);
           mk._key = key;
@@ -210,7 +219,28 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   }, [S.profile]);
 
   // MapLibre's own CSS sets position: relative on the container, so size it from a wrapper
-  return <div className="absolute inset-0"><div ref={el} className="w-full h-full" /></div>;
+  const sx = S.swipe != null && map.current && ready.current ? map.current.project([S.swipe, (D.bbox.north + D.bbox.south) / 2]).x : null;
+  const dragSwipe = (e) => {
+    e.preventDefault();
+    const host = el.current.getBoundingClientRect();
+    const mv = (ev) => { const p = map.current.unproject([ev.clientX - host.left, host.height / 2]); latest.current.onSwipe(Math.max(D.bbox.west, Math.min(D.bbox.east, p.lng))); };
+    const up = () => { window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); };
+    window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
+  };
+  return (
+    <div className="absolute inset-0">
+      <div ref={el} className="w-full h-full" />
+      {sx != null && (
+        <div className="absolute top-0 bottom-0 z-[5] w-0" style={{ left: sx }}>
+          <div className="absolute inset-y-0 -left-px w-[2px] bg-accent shadow-[0_0_14px_#6FA8FF]" />
+          <button onPointerDown={dragSwipe} aria-label="Drag to compare date A and date B"
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize shadow-[0_0_20px_rgba(111,168,255,.6)] font-display font-bold text-[13px]">A|B</button>
+          <span className="absolute top-[64px] right-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">A: {fmtShort(D.dates[S.k1])}</span>
+          <span className="absolute top-[64px] left-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">B: {fmtShort(D.dates[S.k2])}</span>
+        </div>
+      )}
+    </div>
+  );
 });
 
 export default MapView;
