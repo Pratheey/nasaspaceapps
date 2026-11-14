@@ -1,0 +1,2 @@
+# Patches must keep their exact bytes, or `git apply` fails after a line-ending conversion.
+proposals/*.patch -text
