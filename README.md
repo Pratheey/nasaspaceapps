@@ -1,5 +1,6 @@
 # NASA Space Apps 2026: Dancing with the SARS
 
+- 👋 **Start here, humans: your role and goals:** [ROLES.md](ROLES.md)
 - **What we're building:** [docs/PROJECT.md](docs/PROJECT.md)
 - **How we work together (git, pivots, check-ins):** [docs/WORKFLOW.md](docs/WORKFLOW.md)
 - **Rules every AI agent follows:** [AGENTS.md](AGENTS.md)
