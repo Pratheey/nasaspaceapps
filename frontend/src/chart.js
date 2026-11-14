@@ -14,7 +14,7 @@ function scale(d0, d1, r0, r1) {
  *         pair:[k1,k2]|null, cursor:int|null, seasonalSig:bool }
  */
 export function seriesChart(opts) {
-  const { dates, values, tYears, fit, split, gps, pair, cursor, seasonalSig } = opts;
+  const { dates, values, tYears, fit, split, gps, pair, cursor, seasonalSig, compare } = opts;
   const x0 = +dates[0], x1 = +dates[dates.length - 1];
   const X = scale(x0, x1, P.l, W - P.r);
 
@@ -29,6 +29,7 @@ export function seriesChart(opts) {
 
   const ys = values.filter((v) => v != null).map((v) => v * 100);
   if (gps) gps.los.forEach((v) => v != null && ys.push(v * 100));
+  if (compare) compare.values.forEach((v) => v != null && ys.push(v * 100));
   dense.forEach((p) => p.f && ys.push((p.f.total - f0.total) * 100));
   let lo = Math.min(0, ...ys), hi = Math.max(0, ...ys);
   const pad = Math.max(0.3, (hi - lo) * 0.12);
@@ -88,6 +89,13 @@ export function seriesChart(opts) {
     s += `<polyline points="${pts.join(" ")}" class="gpsline"/>`;
   }
 
+  // pinned comparison point
+  if (compare) {
+    const pts = compare.values.map((v, j) => (v == null ? null : `${X(+dates[j]).toFixed(1)},${Y(v * 100).toFixed(1)}`)).filter(Boolean);
+    s += `<polyline points="${pts.join(" ")}" class="compareline"/>`;
+    pts.forEach((p) => { const [cx, cy] = p.split(","); s += `<rect x="${cx - 2.2}" y="${cy - 2.2}" width="4.4" height="4.4" class="comparept"/>`; });
+  }
+
   // measured points
   values.forEach((v, j) => {
     if (v == null) {
@@ -102,13 +110,14 @@ export function seriesChart(opts) {
   return s;
 }
 
-export function chartKey({ split, gps, seasonalSig }) {
+export function chartKey({ split, gps, seasonalSig, compare }) {
   const items = [`<span class="k pt"></span>NISAR measurement`];
   if (split) {
     items.push(`<span class="k trend"></span>Trend`);
     if (seasonalSig) items.push(`<span class="k seasonal"></span>Seasonal part (×3 for visibility)`);
   } else items.push(`<span class="k fit"></span>Fitted curve`);
   if (gps) items.push(`<span class="k gps"></span>GPS`);
+  if (compare) items.push(`<span class="k cmp"></span>${compare.label}`);
   return `<p class="chartkey">${items.join("")}</p>`;
 }
 

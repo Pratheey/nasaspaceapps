@@ -9,6 +9,9 @@ import { seriesChart, chartKey } from "./chart.js";
 import { rod } from "./rod.js";
 import { LIMITS_HTML } from "./limits.js";
 import { TOUR } from "./tour.js";
+import { matrixHTML, drawMatrix } from "./matrix.js";
+import { sampleLine, profileSVG, profileHitFrac, profileX, profileReadout } from "./profile.js";
+import { listen, stopListening, isListening, downloadCSV, writeHash, readHash } from "./extras.js";
 
 maplibregl.setWorkerUrl(workerUrl);
 
@@ -25,6 +28,11 @@ const S = {
   split: false,
   playing: false,
   tour: -1,
+  pin: -1,         // second point for comparison
+  relief: false,   // 3D view
+  drawing: false,  // waiting for profile clicks
+  profile: null,   // { a:[lng,lat], b:[lng,lat] }
+  listenK: null,   // date index being sounded
 };
 
 let D, map, domain, hatch;
@@ -100,13 +108,25 @@ function initMap() {
     map.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#1F2622", "line-width": 2 } });
     map.addSource("frame", { type: "geojson", data: { type: "Feature", geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } } });
     map.addLayer({ id: "frame", type: "line", source: "frame", paint: { "line-color": "#8B5E34", "line-width": 1, "line-dasharray": [3, 2] } });
+    map.addSource("pin", { type: "geojson", data: emptyFC() });
+    map.addLayer({ id: "pin", type: "line", source: "pin", paint: { "line-color": "#1F2622", "line-width": 2, "line-dasharray": [2, 1.5] } });
+    map.addSource("relief", { type: "geojson", data: emptyFC() });
+    map.addLayer({ id: "relief", type: "fill-extrusion", source: "relief", layout: { visibility: "none" },
+      paint: { "fill-extrusion-color": ["get", "c"], "fill-extrusion-height": ["get", "h"], "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.95 } });
+    map.addSource("prof", { type: "geojson", data: emptyFC() });
+    map.addLayer({ id: "prof-casing", type: "line", source: "prof", paint: { "line-color": "#E9ECE4", "line-width": 6 } });
+    map.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#1F2622", "line-width": 2.5 } });
     drawGrid();
     addStations();
+    restoreFromHash();
   });
 
   map.on("click", (e) => {
+    if (S.drawing) { profileClick([e.lngLat.lng, e.lngLat.lat]); return; }
     const i = cellAt(D, e.lngLat.lng, e.lngLat.lat);
-    if (i >= 0) select(i);
+    if (i < 0) return;
+    if (S.awaitPin || ((e.originalEvent.shiftKey || e.originalEvent.altKey) && S.sel >= 0)) { S.awaitPin = false; setPin(i); }
+    else select(i);
   });
   map.on("mousemove", (e) => {
     const i = cellAt(D, e.lngLat.lng, e.lngLat.lat);
@@ -172,6 +192,113 @@ function drawGrid() {
   x.putImageData(img, 0, 0);
   hatchCells.forEach((i) => x.drawImage(hatch, (i % g.ncols) * PX, Math.floor(i / g.ncols) * PX));
   map.getSource("grid").updateImage({ image: c });
+  if (S.relief) updateRelief();
+}
+
+/* ---------------- 3D relief ---------------- */
+let reliefFeatures = null;
+const RELIEF_H = 5000; // metres of map height across the full color range
+function updateRelief() {
+  const g = D.meta.grid;
+  if (!reliefFeatures) {
+    reliefFeatures = [];
+    for (let i = 0; i < D.n; i++) {
+      const b = cellBounds(D, i);
+      reliefFeatures.push({ type: "Feature", id: i, properties: { h: 0, c: "#000" },
+        geometry: { type: "Polygon", coordinates: [[[b.w, b.n], [b.e, b.n], [b.e, b.s], [b.w, b.s], [b.w, b.n]]] } });
+    }
+  }
+  const feats = [];
+  for (let i = 0; i < D.n; i++) {
+    const v = S.mode === "labels" ? D.grid.net_change_m[i] : cellValue(i);
+    if (v == null) continue;
+    const f = reliefFeatures[i];
+    const t = Math.max(0, Math.min(1, (v + domain) / (2 * domain)));
+    f.properties.h = 60 + t * RELIEF_H;
+    f.properties.c = rgb(S.mode === "labels" && LABEL_COLORS[D.grid.label[i]] ? LABEL_COLORS[D.grid.label[i]] : diverging(v, domain));
+    feats.push(f);
+  }
+  map.getSource("relief").setData({ type: "FeatureCollection", features: feats });
+}
+function setRelief(on) {
+  S.relief = on;
+  $("#relief-btn").setAttribute("aria-pressed", on);
+  map.setLayoutProperty("relief", "visibility", on ? "visible" : "none");
+  map.setPaintProperty("grid", "raster-opacity", on ? 0 : 0.86);
+  if (on) { map.dragRotate.enable(); updateRelief(); map.easeTo({ pitch: 58, bearing: -18, duration: reduceMotion ? 0 : 1300 }); }
+  else { map.dragRotate.disable(); map.easeTo({ pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 900 }); }
+  renderLegend();
+  writeHash(S);
+}
+
+/* ---------------- profile (cross-section) ---------------- */
+let profMarkers = [];
+function startProfile() {
+  S.drawing = true;
+  S.profile = null;
+  clearProfileMarkers();
+  map.getSource("prof").setData(emptyFC());
+  $("#profile-btn").setAttribute("aria-pressed", "true");
+  map.getCanvas().style.cursor = "crosshair";
+  showProfilePanel(`<p class="prof-hint">Click two points on the map to draw a line. A canal, a road, a levee: anything you want to see in cross-section.</p>`);
+}
+function profileClick(ll) {
+  if (!S.profile) { S.profile = { a: ll }; addProfMarker("a", ll); return; }
+  S.profile.b = ll;
+  addProfMarker("b", ll);
+  S.drawing = false;
+  renderProfile();
+}
+function addProfMarker(key, ll) {
+  const el = document.createElement("div");
+  el.className = "profend";
+  el.textContent = key === "a" ? "1" : "2";
+  const m = new maplibregl.Marker({ element: el, draggable: true }).setLngLat(ll).addTo(map);
+  m.on("drag", () => { const p = m.getLngLat(); S.profile[key] = [p.lng, p.lat]; if (S.profile.b) renderProfile(); });
+  profMarkers.push(m);
+}
+function clearProfileMarkers() { profMarkers.forEach((m) => m.remove()); profMarkers = []; }
+function closeProfile() {
+  S.drawing = false; S.profile = null;
+  clearProfileMarkers();
+  map.getSource("prof")?.setData(emptyFC());
+  $("#profile-btn").setAttribute("aria-pressed", "false");
+  $("#profile").hidden = true;
+  $(".mapwrap").classList.remove("has-profile");
+  writeHash(S);
+}
+function showProfilePanel(html) {
+  $("#profile").hidden = false;
+  $(".mapwrap").classList.add("has-profile");
+  $("#profile-body").innerHTML = html;
+}
+let profDot;
+function renderProfile() {
+  const P = S.profile;
+  if (!P?.b) return;
+  map.getSource("prof").setData({ type: "Feature", geometry: { type: "LineString", coordinates: [P.a, P.b] } });
+  const valueAt = (lng, lat) => {
+    const i = cellAt(D, lng, lat);
+    if (i < 0) return null;
+    return S.mode === "labels" ? D.grid.net_change_m[i] : cellValue(i);
+  };
+  const smp = sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt);
+  const title = { net: "change over the whole record", pair: `change from ${fmtShort(D.dates[S.k1])} to ${fmtShort(D.dates[S.k2])}`, breathe: `change up to ${fmtShort(D.dates[S.cursor])}`, labels: "change over the whole record" }[S.mode];
+  showProfilePanel(`<div class="prof-head"><h3>Cross-section, ${smp.L.toFixed(1)} km: ${title}</h3><p id="prof-read" class="muted">Point along the profile to find that spot on the map. Drag the numbered ends to move the line.</p></div>${profileSVG(smp, "Ground motion along the drawn line")}`);
+  const svg = $("#profile .profsvg");
+  if (!svg) return;
+  svg.onmousemove = (e) => {
+    const f = profileHitFrac(e, svg);
+    const r = profileReadout(smp, f);
+    $("#prof-read").textContent = r.text;
+    const cur = $("#prof-cursor");
+    cur.setAttribute("x1", profileX(f)); cur.setAttribute("x2", profileX(f)); cur.setAttribute("visibility", "visible");
+    if (!profDot) { const el = document.createElement("div"); el.className = "profdot"; profDot = new maplibregl.Marker({ element: el }).setLngLat(r.p.p).addTo(map); }
+    else profDot.setLngLat(r.p.p);
+  };
+  svg.onmouseleave = () => { profDot?.remove(); profDot = null; $("#prof-cursor")?.setAttribute("visibility", "hidden"); };
+  svg.onclick = (e) => { const r = profileReadout(smp, profileHitFrac(e, svg)); const i = cellAt(D, ...r.p.p); if (i >= 0) select(i); };
+  writeHash(S);
 }
 
 let markers = [];
@@ -210,7 +337,17 @@ function hoverReadout(i, pt) {
     const v = cellValue(i);
     text = v == null ? "No measurement here" : cm(v);
   }
-  hoverEl.textContent = text;
+  const v = D.values[i];
+  let spark = "";
+  if (v && S.mode !== "labels") {
+    const ok = v.filter((x) => x != null);
+    if (ok.length > 2) {
+      const lo = Math.min(...ok), hi = Math.max(...ok), sp = hi - lo || 1;
+      const pts = v.map((x, k) => (x == null ? null : `${((k / (v.length - 1)) * 86 + 2).toFixed(1)},${(2 + (1 - (x - lo) / sp) * 20).toFixed(1)}`)).filter(Boolean).join(" ");
+      spark = `<svg viewBox="0 0 90 24" class="spark" aria-hidden="true"><polyline points="${pts}"/></svg>`;
+    }
+  }
+  hoverEl.innerHTML = `<span>${text}</span>${spark}`;
   hoverEl.style.transform = `translate(${pt.x + 14}px, ${pt.y + 12}px)`;
   hoverEl.hidden = false;
 }
@@ -224,9 +361,23 @@ function select(i, { fly = false } = {}) {
     geometry: { type: "Polygon", coordinates: [[[cb.w, cb.n], [cb.e, cb.n], [cb.e, cb.s], [cb.w, cb.s], [cb.w, cb.n]]] },
   });
   if (fly) map.flyTo({ center: [cb.lng, cb.lat], zoom: Math.max(map.getZoom(), 9.6), duration: reduceMotion ? 0 : 1400 });
+  if (S.pin === i) setPin(-1, false);
+  stopListening(); S.listenK = null;
   renderInspector();
   renderTimeline();
+  writeHash(S);
 }
+
+function setPin(i, rerender = true) {
+  S.pin = i;
+  if (i < 0) map.getSource("pin")?.setData(emptyFC());
+  else {
+    const cb = cellBounds(D, i);
+    map.getSource("pin")?.setData({ type: "Feature", geometry: { type: "Polygon", coordinates: [[[cb.w, cb.n], [cb.e, cb.n], [cb.e, cb.s], [cb.w, cb.s], [cb.w, cb.n]]] } });
+  }
+  if (rerender) { renderInspector(); writeHash(S); }
+}
+const placeName = (i) => { const st = stationAt(i); const cb = cellBounds(D, i); return st ? `GPS station ${st.station}` : `${cb.lat.toFixed(2)}° N, ${Math.abs(cb.lng).toFixed(2)}° W`; };
 
 const stationAt = (i) => D.stations.find((s) => s.cell_index === i);
 
@@ -249,7 +400,7 @@ function renderInspector() {
 
   // rod + key numbers
   h += `<div class="ins-top">
-    <div class="rodwrap">${rod({ dates: D.dates, values: v || [], cursor: S.mode === "breathe" ? S.cursor : D.dates.length - 1 })}</div>
+    <div class="rodwrap">${rod({ dates: D.dates, values: v || [], cursor: S.listenK ?? (S.mode === "breathe" ? S.cursor : D.dates.length - 1) })}</div>
     <dl class="nums">
       <div><dt>Change, first to last date</dt><dd class="big">${cm(G.net_change_m[i])}</dd><dd class="unc">${pm(G.net_change_sigma_m[i])}</dd></div>
       <div><dt>Seasonal movement</dt>${sig
@@ -261,13 +412,20 @@ function renderInspector() {
 
   // chart
   const gps = showGps ? { dates: st.gps.dates.map((s) => new Date(s + "T00:00:00Z")), los: st.gps.los_m } : null;
+  const compare = S.pin >= 0 && S.pin !== i ? { values: D.values[S.pin] || [], label: placeName(S.pin) } : null;
   h += `<div class="chartblock">
     <div class="chart-head">
       <h3>Every measurement here</h3>
       <label class="toggle small"><input type="checkbox" id="split" ${S.split ? "checked" : ""}/> Split into trend and seasonal</label>
     </div>
-    ${seriesChart({ dates: D.dates, values: v || [], tYears: D.tYears, fit: (t) => fitAt(D, i, t), split: S.split, gps, pair: S.mode === "pair" ? [S.k1, S.k2] : null, cursor: S.mode === "breathe" ? S.cursor : null, seasonalSig: sig })}
-    ${chartKey({ split: S.split, gps, seasonalSig: sig })}
+    ${seriesChart({ dates: D.dates, values: v || [], tYears: D.tYears, fit: (t) => fitAt(D, i, t), split: S.split, gps, compare, pair: S.mode === "pair" ? [S.k1, S.k2] : null, cursor: S.listenK ?? (S.mode === "breathe" ? S.cursor : null), seasonalSig: sig })}
+    ${chartKey({ split: S.split, gps, seasonalSig: sig, compare })}
+    <div class="chart-tools">
+      <button class="plain" id="listen">${isListening() ? "Stop" : "Listen to this spot"}</button>
+      ${compare ? `<button class="plain" id="unpin">Stop comparing</button>` : `<button class="plain" id="pin-btn">Compare with another spot</button>`}
+      <button class="plain" id="csv">Download the numbers</button>
+    </div>
+    ${S.awaitPin ? `<p class="hintline">Now click another spot on the map to compare it with this one.</p>` : ""}
   </div>`;
 
   // two dates
@@ -283,6 +441,8 @@ function renderInspector() {
       ? `<p>Pick the wrong two dates and this spot looks ${lie.diff >= 0 ? "like it rose" : "stable"}: ${fmtShort(D.dates[lie.k1])} to ${fmtShort(D.dates[lie.k2])} shows ${cm(lie.diff)}, while the trend says ${cm(lie.expected)}.</p>
          <button id="show-lie">Show me those two dates</button>`
       : `<p class="muted">No two dates here hide the sinking by more than the measurement uncertainty.</p>`}
+    <h4>Every pair of dates at this spot</h4>
+    ${matrixHTML()}
   </section>`;
 
   // GPS
@@ -319,8 +479,22 @@ function renderInspector() {
       <dt>First and last granule</dt><dd class="gran">${pairs[0]?.granule_id ?? "?"}<br/>${pairs[pairs.length - 1]?.granule_id ?? "?"}</dd>
     </dl></details>`;
 
+  const keep = renderInspector.last === i ? el.scrollTop : 0;
   el.innerHTML = h;
-  el.scrollTop = 0;
+  el.scrollTop = keep;
+  renderInspector.last = i;
+  const nLie = drawMatrix(D, i, [S.k1, S.k2], (a, b) => { S.k1 = a; S.k2 = b; setMode("pair"); });
+  if (nLie != null) $("#matrix-read").insertAdjacentHTML("beforebegin", `<p class="matrix-note">${nLie ? `Outlined squares (${nLie}) are pairs that make this spot look stable or rising while the trend says it sank.` : "No pair here hides the sinking."} The red square is the pair on the map now.</p>`);
+  $("#listen").onclick = () => {
+    if (isListening()) { stopListening(); S.listenK = null; renderInspector(); return; }
+    listen(v || [], { onStep: (k) => { S.listenK = k; renderInspector(); }, onEnd: () => { S.listenK = null; renderInspector(); } });
+    renderInspector();
+  };
+  $("#csv").onclick = () => downloadCSV(D, i, (t) => fitAt(D, i, t), st);
+  const pb = $("#pin-btn");
+  if (pb) pb.onclick = () => { S.awaitPin = true; renderInspector(); };
+  const up = $("#unpin");
+  if (up) up.onclick = () => setPin(-1);
   $("#clear-sel").onclick = () => { S.sel = -1; map.getSource("sel").setData(emptyFC()); renderInspector(); renderTimeline(); };
   $("#split").onchange = (e) => { S.split = e.target.checked; renderInspector(); };
   const g = $("#gps-on");
@@ -502,6 +676,26 @@ function update() {
   renderLegend();
   renderTimeline();
   if (S.sel >= 0) renderInspector();
+  if (S.profile?.b) renderProfile();
+  if (!S.playing) writeHash(S);
+}
+
+function restoreFromHash() {
+  const h = readHash();
+  const N = D.dates.length;
+  const int = (x, lo, hi) => { const n = parseInt(x, 10); return isNaN(n) ? null : Math.max(lo, Math.min(hi, n)); };
+  if (h.a != null) S.k1 = int(h.a, 0, N - 2);
+  if (h.b != null) S.k2 = Math.max(S.k1 + 1, int(h.b, 1, N - 1));
+  if (h.t != null) S.cursor = int(h.t, 0, N - 1);
+  if (h.gps === "1") { S.gps = true; $("#gps-toggle").checked = true; syncStations(); }
+  if (h.cell) select(int(h.cell, 0, D.n - 1));
+  if (h.pin) setPin(int(h.pin, 0, D.n - 1));
+  if (["net", "pair", "breathe", "labels"].includes(h.mode)) setMode(h.mode, { keepCursor: true });
+  if (h.prof) {
+    const q = h.prof.split(",").map(Number);
+    if (q.length === 4 && q.every(isFinite)) { S.profile = { a: [q[0], q[1]] }; addProfMarker("a", S.profile.a); S.profile.b = [q[2], q[3]]; addProfMarker("b", S.profile.b); $("#profile-btn").setAttribute("aria-pressed", "true"); renderProfile(); }
+  }
+  if (h.relief === "1") setRelief(true);
 }
 
 let timer;
@@ -544,6 +738,7 @@ function renderLegend() {
       <p class="hatchnote"><span class="sw hatch"></span>No reliable measurement</p>`;
     if (S.mode !== "net") h += `<p class="note">Same color scale in every view, so two views can be compared directly.</p>`;
   }
+  if (S.relief) h += `<p class="note">3D: height shows the same values as the colors, hugely exaggerated (1 cm of motion ≈ ${Math.round(RELIEF_H / (2 * domain * 100))} m of height). Right-drag or two-finger drag to tilt.</p>`;
   h += `<p class="note">Along the radar's line of sight, relative to GPS station ${ref}. ${prov[0].toUpperCase() + prov.slice(1)}.</p>`;
   $("#legend").innerHTML = h;
 }
@@ -562,10 +757,53 @@ function initControls() {
   $("#tour-prev").onclick = () => tourGo(S.tour - 1);
   $("#tour-next").onclick = () => (S.tour >= TOUR.length - 1 ? tourEnd() : tourGo(S.tour + 1));
   $("#tour-close").onclick = tourEnd;
+  $("#relief-btn").onclick = () => setRelief(!S.relief);
+  $("#profile-btn").onclick = () => (S.drawing || S.profile ? closeProfile() : startProfile());
+  $("#profile-close").onclick = closeProfile;
+  $("#share-btn").onclick = async () => {
+    writeHash(S);
+    try { await navigator.clipboard.writeText(location.href); flash("Link copied. It opens this exact view."); }
+    catch { flash("Copy the address bar to share this exact view."); }
+  };
+  // go to
+  const go = $("#goto");
+  go.innerHTML = `<option value="">Go to…</option>` + PLACES.map((p, k) => `<option value="p${k}">${p.name}</option>`).join("") +
+    D.stations.map((st) => `<option value="s${st.station}">GPS ${st.station}${st.role === "reference" ? " (reference)" : ""}</option>`).join("");
+  go.onchange = () => {
+    const v = go.value; go.value = "";
+    if (v[0] === "p") { const p = PLACES[+v.slice(1)]; map.flyTo({ center: p.ll, zoom: p.z, duration: reduceMotion ? 0 : 1400 }); if (!p.noSelect) { const i = cellAt(D, ...p.ll); if (i >= 0) select(i); } }
+    if (v[0] === "s") { const st = D.stations.find((x) => x.station === v.slice(1)); select(st.cell_index, { fly: true }); }
+  };
   document.addEventListener("keydown", (e) => {
-    if (e.key === "Escape" && S.tour >= 0) tourEnd();
-    if (e.key === " " && e.target === document.body) { e.preventDefault(); S.playing ? stop() : play(); }
+    const typing = /INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.target.getAttribute("role") === "slider";
+    if (e.key === "Escape") { if (S.tour >= 0) tourEnd(); else if (S.drawing || S.profile) closeProfile(); else if (S.awaitPin) { S.awaitPin = false; renderInspector(); } }
+    if (typing || e.metaKey || e.ctrlKey) return;
+    const k = e.key.toLowerCase();
+    if (k === " ") { e.preventDefault(); S.playing ? stop() : play(); }
+    else if (["1", "2", "3", "4"].includes(k)) setMode(["net", "pair", "breathe", "labels"][+k - 1]);
+    else if (k === "g") { $("#gps-toggle").click(); }
+    else if (k === "d") setRelief(!S.relief);
+    else if (k === "p") $("#profile-btn").click();
+    else if (k === "w") tourGo(0);
+    else if ((k === "arrowright" || k === "arrowleft") && S.mode !== "pair") {
+      stop(); if (S.mode !== "breathe") setMode("breathe", { keepCursor: true });
+      S.cursor = Math.max(0, Math.min(D.dates.length - 1, S.cursor + (k === "arrowright" ? 1 : -1))); update();
+    }
   });
+}
+
+const PLACES = [
+  { name: "Corcoran", ll: [-119.56, 36.098], z: 10.5 },
+  { name: "Mendota", ll: [-120.381, 36.754], z: 10.5 },
+  { name: "Whole study area", ll: [-120.0, 36.45], z: 8.4, noSelect: true },
+];
+
+let flashT;
+function flash(msg) {
+  let el = $("#flash");
+  if (!el) { el = document.createElement("div"); el.id = "flash"; el.className = "flash"; el.setAttribute("role", "status"); document.body.appendChild(el); }
+  el.textContent = msg; el.hidden = false;
+  clearTimeout(flashT); flashT = setTimeout(() => (el.hidden = true), 2600);
 }
 
 /* ---------------- guided walkthrough ---------------- */
@@ -582,6 +820,7 @@ const api = {
   fitAll: () => { const b = D.bbox; map.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 24, duration: reduceMotion ? 0 : 1200 }); },
   mostMisleadingPair: (i) => mostMisleadingPair(D, i),
   render: () => { renderInspector(); update(); },
+  setRelief: (on) => S.relief !== on && setRelief(on),
   fmtShort, cm,
 };
 

@@ -28,7 +28,13 @@ To refresh the samples: `python3 contracts/samples/make_samples.py && cp contrac
 | GPS check: station markers, GPS line on the chart, residual table | `main.js` |
 | How we got these numbers (evidence receipt) | `main.js` `renderInspector` |
 | Guided walkthrough, mirrors the 30-second pitch | `tour.js` |
-| Limits panel (text from `docs/pitch/limits.md`) | `limits.js` |
+| Limits panel (text from `docs/pitch/limits.md`) and keyboard shortcuts | `limits.js` |
+| Every pair of dates at a spot: triangle chart, outlined pairs hide the sinking, click to map them | `matrix.js` |
+| Cross-section: draw a line (canal, road, levee), drag its ends, hover to find the spot | `profile.js` |
+| 3D: same values as height, with the exaggeration stated; animates with Breathe | `main.js` `updateRelief` |
+| Compare two spots (Shift-click or the button), listen to a spot, download its numbers as CSV | `main.js`, `extras.js` |
+| Go to a place or station; Share view copies a link that reopens the exact view | `main.js`, `extras.js` |
+| Hover sparkline on the map | `main.js` `hoverReadout` |
 
 ## Design
 USGS topographic quad palette: on those maps purple marks change seen from the air, so purple

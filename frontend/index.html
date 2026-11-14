@@ -36,7 +36,19 @@
     <section class="mapwrap" aria-label="Map">
       <div id="map"></div>
 
+      <div class="maptools" role="toolbar" aria-label="Map tools">
+        <select id="goto" aria-label="Go to a place"></select>
+        <button id="profile-btn" class="tool" aria-pressed="false" title="Draw a cross-section (P)">Cross-section</button>
+        <button id="relief-btn" class="tool" aria-pressed="false" title="Show as 3D relief (D)">3D</button>
+        <button id="share-btn" class="tool" title="Copy a link to this exact view">Share view</button>
+      </div>
+
       <div id="legend" class="legend" aria-live="polite"></div>
+
+      <section id="profile" class="profile" hidden aria-label="Cross-section">
+        <button id="profile-close" class="plain">Close</button>
+        <div id="profile-body"></div>
+      </section>
 
       <div id="tour" class="tour" hidden role="dialog" aria-label="Guided walkthrough">
         <p class="tour-step" id="tour-step"></p>

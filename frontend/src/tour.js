@@ -29,6 +29,7 @@ export const TOUR = [
   {
     title: "A town that keeps raising its levee",
     run(api) {
+      api.setRelief(false);
       api.setMode("net");
       api.flyTo(...CORCORAN, 9.2);
       return `<p>Corcoran's flood levee was built to 195 feet in 1983. By 2017 it had sunk to 188 feet. It was
@@ -61,15 +62,18 @@ export const TOUR = [
     run(api) {
       api.fitAll();
       api.setMode("breathe");
+      api.setRelief(true);
       api.play();
       return `<p>Each frame is one radar pass, every 12 days. Watch the ground ease up when water returns in
-        winter and settle in the dry months, while the sinking areas keep going down underneath.</p>`;
+        winter and settle in the dry months, while the sinking areas keep going down underneath.</p>
+        <p class="cite">Height in 3D is hugely exaggerated so millimetres are visible.</p>`;
     },
   },
   {
     title: "Separate the breathing from the sinking",
     run(api) {
       api.stop();
+      api.setRelief(false);
       api.setMode("net");
       const st = demoStation(api, "P307") || api.D.stations[0];
       api.setSplit(true);

@@ -25,4 +25,8 @@ check, not a valley-wide accuracy claim.</p>
 in 2027. Each pair is corrected for the ionosphere using the product's own correction layer.
 Published figures (levee heights, canal capacity) are other people's measurements and are
 credited where shown.</p>
+<h3>Keyboard</h3>
+<p class="keys"><kbd>1</kbd>–<kbd>4</kbd> switch views. <kbd>Space</kbd> plays the record. <kbd>←</kbd> <kbd>→</kbd> step one radar pass.
+<kbd>G</kbd> GPS check. <kbd>D</kbd> 3D. <kbd>P</kbd> cross-section. <kbd>W</kbd> walkthrough. <kbd>Esc</kbd> closes things.
+Shift-click a second spot to compare it with the one you have open.</p>
 `;
