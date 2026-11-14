@@ -41,7 +41,7 @@ export function Numbers({ D }) {
     <section ref={ref} className="relative py-[12vh] border-y border-hair overflow-hidden">
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(240,112,90,.08),transparent_55%)]" />
       <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
-        <p className="font-serif italic text-accent-2 text-[22px] leading-none">By the numbers{D.synthetic ? ", from the preview data" : ""}</p>
+        <p className="text-[15px] text-mute">By the numbers{D.synthetic ? ", from the preview data" : ""}</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mt-10">
           {items.map(([num, label], n) => (
             <div key={n} className={`transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-6"}`} style={{ transitionDelay: `${n * 120}ms` }}>

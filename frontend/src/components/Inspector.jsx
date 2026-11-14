@@ -307,7 +307,7 @@ function Overview({ D, actions }) {
 
   return (
     <div>
-      <h2 className="font-serif text-[34px] leading-[1.05]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
+      <h2 className="font-display font-bold tracking-[-0.01em] text-[30px] leading-[1.08]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Groundwater pumping lowers the water pressure underground, and the ground settles. Some of that comes back when the water returns each winter, and some doesn't. Compare the wrong two dates and sinking ground can look stable.</p>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Click anywhere on the map, or a GPS station, to see every measurement at that spot and how sure we are.</p>
       <div className="grid grid-cols-2 gap-2 mt-5">

@@ -80,7 +80,7 @@ export function tourSteps(D) {
       body: (
         <>
           <p>GPS station {st.station} was never used to calibrate the radar. Its line on the chart is an independent check.{st.residuals?.net_m != null && ` Over the whole record the radar and GPS differ by ${cm(st.residuals.net_m)}.`}</p>
-          <p className="font-serif italic text-[24px] text-accent-2 leading-tight pt-1">We don't tell you the ground is fine. We show you how sure we are.</p>
+          <p className="text-[19px] font-medium text-ink leading-snug pt-1">We don't tell you the ground is fine. We show you how sure we are.</p>
         </>
       ),
     },
