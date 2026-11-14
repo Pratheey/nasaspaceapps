@@ -6,6 +6,7 @@ import Globe from "./Globe.jsx";
 import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
 import { Numbers } from "./Game.jsx";
+import { MEDIA, NasaVideo, MaybeImage, MissionPatch, Telemetry, Chirp, RadarPing } from "./Space.jsx";
 import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
 import { cm, fmtShort, fmtDate } from "../lib/fmt.js";
@@ -28,16 +29,21 @@ export default function Story({ D, onExplore }) {
 
   return (
     <div className="bg-space text-ink overflow-x-clip">
+      <RadarPing />
       <TopBar D={D} onExplore={onExplore} />
       <Hero D={D} onExplore={onExplore} />
+      <Telemetry items={[["mission", "NASA–ISRO NISAR"], ["launched", "2025-07-30"], ["orbit", "~747 km, sun-synchronous"], ["inclination", "98.4°"], ["reflector", "12 m gold mesh"], ["L-band", "λ 24 cm"], ["revisit", "12 days"], ["fringe", "11.9 cm"], ["study area", "36.45° N 120.0° W"], ["passes", `${D.dates.length}`], ["reference", `GPS ${D.meta.reference_station}`]]} />
       <PoleScene />
       <AquiferScene />
+      <Chirp className="my-6" />
       <BreatheScene D={D} demo={demo} />
       <LieScene D={D} st={demo.sink} />
       <Numbers D={D} />
       <OrbitScene />
       <InstrumentScene D={D} />
+      <FirstLight />
       <MeasureScene />
+      <Chirp className="my-6" />
       <GpsScene D={D} />
       <MattersScene />
       <Finale D={D} onExplore={onExplore} />
@@ -85,14 +91,16 @@ function Hero({ D, onExplore }) {
   return (
     <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
       <div className="absolute inset-0" style={{ transform: `translate3d(0, ${y * 0.35}px, 0) scale(${1.08 + y * 0.0002})` }}>
-        <NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
-          className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
-          fallback={<div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="w-[70%] max-w-[760px] opacity-90 translate-x-[18%]" /></div>} />
+        <NasaVideo srcs={MEDIA.heroVideo} className="absolute inset-0 w-full h-full object-cover object-[60%_50%]"
+          fallback={<NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
+            className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
+            fallback={<div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="w-[70%] max-w-[760px] opacity-90 translate-x-[18%]" /></div>} />} />
       </div>
       <Starfield className="absolute inset-0 w-full h-full opacity-60 mix-blend-screen" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#0F1420_0%,rgba(15,20,32,.86)_34%,rgba(15,20,32,.25)_70%,rgba(15,20,32,.1)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-space to-transparent" />
 
+      <MissionPatch size={170} className="absolute right-10 top-28 z-10 opacity-90 max-lg:hidden drop-shadow-[0_0_30px_rgba(111,168,255,.25)]" />
       <div className="relative h-full flex flex-col justify-center pt-24 max-sm:pt-36 pb-10 px-6 md:px-14 max-w-[1400px] mx-auto" style={{ opacity: fade }}>
         <div className="intro-in max-w-[780px]">
           <p className="font-serif italic text-accent-2 text-[22px] leading-none flex items-center gap-2"><Radar size={16} /> NASA Space Apps 2026, Dancing with the SARs</p>
@@ -121,7 +129,7 @@ function Hero({ D, onExplore }) {
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-[11.5px] text-mute">Image: NISAR over California, artist's concept. NASA/JPL-Caltech.</p>
+        <p className="mt-3 text-[11.5px] text-mute">Background: NISAR animation, NASA Scientific Visualization Studio. Artist's concept: NASA/JPL-Caltech.</p>
       </div>
     </section>
   );
@@ -178,6 +186,40 @@ function PoleScene() {
             <text x="48" y={(top + ground) / 2} fontFamily="Saira Semi Condensed" fontWeight="600" fontSize="22" fill="#A9CBFF">{metres} m</text>
           </svg>
         </div>
+      </div>
+    </section>
+  );
+}
+
+/* ------------------------------------------------------------------ */
+function FirstLight() {
+  const [ref, seen] = useInView(0.15);
+  const [hidden, setHidden] = useState({});
+  const tiles = [
+    { id: "nd", kind: "img", srcs: MEDIA.northDakota, title: "North Dakota farmland", text: "Aug 23, 2025: wetlands and forest along the Forest River, with circular and rectangular fields of pasture, corn or soy.", span: "lg:col-span-2 lg:row-span-2" },
+    { id: "me", kind: "img", srcs: MEDIA.maine, title: "Mount Desert Island, Maine", text: "Aug 21, 2025: green is forest, magenta is hard surfaces like Bar Harbor, dark is water." },
+    { id: "orbit", kind: "video", srcs: MEDIA.orbitVideo, title: "NISAR in orbit", text: "Animation, NASA Scientific Visualization Studio." },
+    { id: "art", kind: "img", srcs: IMAGES.orbit, title: "The 12-metre reflector", text: "Artist's concept, NASA/JPL-Caltech." },
+  ].filter((t) => !hidden[t.id]);
+  return (
+    <section ref={ref} className="relative py-[12vh] px-6 md:px-14 max-w-[1400px] mx-auto">
+      <p className="font-serif italic text-accent-2 text-[22px] leading-none">First light</p>
+      <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3 max-w-[900px]">NISAR's first look at Earth.</h2>
+      <p className="text-[18px] leading-relaxed text-ink/75 mt-5 max-w-[700px]">The mission's first released radar images, from August 2025, made by the same L-band radar that measured our valley.</p>
+      <div className={`grid lg:grid-cols-3 gap-4 mt-10 auto-rows-[260px] transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
+        {tiles.map((t) => (
+          <figure key={t.id} className={`group relative overflow-hidden rounded-2xl border border-hair-2 bg-deck ${t.span || ""}`}>
+            {t.kind === "video"
+              ? <NasaVideo srcs={t.srcs} className="absolute inset-0 w-full h-full object-cover" fallback={<SatelliteArt className="absolute inset-0 m-auto w-[80%] h-full" />} />
+              : <MaybeImage srcs={t.srcs} alt={t.title} onFail={() => setHidden((h) => ({ ...h, [t.id]: true }))} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-[1600ms] ease-out" />}
+            <div className="absolute inset-0 bg-gradient-to-t from-space via-space/20 to-transparent" />
+            <figcaption className="absolute left-0 right-0 bottom-0 p-5">
+              <p className="font-display text-[20px] font-semibold">{t.title}</p>
+              <p className="text-[13.5px] text-ink/75 mt-1 max-w-[520px] max-h-0 group-hover:max-h-24 overflow-hidden transition-all duration-500">{t.text}</p>
+            </figcaption>
+            <span className="absolute top-4 right-4 font-mono text-[11px] text-ink/60">NASA/JPL-Caltech</span>
+          </figure>
+        ))}
       </div>
     </section>
   );
@@ -547,49 +589,61 @@ function Finale({ D, onExplore }) {
 
 /* ------------------------------------------------------------------ */
 const TEAM = [
-  ["Ryan Jian", "rjian", "Team lead. Integration, story and pitch"],
-  ["Pratheek Danam", "pratheey", "NISAR data: radar pairs, ionosphere correction, masking"],
-  ["Ismail Churaev", "ischur", "Measurement and model: net change, seasonal fit, uncertainty"],
-  ["Tsz Liang", "s1evenl_", "Radar products: polarization, coverage, descending track"],
-  ["Daniel Li", "danielli", "GPS validation and context layers"],
-  ["Avinash Lee", "avilee", "Interactive map and app"],
+  ["01", "Ryan Jian", "rjian", "ryan", "Team lead"],
+  ["02", "Daniel Li", "danielli", "daniel", "GPS"],
+  ["03", "Tsz “Steven” Liang", "s1evenl_", "steven", "Radar"],
+  ["04", "Ismail Churaev", "ischur", "ismail", "Model"],
+  ["05", "Pratheek Danam", "pratheey", "pratheek", "NISAR data"],
+  ["06", "Avinash Lee", "avilee", "avi", "App"],
 ];
 
-function Team() {
-  const [ref, seen] = useInView(0.2);
+// Trading-card style: tilts toward the cursor, colors up on hover, holographic sheen.
+function PlayerCard({ no, name, handle, img, role, delay, seen }) {
+  const ref = useRef(null);
+  const [t, setT] = useState({ x: 0, y: 0, on: false });
+  const move = (e) => {
+    if (reduceMotion) return;
+    const r = ref.current.getBoundingClientRect();
+    setT({ x: (e.clientX - r.left) / r.width - 0.5, y: (e.clientY - r.top) / r.height - 0.5, on: true });
+  };
   return (
-    <section id="team" ref={ref} className="relative py-[14vh] border-t border-hair">
-      <div className="px-6 md:px-14 max-w-[1400px] mx-auto grid lg:grid-cols-[1fr_1.3fr] gap-14">
-        <div className={`transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
-          <p className="font-serif italic text-accent-2 text-[22px] leading-none">The team</p>
-          <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Six people, one valley, one weekend.</h2>
-          <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
-            We are tech enthusiasts with backgrounds in software, data analysis and engineering, driven by curiosity about real-world
-            science. We work fast, talk openly and iterate quickly, turning complex data into something anyone can explore.
-          </p>
-          <div className="mt-10 rounded-xl border border-hair-2 bg-deck/60 p-6">
-            <p className="font-serif italic text-[20px] text-accent-2 leading-none">The challenge</p>
-            <p className="font-display text-[22px] font-semibold mt-3">Dancing with the SARs, NASA Space Apps 2026</p>
-            <p className="text-[15.5px] leading-relaxed text-ink/80 mt-3">
-              Earth's surface is always changing, through natural processes and human activity, and those changes are hard to see,
-              understand and explain. The challenge: build an interactive application that uses radar data from the NASA-ISRO NISAR
-              mission to track and visualize surface change. We chose farmland that breathes and sinks with groundwater pumping.
-            </p>
-          </div>
+    <li className={`[perspective:900px] transition-all duration-700 ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-10"}`} style={{ transitionDelay: `${delay}ms` }}>
+      <div ref={ref} onMouseMove={move} onMouseLeave={() => setT({ x: 0, y: 0, on: false })}
+        className="group relative aspect-[3/4.2] rounded-2xl overflow-hidden border border-hair-2 bg-deck shadow-[0_20px_60px_rgba(0,0,0,.45)] transition-transform duration-200 ease-out"
+        style={{ transform: `rotateY(${t.x * 14}deg) rotateX(${-t.y * 14}deg) ${t.on ? "scale(1.03)" : ""}` }}>
+        <img src={`./team/${img}.jpg`} alt={name} loading="lazy"
+          className="absolute inset-0 w-full h-full object-cover grayscale contrast-[1.1] brightness-90 group-hover:grayscale-0 group-hover:brightness-100 transition-[filter] duration-500" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(15,20,32,0)_35%,rgba(15,20,32,.92)_88%)]" />
+        <div className="absolute inset-0 mix-blend-color bg-accent/40 group-hover:opacity-0 transition-opacity duration-500" />
+        <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(0deg,rgba(255,255,255,.06)_0_1px,transparent_1px_3px)]" />
+        <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"
+          style={{ background: `radial-gradient(circle at ${50 + t.x * 100}% ${50 + t.y * 100}%, rgba(255,255,255,.55), transparent 45%), linear-gradient(${115 + t.x * 60}deg, rgba(240,112,90,.35), rgba(111,168,255,.35), rgba(95,201,224,.35))` }} />
+        <span className="absolute top-3 left-4 font-wide text-[13px] text-accent-2">{no}</span>
+        <span className="absolute top-3 right-3 rounded-full border border-accent/50 bg-space/70 backdrop-blur px-2.5 py-0.5 font-wide text-[9.5px] tracking-wider text-accent-2">{role}</span>
+        <div className="absolute left-0 right-0 bottom-0 p-4">
+          <p className="font-display text-[21px] font-bold leading-tight">{name}</p>
+          <p className="font-mono text-[12px] text-ink/60 mt-0.5">@{handle}</p>
         </div>
-        <ul className="grid sm:grid-cols-2 gap-3 self-center">
-          {TEAM.map(([name, handle, role], n) => (
-            <li key={handle} className={`rounded-xl border border-hair bg-deck/60 p-5 flex gap-4 items-start transition-all duration-700 hover:border-accent/50 hover:bg-deck ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`} style={{ transitionDelay: `${n * 90}ms` }}>
-              <span className="shrink-0 grid place-items-center w-12 h-12 rounded-full border border-accent/40 bg-[radial-gradient(circle_at_30%_30%,rgba(111,168,255,.35),rgba(15,20,32,.9))] font-display font-bold text-[16px]" aria-hidden="true">
-                {name.split(" ").map((w) => w[0]).join("")}
-              </span>
-              <div className="min-w-0">
-                <p className="font-display text-[19px] font-semibold leading-tight">{name}</p>
-                <p className="font-mono text-[12px] text-mute mt-0.5">@{handle}</p>
-                <p className="text-[14px] text-ink/80 mt-2 leading-snug">{role}</p>
-              </div>
-            </li>
-          ))}
+      </div>
+    </li>
+  );
+}
+
+function Team() {
+  const [ref, seen] = useInView(0.15);
+  return (
+    <section id="team" ref={ref} className="relative py-[14vh] border-t border-hair overflow-hidden">
+      <Starfield className="absolute inset-0 w-full h-full opacity-30" density={120} />
+      <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
+        <div className="flex flex-wrap items-end justify-between gap-6">
+          <div>
+            <p className="font-serif italic text-accent-2 text-[22px] leading-none">The crew</p>
+            <h2 className="font-wide text-[clamp(26px,3.2vw,46px)] leading-[1.05] mt-4">Mission team</h2>
+          </div>
+          <p className="text-[15.5px] text-ink/70 max-w-[460px]">Software, data analysis and engineering, built in one weekend for NASA Space Apps 2026, Dancing with the SARs.</p>
+        </div>
+        <ul className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mt-10">
+          {TEAM.map(([no, name, handle, img, role], n) => <PlayerCard key={handle} {...{ no, name, handle, img, role, seen }} delay={n * 90} />)}
         </ul>
       </div>
     </section>

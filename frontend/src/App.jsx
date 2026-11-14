@@ -232,6 +232,10 @@ function Explorer({ D, onStory, startTour }) {
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
               onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} />
 
+            {S.mode === "breathe" && !S.relief && (
+              // a radar swath sweeps the map on every new pass
+              <div key={S.cursor} aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[38%] z-[3] bg-[linear-gradient(90deg,transparent,rgba(111,168,255,.16)_45%,rgba(169,203,255,.32)_50%,rgba(111,168,255,.16)_55%,transparent)] animate-[sweep_.9s_ease-out_both] motion-reduce:hidden" />
+            )}
             <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] overflow-x-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur shadow-[0_8px_30px_rgba(0,0,0,.4)]">
               <button onClick={() => setCmd(true)} title="Search (Ctrl+K)" aria-label="Search places, views and tools"
                 className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
