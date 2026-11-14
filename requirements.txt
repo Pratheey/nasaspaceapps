@@ -1,0 +1,6 @@
+# Shared Python deps (data + backend lanes). Add one line per package and don't reorder,
+# so two people adding packages at once don't conflict.
+pandas
+numpy
+matplotlib
+jupyterlab

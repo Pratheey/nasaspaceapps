@@ -1,0 +1,23 @@
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+jobs:
+  repo-hygiene:
+    name: No big files or secrets
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: No committed file over 5 MB
+        run: |
+          big=$(git ls-files -z | xargs -0 du -k 2>/dev/null | awk '$1 > 5120 {print $2}')
+          if [ -n "$big" ]; then echo "Files over 5 MB (keep them out of git, see data/README.md):"; echo "$big"; exit 1; fi
+      - name: No .env or raw data committed
+        run: |
+          bad=$(git ls-files | grep -E '(^|/)\.env($|\.)|^data/raw/[^.]' | grep -v '\.env\.example$' || true)
+          if [ -n "$bad" ]; then echo "Should not be committed:"; echo "$bad"; exit 1; fi
+
+  # Add build/test jobs here once the stack is decided (e.g. frontend build, backend tests).

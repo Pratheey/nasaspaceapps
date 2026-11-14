@@ -1,0 +1,13 @@
+# Who must review changes to each path. Fill in GitHub usernames, then uncomment.
+# Keep this in sync with the lane table in AGENTS.md. The last matching line wins.
+#
+# *                      @INTEGRATOR_USERNAME
+# /data/                 @DATA_LEAD_USERNAME
+# /requirements.txt      @DATA_LEAD_USERNAME @BACKEND_USERNAME
+# /backend/              @BACKEND_USERNAME
+# /frontend/             @FRONTEND_USERNAME
+# /docs/pitch/           @STORY_USERNAME
+# /contracts/            @INTEGRATOR_USERNAME
+# /AGENTS.md             @INTEGRATOR_USERNAME
+# /docs/PROJECT.md       @INTEGRATOR_USERNAME
+# /docs/DECISIONS.md     @INTEGRATOR_USERNAME

@@ -1,0 +1,33 @@
+# Per-person settings
+.lane
+.env
+.env.*
+!.env.example
+.claude/settings.local.json
+
+# Raw NASA downloads (big). Keep only data/processed/ in git.
+data/raw/*
+!data/raw/.gitkeep
+*.nc
+*.nc4
+*.h5
+*.hdf
+*.he5
+*.grib2
+
+# Python
+.venv/
+__pycache__/
+*.pyc
+.ipynb_checkpoints/
+
+# Node / web
+node_modules/
+dist/
+build/
+
+# OS / editors
+.DS_Store
+.vscode/*
+!.vscode/extensions.json
+.idea/
