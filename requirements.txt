@@ -4,3 +4,9 @@ pandas
 numpy
 matplotlib
 jupyterlab
+xarray
+h5netcdf
+h5py
+scipy
+pyproj
+earthaccess
