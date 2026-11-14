@@ -39,7 +39,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
   }
   const months = [];
   let lastM = -1;
-  D.dates.forEach((d, k) => { if (d.getUTCMonth() !== lastM) { months.push(k); lastM = d.getUTCMonth(); } });
+  D.dates.forEach((d, k) => { if (d.getUTCMonth() !== lastM) { lastM = d.getUTCMonth(); if (!months.length || k - months[months.length - 1] >= 2) months.push(k); } });
   const days = Math.round((D.dates[S.k2] - D.dates[S.k1]) / 864e5);
 
   return (

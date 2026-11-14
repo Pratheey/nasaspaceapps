@@ -5,7 +5,7 @@ import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
 import Timeline from "./components/Timeline.jsx";
 import Legend from "./components/Legend.jsx";
-import { ProfilePanel, TourCard, Limits, PreviewTag } from "./components/Panels.jsx";
+import { ProfilePanel, TourCard, Limits } from "./components/Panels.jsx";
 import { loadData, cellAt, cellBounds, fitAt } from "./lib/data.js";
 import { cellValue, netDomain, MODES } from "./lib/view.js";
 import { cm } from "./lib/fmt.js";
@@ -38,7 +38,7 @@ function Shell({ D }) {
   useEffect(() => { document.documentElement.style.overflow = view === "explore" ? "hidden" : ""; }, [view]);
   return view === "story"
     ? <Story D={D} onExplore={() => go("explore")} />
-    : <div className="h-[100svh] [animation:rise-in_.6s_both]"><Explorer D={D} onStory={() => go("story")} startTour={tourOnOpen} /></div>;
+    : <div className="h-[100svh] overflow-y-auto lg:overflow-hidden [animation:rise-in_.6s_both]"><Explorer D={D} onStory={() => go("story")} startTour={tourOnOpen} /></div>;
 }
 
 function Explorer({ D, onStory, startTour }) {
@@ -190,13 +190,13 @@ function Explorer({ D, onStory, startTour }) {
   })();
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="lg:h-full flex flex-col">
 
       <header className="shrink-0 flex items-center gap-6 px-5 h-[60px] border-b border-hair bg-space max-lg:flex-wrap max-lg:h-auto max-lg:py-2 max-lg:gap-2">
         <div className="flex items-center gap-3 min-w-0">
           <button onClick={onStory} title="Back to the story" aria-label="Back to the story" className="rounded-full hover:scale-105 transition"><Mark size={32} /></button>
           <div className="min-w-0">
-            <h1 className="font-display font-bold text-[21px] leading-none">The Breathing Ground</h1>
+            <h1 className="font-display font-bold text-[21px] leading-none whitespace-nowrap">The Breathing Ground</h1>
             <p className="text-[12px] text-mute mt-1 truncate max-[1500px]:hidden">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
           </div>
         </div>
@@ -206,7 +206,7 @@ function Explorer({ D, onStory, startTour }) {
             return (
               <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
                 className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 font-display text-[15px] font-medium transition-colors ${on ? "text-accent-2 bg-accent/10" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
-                <Icon size={15} /> {m.name}
+                <Icon size={15} className="shrink-0" /> <span className="lg:max-xl:sr-only">{m.name}</span>
                 {on && <span className="absolute left-3 right-3 -bottom-[11px] h-[2px] bg-accent shadow-[0_0_10px_#6FA8FF] max-lg:hidden" />}
               </button>
             );
@@ -218,17 +218,17 @@ function Explorer({ D, onStory, startTour }) {
             <Satellite size={15} /> GPS check
           </button>
           <button onClick={onStory} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
-            <BookOpen size={15} /> Story
+            <BookOpen size={15} /> <span className="lg:max-xl:sr-only">Story</span>
           </button>
           <button onClick={() => setLimits(true)} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
-            <Info size={15} /> Limits
+            <Info size={15} /> <span className="lg:max-xl:sr-only">Limits</span>
           </button>
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 grid grid-cols-[1fr_440px] max-lg:flex max-lg:flex-col">
+      <main className="flex-1 min-h-0 grid grid-cols-[minmax(0,1fr)_clamp(360px,32vw,440px)] max-lg:flex max-lg:flex-col">
         <div className="min-h-0 flex flex-col">
-          <div className="relative flex-1 min-h-[420px] overflow-hidden">
+          <div className="@container relative flex-1 min-h-[420px] overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]">
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
               onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} />
 
@@ -239,9 +239,9 @@ function Explorer({ D, onStory, startTour }) {
             <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] overflow-x-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur shadow-[0_8px_30px_rgba(0,0,0,.4)]">
               <button onClick={() => setCmd(true)} title="Search (Ctrl+K)" aria-label="Search places, views and tools"
                 className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
-                <Search size={15} className="text-accent" /><kbd className="font-mono text-[11px] text-mute border border-hair-2 rounded px-1 whitespace-nowrap max-sm:hidden">Ctrl K</kbd>
+                <Search size={15} className="text-accent" /><kbd className="font-mono text-[11px] text-mute border border-hair-2 rounded px-1 whitespace-nowrap @max-[700px]:hidden">Ctrl K</kbd>
               </button>
-              <label className="relative flex items-center">
+              <label className="relative flex items-center @max-[560px]:hidden">
                 <MapPin size={15} className="absolute left-3 text-accent pointer-events-none" />
                 <select aria-label="Go to a place" value="" onChange={(e) => {
                   const v = e.target.value;
@@ -262,11 +262,11 @@ function Explorer({ D, onStory, startTour }) {
               ].map(({ icon: Icon, label, on, act, key }) => (
                 <button key={label} onClick={act} aria-pressed={key ? on : undefined} title={key ? `${label} (${key})` : label}
                   className={`inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] ${on ? "bg-accent text-space font-semibold" : "text-ink/90 hover:bg-deck-2"}`}>
-                  <Icon size={15} className="shrink-0" /> <span className="whitespace-nowrap max-sm:sr-only">{label}</span>
+                  <Icon size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[880px]:sr-only">{label}</span>
                 </button>
               ))}
               <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-accent-2 hover:bg-deck-2">
-                <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap max-sm:sr-only">Walkthrough</span>
+                <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[880px]:sr-only">Walkthrough</span>
               </button>
             </div>
 
@@ -274,9 +274,11 @@ function Explorer({ D, onStory, startTour }) {
               <p className="absolute top-[66px] left-4 z-10 rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
             )}
 
-            <div className="absolute left-4 bottom-4 z-10 max-md:left-2 max-md:right-2 max-md:bottom-2">
-              <Legend D={D} S={S} domain={domain} />
-            </div>
+            {S.tour < 0 && (
+              <div className="absolute left-4 bottom-4 z-10 max-lg:hidden">
+                <Legend D={D} S={S} domain={domain} />
+              </div>
+            )}
 
             {hv && hover && (
               <div className="pointer-events-none absolute z-20 flex items-center gap-2 rounded-md bg-space/95 border border-hair-2 px-2 py-1 text-[12.5px] shadow-lg"
@@ -298,6 +300,7 @@ function Explorer({ D, onStory, startTour }) {
             )}
           </div>
 
+          <div className="lg:hidden px-3 pt-3"><Legend D={D} S={S} domain={domain} /></div>
           {S.profile && (
             <ProfilePanel D={D} S={S} valueAt={valueAt} onClose={() => { mapRef.current?.showProbe(null); set({ profile: null, drawing: false }); }}
               onProbe={(ll) => mapRef.current?.showProbe(ll)} onPick={(i) => select(i)} />
@@ -308,13 +311,12 @@ function Explorer({ D, onStory, startTour }) {
             onPlay={togglePlay} onStep={step} />
         </div>
 
-        <div className="min-h-0 border-l border-hair bg-deck/40 max-lg:border-l-0 max-lg:border-t">
+        <div className="min-h-0 min-w-0 overflow-hidden border-l border-hair bg-deck/40 max-lg:border-l-0 max-lg:border-t max-lg:overflow-visible">
           <Inspector D={D} S={S} set={set} actions={actions} stationAt={stationAt} placeName={placeName} />
         </div>
       </main>
 
       <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />
-      {D.synthetic && <PreviewTag />}
       {limits && <Limits D={D} onClose={() => setLimits(false)} />}
       {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(111,168,255,.45)]">{flash}</div>}
     </div>
