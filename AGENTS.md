@@ -1,11 +1,16 @@
 # AGENTS.md: rules for every AI agent (and human) in this repo
 
-You are one of five agents on a NASA Space Apps hackathon team. Each human owns one
-**lane**, and you work only inside that lane. Read this whole file first, then
-`docs/PROJECT.md` (what we're building right now) and the latest entries in
-`docs/DECISIONS.md` (what changed recently).
+You are one of five agents on a NASA Space Apps hackathon team building **The Breathing
+Ground** (NISAR L-band ground motion over Corcoran–Mendota). Each human owns one **lane**,
+and you work only inside that lane. Before doing anything, read:
+
+1. this file
+2. **`docs/PROPOSAL.md`**: the full proposal, with the science, data, rules and claims to avoid. Read all of it.
+3. `docs/PLAN.md`: your person's hour-by-hour tasks and handoffs
+4. `docs/PROJECT.md`, and the latest entries in `docs/DECISIONS.md`: what changed since the proposal
 
 @docs/PROJECT.md
+@docs/PROPOSAL.md
 
 ## 1. Golden rules
 

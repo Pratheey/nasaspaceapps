@@ -103,7 +103,7 @@ You keep everyone unblocked and own what the judges read and hear.
 
 | Hours | Task | Done when |
 |---|---|---|
-| 0–1 | Add collaborators, protect `main`, create a shared Drive folder for big files, and check that everyone has set `.lane`. Save the proposal as `docs/PROPOSAL.md` and fill in `docs/PROJECT.md`. | Everyone can push branches |
+| 0–1 | Add collaborators, protect `main`, create a shared Drive folder for big files, and check that everyone has set `.lane`. Fill in `docs/PROJECT.md` from `docs/PROPOSAL.md`. | Everyone can push branches |
 | 1–2 | 15-minute contracts meeting. Write the formats in `contracts/`, and record in `docs/DECISIONS.md`: the reference station (one station; the rest held out), the LOS sign convention, metres vs cm, and the app's stack. | **H-2**, check-in 1 |
 | 2–3 | Hand-make small fake app files in the agreed format for Avi. | **H-3** |
 | 3–6 | Turn this plan into GitHub issues, one per task. Merge PRs. Run the go/no-go at hour 5 and record the result. | Board live, **H-5** logged |
