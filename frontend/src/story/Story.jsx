@@ -3,7 +3,9 @@ import Lenis from "lenis";
 import { ArrowDown, Map as MapIcon, Radar, Satellite, Waves, CalendarRange, Activity, Route, Box } from "lucide-react";
 import { NasaImage, Starfield, SatelliteArt, IMAGES } from "./art.jsx";
 import Globe from "./Globe.jsx";
+import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
+import { SpotGame, Numbers } from "./Game.jsx";
 import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
 import { cm, fmtShort, fmtDate } from "../lib/fmt.js";
@@ -32,6 +34,8 @@ export default function Story({ D, onExplore }) {
       <AquiferScene />
       <BreatheScene D={D} demo={demo} />
       <LieScene D={D} st={demo.sink} />
+      <SpotGame D={D} />
+      <Numbers D={D} />
       <OrbitScene />
       <InstrumentScene D={D} />
       <MeasureScene />
@@ -39,6 +43,7 @@ export default function Story({ D, onExplore }) {
       <MattersScene />
       <Finale D={D} onExplore={onExplore} />
       <Credits D={D} />
+      {D.synthetic && <PreviewTag />}
     </div>
   );
 }
@@ -48,11 +53,6 @@ function TopBar({ D, onExplore }) {
   const y = useScrollY();
   return (
     <header className={`fixed top-0 inset-x-0 z-40 transition-colors duration-500 ${y > 40 ? "bg-space/80 backdrop-blur-md border-b border-hair" : ""}`}>
-      {D.synthetic && (
-        <div className="text-[12px] font-semibold text-[#0B1830] px-6 py-1 bg-[repeating-linear-gradient(-45deg,#6FA8FF_0_14px,#4F8BEA_14px_28px)]">
-          Charts on this page use synthetic data while the real NISAR results are processed. They are not NASA measurements.
-        </div>
-      )}
       <div className="flex items-center gap-4 px-6 md:px-10 h-16">
         <Mark />
         <span className="font-display font-semibold text-[17px] tracking-wide max-sm:hidden">The Breathing Ground</span>
@@ -95,7 +95,7 @@ function Hero({ D, onExplore }) {
 
       <div className="relative h-full flex flex-col justify-center pt-24 max-sm:pt-36 pb-10 px-6 md:px-14 max-w-[1400px] mx-auto" style={{ opacity: fade }}>
         <div className="intro-in max-w-[780px]">
-          <p className="font-display text-accent-2 text-[15px] flex items-center gap-2"><Radar size={16} /> NASA Space Apps 2026, Dancing with the SARs</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none flex items-center gap-2"><Radar size={16} /> NASA Space Apps 2026, Dancing with the SARs</p>
           <h1 className="font-display font-bold leading-[0.92] tracking-[-0.01em] text-[clamp(46px,6.6vw,104px)] mt-4">
             The ground breathes.
             <span className="block">It also sinks.</span>
@@ -117,7 +117,7 @@ function Hero({ D, onExplore }) {
           {[["Launched", "30 July 2025"], ["Antenna reflector", "12 metres"], ["Radar wavelength", "24 cm, L-band"], ["Revisit", "Every 12 days"]].map(([k, v]) => (
             <div key={k} className="bg-space/75 backdrop-blur px-4 py-3">
               <dt className="text-[12px] text-mute">{k}</dt>
-              <dd className="font-display text-[19px] font-semibold mt-0.5">{v}</dd>
+              <dd className="font-mono text-[17px] font-medium mt-0.5">{v}</dd>
             </div>
           ))}
         </dl>
@@ -141,7 +141,7 @@ function PoleScene() {
     <section id="pole" ref={ref} className="relative h-[260vh]">
       <div className="sticky top-0 h-[100svh] overflow-hidden grid md:grid-cols-2 items-center gap-10 px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className="max-w-[560px]">
-          <p className="font-display text-accent-2 text-[15px]">It has happened here before</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">It has happened here before</p>
           <h2 className="font-display font-bold text-[clamp(40px,5.5vw,84px)] leading-[0.95] mt-3">
             {year < 1977 ? <>{year}.</> : <>Nine metres.</>}
           </h2>
@@ -190,7 +190,7 @@ function AquiferScene() {
     <section ref={ref} className="relative py-[14vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <p className="font-display text-accent-2 text-[15px]">Why the ground breathes</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">Why the ground breathes</p>
           <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">The valley floor sits on a sponge.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             Beneath the farms is an <Term t="aquifer" />: sand and gravel full of water, interleaved with clay. Water pressure helps hold up
@@ -211,7 +211,7 @@ function OrbitScene() {
       <Starfield className="absolute inset-0 w-full h-full opacity-40" density={160} />
       <div className={`relative grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center px-6 md:px-14 max-w-[1400px] mx-auto transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <p className="font-display text-accent-2 text-[15px]">Every 12 days, almost everywhere</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">Every 12 days, almost everywhere</p>
           <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">One satellite, circling pole to pole.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             NISAR flies about 747 km up on a near-polar orbit, so Earth turns beneath it and each pass covers a new strip. Every 12 days it
@@ -231,7 +231,7 @@ function MeasureScene() {
     <section ref={ref} className="relative py-[12vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <p className="font-display text-accent-2 text-[15px]">How a radar measures a centimetre</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">How a radar measures a centimetre</p>
           <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">It counts the wave, not the picture.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             When the ground sinks, the radar pulse has a little farther to travel, there and back, so the wave comes home slightly later in
@@ -272,7 +272,7 @@ function BreatheScene({ D, demo }) {
     <section id="breathe" ref={ref} className="relative h-[320vh]">
       <div className="sticky top-0 h-[100svh] grid lg:grid-cols-[1fr_1.35fr] items-center gap-10 px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className="max-w-[520px]">
-          <p className="font-display text-accent-2 text-[15px]">The valley breathes</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">The valley breathes</p>
           <h2 className="font-display font-bold text-[clamp(38px,4.8vw,72px)] leading-[0.98] mt-3">Every pass tells you where the ground is today.</h2>
           <p key={cap} className="text-[18px] leading-relaxed text-ink/85 mt-6 min-h-[5.5em] [animation:rise-in_.6s_both]">{captions[cap]}</p>
           <div className="mt-4 flex gap-5 text-[14px]">
@@ -280,8 +280,8 @@ function BreatheScene({ D, demo }) {
               <span key={s.st.station} className="inline-flex items-center gap-2"><span className="w-5 h-[3px] rounded" style={{ background: s.color }} />GPS station {s.st.station}</span>
             ))}
           </div>
-          <p className="mt-6 font-display text-[44px] font-bold leading-none tabular-nums">{fmtShort(D.dates[Math.min(N - 1, shown)])}</p>
-          <p className="text-[13px] text-mute">Pass {Math.min(N, shown + 1)} of {N}{D.synthetic ? ". Synthetic data." : "."}</p>
+          <p className="mt-6 font-mono text-[40px] font-medium leading-none tracking-tight">{fmtShort(D.dates[Math.min(N - 1, shown)])}</p>
+          <p className="font-mono text-[12.5px] text-mute mt-1">pass {String(Math.min(N, shown + 1)).padStart(2, "0")}/{N}{D.synthetic ? ". Synthetic data." : "."}</p>
         </div>
         <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto chart" role="img" aria-label="Ground motion at two stations over the NISAR record">
           {[-8, -6, -4, -2, 0, 2].filter((v) => v > lo && v < hi).map((v) => (
@@ -335,7 +335,7 @@ function LieScene({ D, st }) {
     <section ref={inRef} className="relative py-[18vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.35fr] gap-12 items-center transition-all duration-1000 ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
         <div className="max-w-[520px]">
-          <p className="font-display text-accent-2 text-[15px]">Two dates can lie</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">Two dates can lie</p>
           <h2 className="font-display font-bold text-[clamp(38px,4.8vw,72px)] leading-[0.98] mt-3">Compare the wrong two days and the sinking disappears.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             The quickest way to read satellite data is before and after. Here that can mislead. Drag A and B along the record at GPS station {st.station}.
@@ -389,7 +389,7 @@ function InstrumentScene({ D }) {
             <p className="absolute left-4 bottom-3 text-[11.5px] text-ink/70">NISAR in orbit, artist's concept. NASA/JPL-Caltech.</p>
           </div>
           <div>
-            <p className="font-display text-accent-2 text-[15px]">How NISAR sees it</p>
+            <p className="font-serif italic text-accent-2 text-[22px] leading-none">How NISAR sees it</p>
             <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Radar that measures the ground to the centimetre, through cloud, day and night.</h2>
             <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
               NISAR is a joint mission of NASA and ISRO. Its <Term t="L-band" /> radar bounces 24 cm microwaves off the ground from a 12-metre gold mesh reflector,
@@ -457,7 +457,7 @@ function GpsScene({ D }) {
     <section ref={ref} className="relative py-[14vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-2 gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <p className="font-display text-accent-2 text-[15px]">How sure are we</p>
+          <p className="font-serif italic text-accent-2 text-[22px] leading-none">How sure are we</p>
           <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">We check the radar against instruments it has never seen.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             Four GPS stations sit in the study area. One, {D.meta.reference_station}, ties the radar to the ground. The other three,
@@ -493,7 +493,7 @@ function MattersScene() {
   return (
     <section id="matters" ref={ref} className="relative py-[16vh] border-y border-hair bg-[linear-gradient(180deg,#0F1420,#121a2a)]">
       <div className="px-6 md:px-14 max-w-[1400px] mx-auto">
-        <p className="font-display text-accent-2 text-[15px]">Why it matters</p>
+        <p className="font-serif italic text-accent-2 text-[22px] leading-none">Why it matters</p>
         <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3 max-w-[900px]">Sinking ground breaks the things built on it.</h2>
         <div className="grid md:grid-cols-3 gap-px bg-hair rounded-2xl overflow-hidden border border-hair mt-12">
           {items.map(([big, text, src], n) => (
@@ -526,7 +526,7 @@ function Finale({ D, onExplore }) {
       <Starfield className="absolute inset-0 w-full h-full opacity-50" density={180} />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_100%,rgba(111,168,255,.16),transparent_60%)]" />
       <div className="relative px-6 md:px-14 max-w-[1100px] mx-auto text-center">
-        <h2 className="font-display font-bold text-[clamp(44px,7vw,110px)] leading-[0.92]">See it for yourself.</h2>
+        <h2 className="font-serif text-[clamp(60px,10vw,160px)] leading-[0.88] tracking-[-0.01em]">See it <span className="italic">for yourself.</span></h2>
         <p className="text-[19px] text-ink/80 mt-6 max-w-[620px] mx-auto">{D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, over Corcoran and Mendota. Click any spot.</p>
         <button onClick={onExplore} className="mt-10 inline-flex items-center gap-2 rounded-full bg-accent text-space font-semibold text-[17px] px-8 py-4 hover:bg-accent-2 shadow-[0_0_50px_rgba(111,168,255,.5)] transition">
           <MapIcon size={19} /> Open the live map

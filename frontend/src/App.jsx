@@ -1,16 +1,17 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick } from "lucide-react";
 import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
 import Timeline from "./components/Timeline.jsx";
 import Legend from "./components/Legend.jsx";
-import { ProfilePanel, TourCard, Limits } from "./components/Panels.jsx";
+import { ProfilePanel, TourCard, Limits, PreviewTag } from "./components/Panels.jsx";
 import { loadData, cellAt, cellBounds, fitAt } from "./lib/data.js";
 import { cellValue, netDomain, MODES } from "./lib/view.js";
 import { cm } from "./lib/fmt.js";
 import { listen, stopListening, downloadCSV, writeHash, readHash } from "./lib/extras.js";
 import { tourSteps } from "./lib/tour.jsx";
+import CommandBar from "./components/CommandBar.jsx";
 
 const MODE_ICONS = { net: Layers, pair: CalendarRange, breathe: Activity, fringe: Waves, labels: Tags };
 const PLACES = [
@@ -50,6 +51,7 @@ function Explorer({ D, onStory, startTour }) {
   const [hover, setHover] = useState(null);
   const [limits, setLimits] = useState(false);
   const [flash, setFlash] = useState(null);
+  const [cmd, setCmd] = useState(false);
   const steps = useMemo(() => tourSteps(D), [D]);
 
   const stationAt = useCallback((i) => D.stations.find((s) => s.cell_index === i), [D]);
@@ -122,10 +124,35 @@ function Explorer({ D, onStory, startTour }) {
   const endTour = () => set({ tour: -1, playing: false });
   useEffect(() => { if (startTour) setTimeout(() => goStep(0), 400); }, []); // eslint-disable-line
 
+  /* ---------- command bar ---------- */
+  const commandItems = () => {
+    const G = D.grid;
+    const fastest = [];
+    for (let i = 0; i < D.n; i++) if (G.net_change_m[i] != null && (G.label[i] === 1 || G.label[i] === 3)) fastest.push([i, G.net_change_m[i]]);
+    fastest.sort((a, b) => a[1] - b[1]);
+    return [
+      ...PLACES.map((p) => ({ id: "p" + p.name, group: "Places", label: p.name, icon: MapPin, run: () => { if (!p.ll) mapRef.current?.fitAll(); else { mapRef.current?.flyTo(p.ll, p.z); const i = cellAt(D, ...p.ll); if (i >= 0) select(i); } } })),
+      ...D.stations.map((st) => ({ id: "s" + st.station, group: "GPS stations", label: `GPS ${st.station}`, hint: st.role === "reference" ? "reference" : "independent check", icon: Satellite, run: () => { set({ gps: true }); select(st.cell_index, { fly: true }); } })),
+      ...fastest.slice(0, 3).map(([i, v], n) => ({ id: "f" + i, group: "Sinking fastest", label: placeName(i), hint: cm(v), icon: Activity, run: () => select(i, { fly: true }) })),
+      ...MODES.map((m) => ({ id: "m" + m.id, group: "Views", label: m.name, key: m.key, icon: MODE_ICONS[m.id], run: () => setMode(m.id) })),
+      { id: "t-play", group: "Tools", label: "Play the record", key: "Space", icon: Play, run: togglePlay },
+      { id: "t-swipe", group: "Tools", label: "Swipe date A against date B", key: "S", icon: SplitSquareHorizontal, run: () => set({ swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }) },
+      { id: "t-lens", group: "Tools", label: "Radar lens", key: "L", icon: ScanSearch, run: () => set({ lens: true, relief: false }) },
+      { id: "t-3d", group: "Tools", label: "3D view", key: "D", icon: Box, run: () => set({ relief: true, lens: false }) },
+      { id: "t-prof", group: "Tools", label: "Draw a cross-section", key: "P", icon: Route, run: () => set({ profile: { a: null }, drawing: true }) },
+      { id: "t-gps", group: "Tools", label: S.gps ? "Hide GPS check" : "Show GPS check", key: "G", icon: Satellite, run: () => set({ gps: !Sref.current.gps }) },
+      { id: "t-tour", group: "Tools", label: "Walkthrough", key: "W", icon: Compass, run: () => goStep(0) },
+      { id: "t-share", group: "Tools", label: "Copy a link to this view", icon: Share2, run: share },
+      { id: "t-limits", group: "Tools", label: "What this map can and can't tell you", icon: Info, run: () => setLimits(true) },
+      { id: "t-story", group: "Tools", label: "Back to the story", icon: BookIcon, run: onStory },
+    ];
+  };
+
   /* ---------- keyboard ---------- */
   useEffect(() => {
     const onKey = (e) => {
       const s = Sref.current;
+      if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setCmd((o) => !o); return; }
       if (e.key === "Escape") {
         if (limits) setLimits(false);
         else if (s.tour >= 0) endTour();
@@ -138,7 +165,8 @@ function Explorer({ D, onStory, startTour }) {
       if (k === " ") { e.preventDefault(); togglePlay(); }
       else if ("12345".includes(k) && k) setMode(MODES[+k - 1].id);
       else if (k === "g") set({ gps: !s.gps });
-      else if (k === "d") set({ relief: !s.relief });
+      else if (k === "d") set({ relief: !s.relief, lens: false });
+      else if (k === "l") set({ lens: !s.lens, relief: false });
       else if (k === "s") set(s.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false });
       else if (k === "p") set(s.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true });
       else if (k === "w") goStep(0);
@@ -163,11 +191,6 @@ function Explorer({ D, onStory, startTour }) {
 
   return (
     <div className="h-full flex flex-col">
-      {D.synthetic && (
-        <div className="shrink-0 text-[12.5px] font-semibold text-[#0B1830] px-5 py-1.5 bg-[repeating-linear-gradient(-45deg,#6FA8FF_0_14px,#4F8BEA_14px_28px)]">
-          Synthetic data for building the app. These are not NASA measurements.
-        </div>
-      )}
 
       <header className="shrink-0 flex items-center gap-6 px-5 h-[60px] border-b border-hair bg-space max-lg:flex-wrap max-lg:h-auto max-lg:py-2 max-lg:gap-2">
         <div className="flex items-center gap-3 min-w-0">
@@ -210,6 +233,10 @@ function Explorer({ D, onStory, startTour }) {
               onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} />
 
             <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] overflow-x-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur shadow-[0_8px_30px_rgba(0,0,0,.4)]">
+              <button onClick={() => setCmd(true)} title="Search (Ctrl+K)" aria-label="Search places, views and tools"
+                className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
+                <Search size={15} className="text-accent" /><kbd className="font-mono text-[11px] text-mute border border-hair-2 rounded px-1 whitespace-nowrap max-sm:hidden">Ctrl K</kbd>
+              </button>
               <label className="relative flex items-center">
                 <MapPin size={15} className="absolute left-3 text-accent pointer-events-none" />
                 <select aria-label="Go to a place" value="" onChange={(e) => {
@@ -225,7 +252,8 @@ function Explorer({ D, onStory, startTour }) {
               {[
                 { icon: Route, label: "Cross-section", on: !!S.profile, act: () => set(S.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true }), key: "P" },
                 { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: () => set(S.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }), key: "S" },
-                { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief }), key: "D" },
+                { icon: ScanSearch, label: "Lens", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
+                { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },
                 { icon: Share2, label: "Share view", on: false, act: share },
               ].map(({ icon: Icon, label, on, act, key }) => (
                 <button key={label} onClick={act} aria-pressed={key ? on : undefined} title={key ? `${label} (${key})` : label}
@@ -281,6 +309,8 @@ function Explorer({ D, onStory, startTour }) {
         </div>
       </main>
 
+      <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />
+      {D.synthetic && <PreviewTag />}
       {limits && <Limits D={D} onClose={() => setLimits(false)} />}
       {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(111,168,255,.45)]">{flash}</div>}
     </div>
@@ -290,7 +320,7 @@ function Explorer({ D, onStory, startTour }) {
 function initialState(D) {
   const N = D.dates.length;
   const S = { mode: "net", sel: -1, pin: -1, k1: 0, k2: N - 1, cursor: N - 1, gps: false, split: false, playing: false,
-    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, swipe: null };
+    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, swipe: null, lens: false };
   const h = readHash();
   const int = (x, lo, hi) => { const n = parseInt(x, 10); return isNaN(n) ? null : Math.max(lo, Math.min(hi, n)); };
   if (MODES.some((m) => m.id === h.mode)) S.mode = h.mode;

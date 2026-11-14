@@ -80,7 +80,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       <button onClick={actions.clearSel} className="inline-flex items-center gap-1.5 text-[13px] text-mute hover:text-accent-2 mb-3">
         <ArrowLeft size={14} /> Back to the overview
       </button>
-      <p className="text-[13px] text-mute flex items-center gap-1.5">
+      <p className="font-mono text-[12.5px] text-mute flex items-center gap-1.5">
         {st && <><Satellite size={13} className="text-accent" /> GPS station {st.station}{st.role === "reference" ? " (reference)" : ""}, </>}
         {cb.lat.toFixed(3)}° N, {Math.abs(cb.lng).toFixed(3)}° W
       </p>
@@ -307,7 +307,7 @@ function Overview({ D, actions }) {
 
   return (
     <div>
-      <h2 className="font-display text-[27px] leading-[1.12] font-semibold">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
+      <h2 className="font-serif text-[34px] leading-[1.05]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Groundwater pumping lowers the water pressure underground, and the ground settles. Some of that comes back when the water returns each winter, and some doesn't. Compare the wrong two dates and sinking ground can look stable.</p>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Click anywhere on the map, or a GPS station, to see every measurement at that spot and how sure we are.</p>
       <div className="grid grid-cols-2 gap-2 mt-5">

@@ -55,7 +55,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
           {S.mode === "pair"
             ? <>Comparing <span className="text-ink">{fmtDate(D.dates[S.k1])}</span> with <span className="text-ink">{fmtDate(D.dates[S.k2])}</span>, {days} days apart. Drag A or B.</>
             : S.mode === "breathe"
-              ? <>Pass {S.cursor + 1} of {N}, <span className="text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}.</>
+              ? <><span className="font-mono text-ink">pass {String(S.cursor + 1).padStart(2, "0")}/{N}</span>, <span className="font-mono text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}.</>
               : <>{N} radar passes, every 12 days. Press Play to watch the valley move.</>}
         </p>
       </div>

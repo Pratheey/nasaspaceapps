@@ -142,7 +142,7 @@ export function Limits({ D, onClose }) {
         ))}
         <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-accent-2">Keyboard</h3>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[14px]">
-          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
+          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
             <li key={k} className="flex items-center gap-2"><kbd className="font-sans text-[12px] font-semibold border border-hair-2 border-b-2 rounded px-1.5 py-0.5 bg-space">{k}</kbd><span className="text-ink/85">{d}</span></li>
           ))}
         </ul>
@@ -150,3 +150,17 @@ export function Limits({ D, onClose }) {
     </div>
   );
 }
+
+// Shown only while the app runs on the synthetic sample files. Disappears by itself when the
+// real NISAR files are in public/data/ (AGENTS.md rule 6: never present placeholder data as NASA data).
+export function PreviewTag() {
+  const [open, setOpen] = useState(false);
+  return (
+    <button onClick={() => setOpen(!open)} aria-expanded={open}
+      className={`fixed right-3 bottom-3 z-50 max-w-[300px] text-left ${open ? "rounded-lg" : "rounded-full"} border border-hair-2 bg-space/90 backdrop-blur px-3 py-1.5 text-[12px] text-mute hover:text-ink shadow-lg`}>
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-2 align-middle" />Preview data
+      {open && <span className="block mt-1 leading-snug text-ink/85">These charts use synthetic data in the real file format while the NISAR results are processed. This tag disappears when the real data is loaded.</span>}
+    </button>
+  );
+}
+

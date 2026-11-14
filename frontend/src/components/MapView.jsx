@@ -25,6 +25,42 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   const stationEls = useRef([]);
   const profMarkers = useRef([]);
   const probe = useRef(null);
+  const lens = useRef(null);
+
+  // Radar lens: a circle under the cursor that shows the fringe view of whatever is there.
+  const drawLens = (pt) => {
+    const c = lens.current, m = map.current;
+    if (!c || !m) return;
+    const x = c.getContext("2d");
+    const dpr = window.devicePixelRatio || 1;
+    const Wc = c.clientWidth, Hc = c.clientHeight;
+    if (c.width !== Wc * dpr) { c.width = Wc * dpr; c.height = Hc * dpr; }
+    x.setTransform(dpr, 0, 0, dpr, 0, 0);
+    x.clearRect(0, 0, Wc, Hc);
+    if (!pt || !latest.current.S.lens || latest.current.S.relief) return;
+    const r = 100, g = D.meta.grid, S2 = latest.current.S;
+    const nw = m.unproject([pt.x - r, pt.y - r]), se = m.unproject([pt.x + r, pt.y + r]);
+    const c0 = Math.max(0, Math.floor((nw.lng - g.lon_min) / g.step_deg)), c1 = Math.min(g.ncols - 1, Math.floor((se.lng - g.lon_min) / g.step_deg));
+    const r0 = Math.max(0, Math.floor((g.lat_max - nw.lat) / g.step_deg)), r1 = Math.min(g.nrows - 1, Math.floor((g.lat_max - se.lat) / g.step_deg));
+    x.save();
+    x.beginPath(); x.arc(pt.x, pt.y, r, 0, 6.283); x.clip();
+    x.fillStyle = "rgba(10,14,24,0.92)"; x.fillRect(pt.x - r, pt.y - r, 2 * r, 2 * r);
+    for (let row = r0; row <= r1; row++) for (let col = c0; col <= c1; col++) {
+      const i = row * g.ncols + col;
+      const v = S2.mode === "labels" || S2.mode === "fringe" ? D.grid.net_change_m[i] : cellValue(D, S2, i);
+      if (v == null) continue;
+      const b = cellBounds(D, i);
+      const p1 = m.project([b.w, b.n]), p2 = m.project([b.e, b.s]);
+      const f = fringe(v);
+      x.fillStyle = `rgb(${f[0]},${f[1]},${f[2]})`;
+      x.fillRect(p1.x, p1.y, p2.x - p1.x + 0.6, p2.y - p1.y + 0.6);
+    }
+    x.restore();
+    x.strokeStyle = "#A9CBFF"; x.lineWidth = 2; x.shadowColor = "#6FA8FF"; x.shadowBlur = 18;
+    x.beginPath(); x.arc(pt.x, pt.y, r, 0, 6.283); x.stroke(); x.shadowBlur = 0;
+    x.font = "500 11px 'IBM Plex Mono', monospace"; x.fillStyle = "#A9CBFF"; x.textAlign = "center";
+    x.fillText("radar fringes, 11.9 cm per color cycle", pt.x, pt.y + r + 16);
+  };
 
   useImperativeHandle(ref, () => ({
     flyTo: (ll, zoom, tilted = latest.current.S.relief) => map.current?.flyTo({ center: ll, zoom, pitch: tilted ? 58 : 0, bearing: tilted ? -18 : 0, duration: reduceMotion ? 0 : 1500 }),
@@ -110,9 +146,10 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     m.on("mousemove", (e) => {
       const i = cellAt(D, e.lngLat.lng, e.lngLat.lat);
       m.getCanvas().style.cursor = latest.current.S.drawing || i >= 0 ? "crosshair" : "";
-      latest.current.onHover(i >= 0 ? { i, x: e.point.x, y: e.point.y } : null);
+      latest.current.onHover(i >= 0 && !latest.current.S.lens ? { i, x: e.point.x, y: e.point.y } : null);
+      if (latest.current.S.lens) drawLens(e.point);
     });
-    m.on("mouseout", () => latest.current.onHover(null));
+    m.on("mouseout", () => { latest.current.onHover(null); drawLens(null); });
     m.on("move", () => latest.current.S.swipe != null && setTick((t) => t + 1));
     return () => m.remove();
   }, [D]);
@@ -193,6 +230,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
 
   // stations dim unless GPS check is on
   useEffect(() => { stationEls.current.forEach((b) => (b.style.opacity = S.gps ? 1 : 0.55)); }, [S.gps]);
+  useEffect(() => { if (!S.lens) drawLens(null); }, [S.lens]); // eslint-disable-line
 
   // profile line + draggable ends
   useEffect(() => {
@@ -230,6 +268,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   return (
     <div className="absolute inset-0">
       <div ref={el} className="w-full h-full" />
+      <canvas ref={lens} className="absolute inset-0 w-full h-full pointer-events-none z-[4]" aria-hidden="true" />
       {sx != null && (
         <div className="absolute top-0 bottom-0 z-[5] w-0" style={{ left: sx }}>
           <div className="absolute inset-y-0 -left-px w-[2px] bg-accent shadow-[0_0_14px_#6FA8FF]" />

@@ -100,7 +100,7 @@ export default function Globe({ className = "" }) {
   return (
     <div className={`relative ${className}`}>
       <canvas ref={ref} className="w-full aspect-square cursor-grab active:cursor-grabbing touch-none" aria-label="Globe showing NISAR's orbit and ground track. Drag to turn it." />
-      <div className="absolute left-0 bottom-2 text-[12.5px] text-mute leading-relaxed">
+      <div className="absolute left-0 bottom-2 font-mono text-[12px] text-mute leading-relaxed">
         <p><span className="inline-block w-2 h-2 rounded-full bg-accent-2 mr-2 shadow-[0_0_8px_#6FA8FF]" />NISAR now over {f(info.lat, "N", "S")}, {f(info.lon, "E", "W")} <span className="text-ink/40">(simulated)</span></p>
         <p><span className="inline-block w-2 h-2 rounded-full bg-sink mr-2" />Our study area, San Joaquin Valley</p>
         <p className="text-ink/40">Drag to turn the globe.</p>
