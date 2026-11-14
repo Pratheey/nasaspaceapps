@@ -1,5 +1,36 @@
-# frontend/: owned by the frontend lane
+# frontend/: The Breathing Ground app (owned by the frontend lane)
 
-The site or app: maps, charts and UI. Build it against the sample files in `contracts/`
-until real data is ready. The stack isn't decided yet. Record the decision in
-`docs/DECISIONS.md` first, then build here.
+Static site, no backend (D3). Vite + MapLibre GL JS, plain JavaScript, hand-drawn SVG charts.
+
+```bash
+cd frontend
+npm install
+npm run dev      # http://localhost:5173
+npm run build    # static site in dist/, deployable to GitHub Pages or Vercel
+```
+
+## Data
+The app loads the four files from `contracts/app_data.md`:
+1. `public/data/{meta,grid,series,stations}.json`, written by the analysis lane (real NISAR).
+2. If those don't exist, `public/samples/` (synthetic copies of `contracts/samples/`), and a
+   striped "Synthetic data" banner appears at the top. Never record the demo with that banner showing.
+
+To refresh the samples: `python3 contracts/samples/make_samples.py && cp contracts/samples/*.json frontend/public/samples/`
+
+## What's in it
+| Feature | Where |
+|---|---|
+| Net change map, same color scale in every view, hatched where there's no reliable measurement | `main.js` `drawGrid` |
+| Two dates: drag A and B on the timeline; "find the two dates that hide the most here" | `main.js`, `data.js` `mostMisleadingPair` |
+| Breathe: play the record pass by pass | `main.js` `play` |
+| What we can say: the four labels from the proposal | `main.js`, `colors.js` |
+| Inspector: leveling rod, key numbers with uncertainty, chart with fit or trend/seasonal split | `rod.js`, `chart.js` |
+| GPS check: station markers, GPS line on the chart, residual table | `main.js` |
+| How we got these numbers (evidence receipt) | `main.js` `renderInspector` |
+| Guided walkthrough, mirrors the 30-second pitch | `tour.js` |
+| Limits panel (text from `docs/pitch/limits.md`) | `limits.js` |
+
+## Design
+USGS topographic quad palette: on those maps purple marks change seen from the air, so purple
+means sinking. Survey teal means rising. Rod red appears only on the leveling rod. Type is
+Barlow Semi Condensed (headings) and Barlow (body), tabular numerals throughout.

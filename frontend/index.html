@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>The Breathing Ground: NISAR ground motion, San Joaquin Valley</title>
+  <meta name="description" content="Where seasonal rebound hides continued sinking in California's San Joaquin Valley, measured by NISAR radar and checked against GPS." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:ital,wght@0,400;0,500;0,600;1,400&family=Barlow+Semi+Condensed:wght@500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+  <div id="synthetic" class="synthetic" hidden>
+    Synthetic data for building the app. These are not NASA measurements.
+  </div>
+
+  <header class="bar">
+    <div class="brand">
+      <h1>The Breathing Ground</h1>
+      <p class="sub">Corcoran–Mendota, San Joaquin Valley. NISAR L-band radar, <span id="window-text">24 Nov 2025 to 14 Oct 2026</span>.</p>
+    </div>
+    <nav class="modes" aria-label="Map view">
+      <button class="mode" data-mode="net" aria-pressed="true">Net change</button>
+      <button class="mode" data-mode="pair" aria-pressed="false">Two dates</button>
+      <button class="mode" data-mode="breathe" aria-pressed="false">Breathe</button>
+      <button class="mode" data-mode="labels" aria-pressed="false">What we can say</button>
+    </nav>
+    <div class="actions">
+      <label class="toggle"><input type="checkbox" id="gps-toggle" /> GPS check</label>
+      <button id="tour-btn" class="plain">Walk me through it</button>
+      <button id="limits-btn" class="plain">Limits</button>
+    </div>
+  </header>
+
+  <main class="layout">
+    <section class="mapwrap" aria-label="Map">
+      <div id="map"></div>
+
+      <div id="legend" class="legend" aria-live="polite"></div>
+
+      <div id="tour" class="tour" hidden role="dialog" aria-label="Guided walkthrough">
+        <p class="tour-step" id="tour-step"></p>
+        <h2 id="tour-title"></h2>
+        <div id="tour-body"></div>
+        <div class="tour-nav">
+          <button id="tour-prev" class="plain">Back</button>
+          <button id="tour-next">Next</button>
+          <button id="tour-close" class="plain" aria-label="Close walkthrough">Close</button>
+        </div>
+      </div>
+    </section>
+
+    <aside class="inspector" id="inspector" aria-label="Selected location"></aside>
+
+    <section class="timeline" aria-label="Observation dates">
+      <div class="tl-head">
+        <button id="play" class="play" aria-label="Play the record">Play</button>
+        <p id="tl-readout" class="tl-readout"></p>
+      </div>
+      <div id="tl" class="tl"></div>
+    </section>
+  </main>
+
+  <dialog id="limits" class="limits">
+    <form method="dialog"><button class="plain close">Close</button></form>
+    <div id="limits-body"></div>
+  </dialog>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>
