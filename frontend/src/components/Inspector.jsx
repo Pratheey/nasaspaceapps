@@ -1,5 +1,5 @@
-import { useEffect, useRef } from "react";
-import { ArrowLeft, Download, GitCompareArrows, Satellite, Volume2, VolumeX, Sparkles } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { ArrowLeft, Download, GitCompareArrows, Satellite, Volume2, VolumeX, Sparkles, LineChart, CalendarRange, ShieldCheck } from "lucide-react";
 import Chart, { ChartKey } from "./Chart.jsx";
 import Gauge from "./Gauge.jsx";
 import PairMatrix from "./PairMatrix.jsx";
@@ -39,7 +39,26 @@ export default function Inspector({ D, S, set, actions, stationAt, placeName }) 
   );
 }
 
+// Animates a number toward its new value (skipped for reduced motion).
+function useCountUp(target, ms = 700) {
+  const [v, setV] = useState(target);
+  const from = useRef(target);
+  useEffect(() => {
+    if (target == null || !isFinite(target) || window.matchMedia("(prefers-reduced-motion: reduce)").matches) { setV(target); return; }
+    const a = from.current ?? 0, t0 = performance.now();
+    let raf;
+    const step = (now) => { const k = Math.min(1, (now - t0) / ms); const e = 1 - Math.pow(1 - k, 3); setV(a + (target - a) * e); if (k < 1) raf = requestAnimationFrame(step); else from.current = target; };
+    raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, ms]);
+  return v;
+}
+
+const TABS = [["record", "The record", LineChart], ["dates", "Two dates", CalendarRange], ["evidence", "Evidence", ShieldCheck]];
+
 function Spot({ D, S, set, actions, stationAt, placeName }) {
+  const [tab, setTab] = useState("record");
+  useEffect(() => { if (S.mode === "pair") setTab("dates"); }, [S.mode, S.k1, S.k2]);
   const i = S.sel, G = D.grid, cb = cellBounds(D, i);
   const st = stationAt(i);
   const sig = G.seasonal_significant[i] === true;
@@ -53,9 +72,10 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
   const cursor = S.listenK ?? (S.mode === "breathe" ? S.cursor : null);
   const pairs = D.meta.pairs || [];
   const L = G.label[i];
+  const net = useCountUp(G.net_change_m[i]);
 
   return (
-    <div>
+    <div key={i} className="[animation:rise-in_.45s_cubic-bezier(.2,.7,.2,1)_both]">
       <button onClick={actions.clearSel} className="inline-flex items-center gap-1.5 text-[13px] text-mute hover:text-gold-2 mb-3">
         <ArrowLeft size={14} /> Back to the overview
       </button>
@@ -70,7 +90,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         <dl className="divide-y divide-hair">
           <div className="pb-3">
             <dt className="text-[13px] text-mute">Change, first to last date</dt>
-            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#F0705A" : "#E6EAF2", textShadow: G.net_change_m[i] < 0 ? "0 0 22px rgba(240,112,90,.35)" : "none" }}>{cm(G.net_change_m[i])}</dd>
+            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#F0705A" : "#E6EAF2", textShadow: G.net_change_m[i] < 0 ? "0 0 22px rgba(240,112,90,.35)" : "none" }}>{cm(net)}</dd>
             <dd className="text-[12.5px] text-mute mt-1">{pm(G.net_change_sigma_m[i])}</dd>
           </div>
           <div className="py-3">
@@ -90,6 +110,18 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         </dl>
       </div>
 
+      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
+        {TABS.map(([id, name, Icon]) => (
+          <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
+            className={`relative inline-flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-gold-2" : "text-mute hover:text-ink"}`}>
+            <Icon size={14} /> {name}
+            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-gold shadow-[0_0_8px_#E2B04A]" />}
+          </button>
+        ))}
+      </div>
+
+      <div key={tab} className="[animation:rise-in_.35s_both]">
+      {tab === "record" && <>
       <Section title="Every measurement here" aside={
         <label className="inline-flex items-center gap-2 text-[13px] text-ink/85 cursor-pointer">
           <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#E2B04A] w-4 h-4" />
@@ -107,8 +139,11 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           <Tool icon={Download} onClick={actions.csv}>Download the numbers</Tool>
         </div>
         {S.awaitPin && <p className="mt-2 text-[13.5px] rounded-md border border-gold/40 bg-gold/10 px-3 py-2">Now click another spot on the map to compare it with this one.</p>}
+        <p className="text-[13px] text-mute mt-3">Click the chart to jump the map to that date.</p>
       </Section>
+      </>}
 
+      {tab === "dates" && <>
       <Section title="Two dates">
         <p className="text-[14.5px] leading-relaxed">
           From {fmtShort(D.dates[S.k1])} to {fmtShort(D.dates[S.k2])} ({days} days) this spot moved <strong className="text-ink">{cm(d12)}</strong>.
@@ -127,6 +162,10 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         <h4 className="font-display text-[15.5px] font-semibold mt-5 mb-2">Every pair of dates at this spot</h4>
         <PairMatrix D={D} i={i} k1={S.k1} k2={S.k2} onPick={actions.showPair} />
       </Section>
+      </>}
+
+      {tab === "evidence" && <>
+      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the four stations on the map to see the radar checked against it.</p></Section>}
 
       {st && (
         <Section title="GPS check">
@@ -148,7 +187,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         </Section>
       )}
 
-      <details className="mt-6 rounded-lg border border-hair-2 bg-deck/60 open:bg-deck group">
+      <details open className="mt-6 rounded-lg border border-hair-2 bg-deck/60 open:bg-deck group">
         <summary className="cursor-pointer px-4 py-3 font-display text-[15.5px] font-semibold marker:text-gold">How we got these numbers</summary>
         <dl className="px-4 pb-4 text-[13px] space-y-2">
           {[
@@ -165,6 +204,8 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           ))}
         </dl>
       </details>
+      </>}
+      </div>
     </div>
   );
 }

@@ -1,10 +1,11 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass } from "lucide-react";
+import { Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick } from "lucide-react";
+import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
 import Timeline from "./components/Timeline.jsx";
 import Legend from "./components/Legend.jsx";
-import { ProfilePanel, TourCard, Intro, Limits } from "./components/Panels.jsx";
+import { ProfilePanel, TourCard, Limits } from "./components/Panels.jsx";
 import { loadData, cellAt, cellBounds, fitAt } from "./lib/data.js";
 import { cellValue, netDomain, MODES } from "./lib/view.js";
 import { cm } from "./lib/fmt.js";
@@ -25,10 +26,21 @@ export default function App() {
   useEffect(() => { loadData().then(setD).catch((e) => setErr(e.message)); }, []);
   if (err) return <Failure msg={err} />;
   if (!D) return <div className="h-full grid place-items-center text-mute font-display">Loading radar passes…</div>;
-  return <Explorer D={D} />;
+  return <Shell D={D} />;
 }
 
-function Explorer({ D }) {
+// The story is the front door; the explorer is the instrument. A shared link opens the explorer directly.
+function Shell({ D }) {
+  const [view, setView] = useState(() => (location.hash.length > 1 ? "explore" : "story"));
+  const [tourOnOpen, setTourOnOpen] = useState(false);
+  const go = (v, tour = false) => { setTourOnOpen(tour); setView(v); window.scrollTo(0, 0); if (v === "story") history.replaceState(null, "", location.pathname); };
+  useEffect(() => { document.documentElement.style.overflow = view === "explore" ? "hidden" : ""; }, [view]);
+  return view === "story"
+    ? <Story D={D} onExplore={() => go("explore")} />
+    : <div className="h-[100svh] [animation:rise-in_.6s_both]"><Explorer D={D} onStory={() => go("story")} startTour={tourOnOpen} /></div>;
+}
+
+function Explorer({ D, onStory, startTour }) {
   const N = D.dates.length;
   const domain = useMemo(() => netDomain(D), [D]);
   const [S, setS] = useState(() => initialState(D));
@@ -36,7 +48,6 @@ function Explorer({ D }) {
   const Sref = useRef(S); Sref.current = S;
   const mapRef = useRef(null);
   const [hover, setHover] = useState(null);
-  const [intro, setIntro] = useState(() => !location.hash);
   const [limits, setLimits] = useState(false);
   const [flash, setFlash] = useState(null);
   const steps = useMemo(() => tourSteps(D), [D]);
@@ -99,7 +110,6 @@ function Explorer({ D }) {
     const st = steps[k];
     stopListening();
     set({ ...st.state, tour: k, listenK: null });
-    setIntro(false);
     const sel = st.state.sel ?? Sref.current.sel;
     // after React has applied the state (and the 3D camera effect has run)
     setTimeout(() => {
@@ -110,6 +120,7 @@ function Explorer({ D }) {
     }, 60);
   }, [steps, set, D]);
   const endTour = () => set({ tour: -1, playing: false });
+  useEffect(() => { if (startTour) setTimeout(() => goStep(0), 400); }, []); // eslint-disable-line
 
   /* ---------- keyboard ---------- */
   useEffect(() => {
@@ -159,13 +170,10 @@ function Explorer({ D }) {
 
       <header className="shrink-0 flex items-center gap-6 px-5 h-[60px] border-b border-hair bg-space max-lg:flex-wrap max-lg:h-auto max-lg:py-2 max-lg:gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <span className="relative grid place-items-center w-8 h-8 rounded-full border border-gold/60 shadow-[0_0_16px_rgba(226,176,74,.35)]" aria-hidden="true">
-            <span className="absolute inset-1.5 rounded-full border border-gold/40" />
-            <span className="w-1.5 h-1.5 rounded-full bg-gold" />
-          </span>
+          <button onClick={onStory} title="Back to the story" aria-label="Back to the story" className="rounded-full hover:scale-105 transition"><Mark size={32} /></button>
           <div className="min-w-0">
             <h1 className="font-display font-bold text-[21px] leading-none">The Breathing Ground</h1>
-            <p className="text-[12px] text-mute mt-1 truncate">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
+            <p className="text-[12px] text-mute mt-1 truncate max-[1500px]:hidden">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
           </div>
         </div>
         <nav aria-label="Map view" className="flex gap-1 mx-auto max-lg:order-3 max-lg:w-full max-lg:overflow-x-auto">
@@ -182,8 +190,11 @@ function Explorer({ D }) {
         </nav>
         <div className="flex items-center gap-1.5">
           <button onClick={() => set({ gps: !S.gps })} aria-pressed={S.gps}
-            className={`inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] border ${S.gps ? "border-gold/60 text-gold-2 bg-gold/10" : "border-hair text-ink/85 hover:border-hair-2"}`}>
+            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-[14px] border ${S.gps ? "border-gold/60 text-gold-2 bg-gold/10" : "border-hair text-ink/85 hover:border-hair-2"}`}>
             <Satellite size={15} /> GPS check
+          </button>
+          <button onClick={onStory} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
+            <BookOpen size={15} /> Story
           </button>
           <button onClick={() => setLimits(true)} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
             <Info size={15} /> Limits
@@ -245,7 +256,12 @@ function Explorer({ D }) {
               <TourCard step={steps[S.tour]} k={S.tour} n={steps.length}
                 onPrev={() => goStep(S.tour - 1)} onNext={() => (S.tour >= steps.length - 1 ? endTour() : goStep(S.tour + 1))} onClose={endTour} />
             )}
-            {intro && <Intro D={D} onStart={() => setIntro(false)} onTour={() => goStep(0)} />}
+            {S.sel < 0 && S.tour < 0 && !S.drawing && (
+              <div className="pointer-events-none absolute left-1/2 top-[68px] -translate-x-1/2 z-10 flex items-center gap-2.5 rounded-full border border-gold/40 bg-space/85 backdrop-blur px-4 py-2 text-[13.5px] shadow-[0_0_30px_rgba(226,176,74,.18)] [animation:rise-in_.6s_.4s_both] max-md:hidden">
+                <span className="relative flex w-2.5 h-2.5"><span className="absolute inset-0 rounded-full bg-gold animate-ping opacity-60" /><span className="relative w-2.5 h-2.5 rounded-full bg-gold" /></span>
+                <MousePointerClick size={15} className="text-gold" /> Click any spot to open its record
+              </div>
+            )}
           </div>
 
           {S.profile && (
