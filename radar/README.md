@@ -2,6 +2,20 @@
 
 The Breathing Ground · Corcoran–Mendota, California
 
+## Slant motion, vertical motion, and polarization
+
+A stack is a collection of measurements aligned on one grid across dates or date pairs.
+These products answer different questions:
+
+| Product | What it measures | Where it is used |
+|---|---|---|
+| Slant / line-of-sight (LOS) displacement | Ground motion toward or away from the satellite's angled viewing direction; it mixes vertical and horizontal motion | Frozen Track 034 v3 stack and the primary website map |
+| Vertical and east–west displacement | Two viewing directions combined to estimate up/down and east/west motion, assuming north motion is zero | H-16 two-track stack and the provisional H-13 cross-check; Hanford has no descending coverage |
+| HH/HV polarization | Radar backscatter with horizontally transmitted waves and horizontal/vertical received waves | GCOV field comparison and the website's Fields panel; it does not measure up/down displacement |
+
+The vertical stack is a separate cross-check, not a replacement for the primary LOS stack.
+See the [current export instructions](results/hour_33/hour_33_handoff.md#method) for its GPS Up comparison.
+
 ## Polarization (H-6)
 
 NASA Harmony finished exporting frequency A HH and HV for 26 provisional GCOV acquisitions
