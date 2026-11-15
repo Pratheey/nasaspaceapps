@@ -241,6 +241,23 @@ at the hour-8 check-in.** Builds on D5.
   run goes to `frontend/public/data/vertical/`. / frontend: read profiles and the vertical folder only
   through these keys; label vertical as a cross-check. / integrator: turn on Pages in repo settings.
 
+## D11: 2026-11-15 10:35: North-east control box stays; east-edge sinking is understated
+**Status: decided by the Integrator (Ryan) with the data lane (Pratheek).** Answers
+`analysis/REQUESTS.md` Ryan item 5 and Pratheek item 2.
+- **Decision:**
+  - **Keep the north-east control box** (lat 36.85–36.95, lon −119.5 to −119.4) in
+    `seasonal.STABLE_CONTROL_BOXES`. It is stable ground; its apparent seasonal signal and
+    +4.3 cm/yr trend are atmospheric error, not motion (details in `data/README.md`). The 18.5 mm
+    seasonal bar stays, so the labels in the app do not change.
+  - **East edge:** NISAR reads about 2–3 cm less sinking than GPS toward the east edge of the map.
+    Sinking there is **understated, not overstated**. The limits panel and `docs/pitch/limits.md` say so.
+  - **Still no NISAR-only trend** in the pitch, video or app headline (PROPOSAL §5 rule; NISAR trends
+    run about +2 cm/yr less negative than GPS at the held-out stations).
+- **Impact per lane:** analysis: nothing to rerun; optionally reword the `meta.json` note so it no
+  longer says the north-east box "may raise the bar above what is needed". / frontend: limits text
+  updated. / story: any "sinking at the east edge" line says "at least". / nisar: document the box in
+  `data/README.md` if not already there.
+
 ## D12: 2026-11-15 13:30: Three additions built from data we already have
 **Status: decided by the Integrator (Ryan).** No new NISAR processing; no NISAR-only trend anywhere.
 - **Hidden sinking view (key 6):** spots that sank beyond 2σ over the record where some pair of dates at

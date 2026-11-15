@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 6. **Last updated:** 2026-11-14 22:05 by the Integrator: contracts v1.2, samples on the D5 stations, public deploy (D10). Earlier: final GPS agreement 1.8 cm at 13 stations, radar signed off (D9).
+**Version:** 7. **Last updated:** 2026-11-15 10:35 by the Integrator: north-east control box kept, east-edge sinking understated (D11). Earlier: contracts v1.2 and deploy (D10).
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.

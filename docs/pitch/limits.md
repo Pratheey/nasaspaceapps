@@ -26,6 +26,9 @@
   checked so far; the station count is shown next to it and comes from
   `gps/processed/uncertainty.json`). A separate check at 13 stations gives 1.2 to 2.2 cm.
   Motion smaller than that is not resolved at a single spot.
+- Toward the east edge of the map, NISAR reads about 2 to 3 cm less sinking than GPS, so
+  sinking there is understated, not overstated. For the same reason we never quote a trend
+  from NISAR alone.
 - A handful of check stations in one radar frame make a prototype check, not a valley-wide
   accuracy claim.
 
