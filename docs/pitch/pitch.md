@@ -12,11 +12,13 @@ only: no mockups, no synthetic sample data on screen.
 | 0–6 s | Corcoran levee, flood water against it | "This levee in Corcoran, California keeps getting rebuilt. It keeps sinking." |
 | 6–13 s | Pick Two Dates: two dates side by side, ground looks stable | "Compare two satellite dates and the ground looks fine." |
 | 13–20 s | Full NISAR series plays; breathing map pulses, sinking shown underneath | "But the valley breathes with the seasons, and the breathing hides the sinking." |
-| 20–26 s | Click a pixel: measured points, fitted curve, GPS overlay, uncertainty | "The Breathing Ground uses NISAR radar to separate them, and checks every result against GPS." |
+| 20–26 s | Click a pixel: measured points, fitted curve, GPS overlay, uncertainty | "The Breathing Ground uses NISAR radar to separate them, and compares the ground motion with GPS at held-out stations." |
 | 26–30 s | Title card | "We don't tell you the ground is fine. We show you how sure we are." |
 
 **Fill after real data (hour 18):** pick the two "fine-looking" dates from the real
-date-pair results. If the real data doesn't show a misleading pair at a significant level,
+date-pair results. Candidate from the first stack (D5): Hanford (CAHA), 2025-12-06 to
+2026-02-04, where GPS and NISAR both show a rise of about 1 cm while the full record ends
+near −5 cm in GPS. If the real data doesn't show a misleading pair at a significant level,
 change line 2 to what the data does show. Never stage it.
 
 ## Story beats for the project page
@@ -48,7 +50,8 @@ All figures in beat 1 and 4 are published figures, not our measurements. Say so 
 ## Claims review (Ryan signs off at hour 18, before recording)
 - [ ] No "only NISAR can do this" (ALOS-2, SAOCOM also fly L-band).
 - [ ] No "permanent", "irreversible" or "storage loss" on anything fitted.
-- [ ] No "validated" unless the held-out residual table exists; then quote it with n = 3 stations.
+- [ ] No "validated" unless the held-out residual table exists; then quote the measured agreement with its n (D9: 1.8 cm RMS per pair, n = 13 held-out stations; 1.2–2.2 cm in the 13-station self-check). Never "1 cm" or "centimetre-level".
+- [ ] Vertical vs east-west motion (descending track) only as a cross-check, never a headline (D7).
 - [ ] No amplitude or timing shown where the seasonal term isn't significant.
 - [ ] 14 km³, 30 cm/yr, levee and canal figures labelled as published, with source.
 - [ ] Reference station (P304) and "provisional NISAR" named on the map legend.

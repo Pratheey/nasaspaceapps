@@ -14,8 +14,9 @@ The tie: each pair is zero at the reference station (P304) when it leaves proces
 Here the reference station's own GPS motion over the pair's dates, projected on the line of
 sight, is added to every pixel, so the stack is "tied to P304 GPS" as decision D3 asks.
 Tie source, first one that exists:
-  1. gps/processed/gps_los.csv   (Daniel's cleaned series, contracts/gps.md)
-  2. data/raw/ngl/P304.tenv3     (raw NGL daily solutions, downloaded if missing; PROVISIONAL)
+  1. gps/processed/gps_los.csv   (cleaned Track 034 / Frame 020 projection, that track only)
+  2. gps/processed/gps_cleaned_enu.csv (cleaned positions projected on this track's LOS)
+  3. data/raw/ngl/P304.tenv3     (raw NGL daily solutions, downloaded if missing; PROVISIONAL)
 `--no-tie` writes the stack relative to the reference station instead.
 """
 from __future__ import annotations
@@ -76,6 +77,43 @@ def tie_from_tenv3(path: Path, los_enu, pairs: list[tuple[str, str]]):
     return [_diff(at(a), at(b)) for a, b in pairs]
 
 
+def tie_from_cleaned_enu_csv(path: Path, station: str, los_enu, pairs: list[tuple[str, str]]):
+    """Project cleaned GPS positions into the requested track's viewing direction."""
+    rows = [r for r in common.read_csv(path) if r["station"] == station]
+    series = {"dates": [], "east_m": [], "north_m": [], "up_m": []}
+    for row in rows:
+        components = [float(row[f"{c}_m_corr"]) if row[f"{c}_m_corr"] else np.nan
+                      for c in ("east", "north", "up")]
+        if not np.isfinite(components).all():
+            continue
+        series["dates"].append(dt.date.fromisoformat(row["date"]))
+        for name, value in zip(("east_m", "north_m", "up_m"), components):
+            series[name].append(value)
+    for name in ("east_m", "north_m", "up_m"):
+        series[name] = np.asarray(series[name])
+
+    def at(day):
+        return ng.gps_los_at(series, los_enu, dt.date.fromisoformat(day))[0]
+
+    return [_diff(at(a), at(b)) for a, b in pairs]
+
+
+def reference_tie(track: int, frame: int, los_enu, pairs: list[tuple[str, str]]):
+    """Choose a GPS source without reusing an ascending projection for another track."""
+    gps_dir = common.REPO_ROOT / "gps" / "processed"
+    gps_csv = gps_dir / "gps_los.csv"
+    enu_csv = gps_dir / "gps_cleaned_enu.csv"
+    if (track, frame) == (34, 20) and gps_csv.exists():
+        return (tie_from_gps_los_csv(gps_csv, common.REFERENCE_STATION, pairs),
+                "gps/processed/gps_los.csv, 7-day median at each date")
+    if enu_csv.exists():
+        return (tie_from_cleaned_enu_csv(enu_csv, common.REFERENCE_STATION, los_enu, pairs),
+                "gps/processed/gps_cleaned_enu.csv, projected on this track's LOS, 7-day median at each date")
+    return (tie_from_tenv3(ngl_tenv3(common.REFERENCE_STATION), los_enu, pairs),
+            "PROVISIONAL: raw NGL IGS20 tenv3 for the reference station, 7-day median "
+            "at each date, projected on the LOS; replace with cleaned GPS positions")
+
+
 def _diff(a, b):
     return None if a is None or b is None else b - a
 
@@ -89,6 +127,9 @@ def main() -> int:
                     help="use the ionosphere-only displacement (no troposphere / tide screens)")
     ap.add_argument("--stations-only", action="store_true",
                     help="rewrite only the station table (after the station list changed); leave the stack file alone")
+    ap.add_argument("--suffix", default="",
+                    help="appended to the stack file name, e.g. _v2 -> stack_tTTT_fFFF_v2.nc, so a "
+                         "new version does not overwrite the one teammates already have")
     ap.add_argument("--notes", default="", help="free text stored in the stack's `notes` attribute")
     args = ap.parse_args()
 
@@ -122,16 +163,10 @@ def main() -> int:
     pair_dates = [(m["ref_date"], m["sec_date"]) for m in metas]
 
     # --- tie to the reference station's GPS motion ---
-    gps_csv = common.REPO_ROOT / "gps" / "processed" / "gps_los.csv"
     if args.no_tie:
         tie, tie_source = [0.0] * len(files), "none (stack is relative to the reference station)"
-    elif gps_csv.exists():
-        tie = tie_from_gps_los_csv(gps_csv, common.REFERENCE_STATION, pair_dates)
-        tie_source = "gps/processed/gps_los.csv, 7-day median at each date"
     else:
-        tie = tie_from_tenv3(ngl_tenv3(common.REFERENCE_STATION), ref_enu, pair_dates)
-        tie_source = ("PROVISIONAL: raw NGL IGS20 tenv3 for the reference station, 7-day median "
-                      "at each date, projected on the LOS; replace with gps/processed/gps_los.csv")
+        tie, tie_source = reference_tie(args.track, args.frame, ref_enu, pair_dates)
     untied = [int(m["pair"]) for m, t in zip(metas, tie) if t is None]
     if untied:
         print(f"No GPS solution near the dates of pairs {untied}; cannot tie them.", file=sys.stderr)
@@ -142,7 +177,7 @@ def main() -> int:
     # --- stack file ---
     write_stack = not args.stations_only
     if write_stack:
-        out = common.INTERIM / f"stack_{tag}.nc"
+        out = common.INTERIM / f"stack_{tag}{args.suffix}.nc"
         tmp = out.with_name(out.stem + ".partial")
         nc = netCDF4.Dataset(tmp, "w", format="NETCDF4")
         nc.createDimension("pair", len(files))
@@ -218,6 +253,10 @@ def main() -> int:
     notes.append(f"tie source: {tie_source}")
     notes.append("corrections: " + ("ionosphere only" if args.iono_only else
                  "ionosphere, troposphere (wet + hydrostatic) and solid Earth tide screens from the GUNW"))
+    terrain = sorted({int(m.get("terrain_heights_used", 0)) for m in metas})
+    notes.append("troposphere/tide/LOS cubes read at: " + (
+        "terrain height (Copernicus GLO-90)" if terrain == [1] else
+        "a constant height" if terrain == [0] else "MIXED terrain and constant heights across pairs"))
     notes.append("no pair has been corrected for unwrapping errors")
     if write_stack:
         nc.setncatts({

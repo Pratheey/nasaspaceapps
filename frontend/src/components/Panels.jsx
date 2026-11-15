@@ -1,19 +1,23 @@
 import { useMemo, useState } from "react";
 import { X, ChevronLeft, ChevronRight, Radar, Route } from "lucide-react";
-import { sampleLine, distKm } from "../lib/profile.js";
+import { sampleLine, sampleCanal, distKm } from "../lib/profile.js";
 import { cm, fmtDate } from "../lib/fmt.js";
 import { cellAt } from "../lib/data.js";
+import { AGREEMENT, isDraft } from "../lib/demo.js";
 
 /* ---------------- cross-section ---------------- */
 const PW = 900, PH = 150, PP = { l: 54, r: 14, t: 12, b: 26 };
 export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
   const P = S.profile;
-  const smp = useMemo(() => (P?.b ? sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt) : null), [P, valueAt, D]);
-  const [read, setRead] = useState(null);
+  const smp = useMemo(() => (P?.canal ? (D.canal ? sampleCanal(D.canal, valueAt) : null)
+    : P?.b ? sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt) : null), [P, valueAt, D]);
+  const [readFrac, setReadFrac] = useState(null);
   if (!P) return null;
 
   let body;
-  if (!smp) body = <p className="text-[14px] text-ink/85">Click two points on the map to draw a line. A canal, a road, a levee: anything you want to see in cross-section.</p>;
+  if (!smp && P.canal) body = <p className="text-[14px] text-ink/85">The canal profile is not available with this data.</p>;
+  else if (!smp) body = <p className="text-[14px] text-ink/85">Click two points on the map to draw a line. A canal, a road, a levee: anything you want to see in cross-section.</p>;
+  else if (!smp.L) body = <p className="text-mute">Drag one end to a different spot to see a cross-section.</p>;
   else {
     const ok = smp.pts.filter((s) => s.v != null);
     if (!ok.length) body = <p className="text-mute">No measurements along this line.</p>;
@@ -32,19 +36,22 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
       if (seg.length) segs.push(seg);
       const frac = (e) => { const r = e.currentTarget.getBoundingClientRect(); return Math.max(0, Math.min(1, (((e.clientX - r.left) / r.width) * PW - PP.l) / (PW - PP.l - PP.r))); };
       const at = (f) => smp.pts[Math.round(f * (smp.pts.length - 1))];
+      const read = readFrac == null ? null : at(readFrac);
       body = (
         <>
           <p className="text-[13px] text-mute mb-1 min-h-[1.4em]" aria-live="polite">
-            {read ? <>{read.km.toFixed(1)} km along the line: <span className="text-ink">{read.v == null ? "no measurement" : cm(read.v)}</span></> : "Point along the profile to find that spot on the map. Drag the numbered ends to move the line."}
+            {read ? <>{read.km.toFixed(1)} km along the {P.canal ? "Aqueduct" : "line"}: <span className="text-ink">{read.v == null ? "no measurement" : cm(read.v)}</span></>
+              : P.canal ? "North to south along the California Aqueduct. Point along the profile to find that spot on the map. A screening tool: where to look closer, not damage or capacity."
+              : "Point along the profile to find that spot on the map. Drag the numbered ends to move the line."}
           </p>
           <svg viewBox={`0 0 ${PW} ${PH}`} preserveAspectRatio="none" className="chart w-full h-[132px] block"
-            onMouseMove={(e) => { const p = at(frac(e)); setRead(p); onProbe(p.p); }}
-            onMouseLeave={() => { setRead(null); onProbe(null); }}
+            onMouseMove={(e) => { const f = frac(e); setReadFrac(f); onProbe(at(f).p); }}
+            onMouseLeave={() => { setReadFrac(null); onProbe(null); }}
             onClick={(e) => { const p = at(frac(e)); const i = cellAt(D, ...p.p); if (i >= 0) onPick(i); }}>
             <defs>
               <linearGradient id="profFill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#F0705A" stopOpacity="0.05" />
-                <stop offset="1" stopColor="#F0705A" stopOpacity="0.4" />
+                <stop offset="0" stopColor="#D08B5B" stopOpacity="0.05" />
+                <stop offset="1" stopColor="#D08B5B" stopOpacity="0.4" />
               </linearGradient>
             </defs>
             {grid.map((v) => (
@@ -59,11 +66,11 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
               return (
                 <g key={n}>
                   <polygon points={`${X(g[0].km)},${Y(0)} ${top.join(" ")} ${X(g[g.length - 1].km)},${Y(0)}`} fill="url(#profFill)" />
-                  <polyline points={top.join(" ")} fill="none" stroke="#F0705A" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
+                  <polyline points={top.join(" ")} fill="none" stroke="#D08B5B" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
                 </g>
               );
             })}
-            {read && <line x1={X(read.km)} x2={X(read.km)} y1={PP.t} y2={PH - PP.b} stroke="#6FA8FF" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+            {read && <line x1={X(read.km)} x2={X(read.km)} y1={PP.t} y2={PH - PP.b} stroke="#9DB08A" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
           </svg>
         </>
       );
@@ -74,7 +81,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
       <button onClick={onClose} aria-label="Close cross-section" className="absolute right-3 top-2.5 p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2"><X size={16} /></button>
       <h3 className="font-display text-[16px] font-semibold flex items-center gap-2 mb-1 pr-10">
         <Route size={16} className="text-accent" />
-        Cross-section{smp ? `, ${distKm(P.a, P.b).toFixed(1)} km` : ""}
+        {P.canal ? `California Aqueduct${smp ? `, ${smp.L.toFixed(0)} km` : ""}` : <>Cross-section{smp ? `, ${distKm(P.a, P.b).toFixed(1)} km` : ""}</>}
       </h3>
       {body}
     </section>
@@ -86,7 +93,7 @@ export function TourCard({ step, k, n, onPrev, onNext, onClose }) {
   if (!step) return null;
   return (
     <div role="dialog" aria-label="Guided walkthrough"
-      className="absolute top-16 left-4 z-20 w-[380px] max-w-[calc(100%-2rem)] rounded-xl border border-accent/40 bg-space/95 backdrop-blur p-5 shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(111,168,255,.08)]">
+      className="absolute top-16 left-4 z-20 w-[380px] max-w-[calc(100%-2rem)] rounded-xl border border-accent/40 bg-space/95 backdrop-blur p-5 shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(157,176,138,.08)]">
       <div className="flex items-center gap-2 text-[12.5px] text-accent-2">
         <span className="font-display font-semibold">Step {k + 1} of {n}</span>
         <span className="flex gap-1 ml-1" aria-hidden="true">{Array.from({ length: n }, (_, j) => <span key={j} className={`h-1 w-5 rounded-full ${j <= k ? "bg-accent" : "bg-hair-2"}`} />)}</span>
@@ -116,7 +123,7 @@ export function Intro({ D, onStart, onTour }) {
           and two well-chosen dates can hide it. {D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, checked against GPS.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button onClick={onTour} className="rounded-lg bg-accent text-space font-semibold px-5 py-2.5 hover:bg-accent-2 shadow-[0_0_30px_rgba(111,168,255,.4)]">Walk me through it</button>
+          <button onClick={onTour} className="rounded-lg bg-accent text-space font-semibold px-5 py-2.5 hover:bg-accent-2 shadow-[0_0_30px_rgba(157,176,138,.4)]">Walk me through it</button>
           <button onClick={onStart} className="rounded-lg border border-hair-2 text-ink px-5 py-2.5 hover:border-accent/60 hover:text-accent-2">Explore the map</button>
         </div>
       </div>
@@ -132,17 +139,17 @@ export function Limits({ D, onClose }) {
         <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2"><X size={18} /></button>
         <h2 className="font-display text-[26px] font-semibold">What this map can and can't tell you</h2>
         {[
-          ["What it shows", `Ground motion measured by NISAR along the radar's line of sight, relative to GPS station ${D.meta.reference_station}. Negative means moving away from the satellite, which here is mostly sinking. The main map is the change from the first to the last date. Those dates fall in nearly the same season, so most of the seasonal movement cancels out.`],
-          ["What the fit means", "Each spot is fitted with a steady trend plus a once-a-year cycle. With less than a year of data the two can trade off, so the trend is shown with its uncertainty and is never the headline. Seasonal size and timing are shown only where the cycle passes a significance test."],
-          ["What it does not mean", "It does not say how much of the sinking is permanent. It does not measure water volume, aquifer health, or where to recharge. Hatched areas mean we could not tell, not that the ground is stable."],
-          ["How we checked it", `GPS stations ${D.meta.held_out_stations.join(", ")} were never used to calibrate the radar. Their disagreement with NISAR is shown when GPS check is on. Three check stations make a prototype check, not a valley-wide accuracy claim.`],
-          ["About the data", "NISAR data here is provisional. NASA and ISRO will release reprocessed, validated versions in 2027. Each pair is corrected for the ionosphere using the product's own correction layer. Published figures (levee heights, canal capacity) are other people's measurements and are credited where shown."],
+          ["What it shows", `Ground motion measured by NISAR along the radar's line of sight, from ${fmtDate(D.dates[0])} to ${fmtDate(D.dates[D.dates.length - 1])}, relative to GPS station ${D.meta.reference_station}. Negative means moving away from the satellite, which here is mostly sinking. The main map is the change from the first to the last date. Those dates fall in nearly the same season, so most of the seasonal movement cancels out.`],
+          ["What the fit means", "Each spot is fitted with a steady trend plus a once-a-year cycle. With less than a year of data the two can trade off, so the trend is shown with its uncertainty and is never the headline. Seasonal size and timing are shown only where the cycle passes a significance test. Elsewhere the app says the seasonal term is not significant here."],
+          ["What it does not mean", "It does not say how much of the sinking is permanent. It does not measure water volume, aquifer health, or where to recharge. \"Insufficient evidence\" (hatched on the map) means we could not tell, not that the ground is stable."],
+          ["How we checked it", `GPS stations that were never used to calibrate the radar (${D.meta.held_out_stations.join(", ")}) are compared with NISAR in the GPS check, including the one that disagrees most. NISAR and GPS agree to about ${AGREEMENT.rms_cm} cm per 12-day pair (root mean square, ${AGREEMENT.n_stations} held-out stations). A separate check at ${AGREEMENT.selfcheck_n} stations gives ${AGREEMENT.selfcheck}. Motion smaller than that is not resolved at a single spot. Toward the east edge of the map NISAR reads about 2 to 3 cm less sinking than GPS, so sinking there is understated, not overstated. A handful of check stations in one radar frame make a prototype check, not a valley-wide accuracy claim.`],
+          ["About the data", `NISAR data here is provisional. NASA and ISRO will release reprocessed, validated versions in 2027. Corrected for the ionosphere, the troposphere and solid Earth tides using the product's own correction layers, read at each spot's ground height. A second NISAR viewing direction (descending track) is used only as a cross-check of vertical vs east-west motion. It is noisier (about ${AGREEMENT.descending_cm} cm per pair) and misses Hanford. Each map cell is the median of the radar pixels inside it. Single pixels on farmland can show soil-moisture effects that look like sinking. Published figures (levee heights, canal capacity, valley-wide subsidence) are other people's measurements, credited where shown.`],
         ].map(([h, p]) => (
           <div key={h}><h3 className="font-display text-[18px] font-semibold mt-5 mb-1 text-accent-2">{h}</h3><p className="text-ink/90">{p}</p></div>
         ))}
         <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-accent-2">Keyboard</h3>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[14px]">
-          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
+          {[["1–7", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["F", "Crop fields"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
             <li key={k} className="flex items-center gap-2"><kbd className="font-sans text-[12px] font-semibold border border-hair-2 border-b-2 rounded px-1.5 py-0.5 bg-space">{k}</kbd><span className="text-ink/85">{d}</span></li>
           ))}
         </ul>
@@ -151,15 +158,39 @@ export function Limits({ D, onClose }) {
   );
 }
 
+// Explorer header: says plainly when the map is not real NISAR results (D6), or is a draft.
+export function DataStatus({ D }) {
+  const [open, setOpen] = useState(false);
+  const draft = isDraft(D);
+  if (!D.synthetic && !draft) return null;
+  const incomplete = D.fallback === "incomplete";
+  const text = D.synthetic
+    ? incomplete
+      ? "The map could only load part of its NISAR dataset. It is showing synthetic sample data."
+      : "NISAR displacement data is unavailable here. The map is showing synthetic sample data."
+    : "First real NISAR results. Labels can still change until the checks pass: sign at the moving GPS stations, the seasonal test on stable ground, and the held-out residual table.";
+  return (
+    <div className="relative shrink-0">
+      <button onClick={() => setOpen(!open)} aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-medium ${D.synthetic ? "border-sink/60 text-sink bg-sink/10" : "border-accent/50 text-accent-2 bg-accent/10"}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${D.synthetic ? "bg-sink" : "bg-accent"}`} />
+        {incomplete ? "Incomplete NISAR data" : D.synthetic ? "Synthetic preview" : "Draft results"}
+      </button>
+      {open && <p className="absolute left-0 top-full mt-2 z-40 w-[300px] rounded-lg border border-hair-2 bg-deck p-3 text-[13px] leading-snug text-ink/90 shadow-xl">{text}</p>}
+    </div>
+  );
+}
+
 // Shown only while the app runs on the synthetic sample files. Disappears by itself when the
 // real NISAR files are in public/data/ (AGENTS.md rule 6: never present placeholder data as NASA data).
-export function PreviewTag() {
+export function PreviewTag({ D }) {
   const [open, setOpen] = useState(false);
+  const incomplete = D.fallback === "incomplete";
   return (
     <button onClick={() => setOpen(!open)} aria-expanded={open}
       className={`fixed right-3 bottom-3 z-50 max-w-[300px] text-left ${open ? "rounded-lg" : "rounded-full"} border border-hair-2 bg-space/90 backdrop-blur px-3 py-1.5 text-[12px] text-mute hover:text-ink shadow-lg`}>
-      <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-2 align-middle" />Preview data
-      {open && <span className="block mt-1 leading-snug text-ink/85">These charts use synthetic data in the real file format while the NISAR results are processed. This tag disappears when the real data is loaded.</span>}
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-2 align-middle" />{incomplete ? "Incomplete NISAR data" : "Preview data"}
+      {open && <span className="block mt-1 leading-snug text-ink/85">{incomplete ? "The app could only load part of its NISAR dataset. The ground motion charts show synthetic sample data." : "The ground motion charts show synthetic sample data."}</span>}
     </button>
   );
 }

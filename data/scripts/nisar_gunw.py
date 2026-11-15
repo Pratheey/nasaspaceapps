@@ -280,18 +280,25 @@ def decode_mask(mask: np.ndarray) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     return water & ~fill, valid_samples, anomaly & ~fill
 
 
-def interp_cube(f, name: str, xw: np.ndarray, yw: np.ndarray, height_m: float) -> np.ndarray:
-    """Interpolate a metadata/radarGrid cube (height, y, x) onto grid (yw, xw) at one height.
+def interp_cube(f, name: str, xw: np.ndarray, yw: np.ndarray, height_m) -> np.ndarray:
+    """Interpolate a metadata/radarGrid cube (height, y, x) onto grid (yw, xw).
 
-    Bilinear in x/y and linear in height. Reads only the two height levels and the part of
-    the 500 m cube that covers the target grid.
+    `height_m` is one height for the whole grid, or an array of shape (len(yw), len(xw))
+    with the terrain height of every pixel (NaN allowed; the result is NaN there).
+    Bilinear in x/y and linear in height. Reads only the height levels needed and the part
+    of the 500 m cube that covers the target grid.
     """
     from scipy.interpolate import RegularGridInterpolator
 
     grp = f[f"{GUNW_ROOT}/metadata/radarGrid"]
     cx, cy, cz = grp["xCoordinates"][:], grp["yCoordinates"][:], grp["heightAboveEllipsoid"][:]
-    k = int(np.clip(np.searchsorted(cz, height_m) - 1, 0, cz.size - 2))
-    w = (height_m - cz[k]) / (cz[k + 1] - cz[k])
+    h = np.broadcast_to(np.asarray(height_m, dtype=np.float64), (yw.size, xw.size))
+    if not np.isfinite(h).any():
+        raise ValueError(f"{name}: no finite height to interpolate at")
+    hc = np.nan_to_num(np.clip(h, cz[0], cz[-1]), nan=float(cz[0]))
+    finite = np.isfinite(h)
+    k0 = int(np.clip(np.searchsorted(cz, hc[finite].min(), side="right") - 1, 0, cz.size - 2))
+    k1 = int(np.clip(np.searchsorted(cz, hc[finite].max(), side="left"), k0 + 1, cz.size - 1))
 
     def cover(coords: np.ndarray, lo: float, hi: float) -> slice:
         inside = np.nonzero((coords >= lo) & (coords <= hi))[0]
@@ -300,18 +307,29 @@ def interp_cube(f, name: str, xw: np.ndarray, yw: np.ndarray, height_m: float) -
         return slice(max(int(inside[0]) - 1, 0), min(int(inside[-1]) + 2, coords.size))
 
     sx, sy = cover(cx, xw.min(), xw.max()), cover(cy, yw.min(), yw.max())
-    block = grp[name][k : k + 2, sy, sx].astype(np.float64)
-    level = (1.0 - w) * block[0] + w * block[1]
-
+    block = grp[name][k0 : k1 + 1, sy, sx].astype(np.float64)
     suby, subx = cy[sy], cx[sx]
     if suby[0] > suby[-1]:  # the interpolator needs ascending axes
-        suby, level = suby[::-1], level[::-1, :]
-    interp = RegularGridInterpolator((suby, subx), level, bounds_error=False, fill_value=np.nan)
+        suby, block = suby[::-1], block[:, ::-1, :]
     yy, xx = np.meshgrid(yw, xw, indexing="ij")
-    return interp(np.stack([yy, xx], axis=-1))
+    pts = np.stack([yy, xx], axis=-1)
+    levels = np.stack([
+        RegularGridInterpolator((suby, subx), block[i], bounds_error=False, fill_value=np.nan)(pts)
+        for i in range(block.shape[0])
+    ])
+
+    # linear in height, pixel by pixel
+    z = cz[k0 : k1 + 1]
+    j = np.clip(np.searchsorted(z, hc, side="right") - 1, 0, z.size - 2)
+    w = np.clip((hc - z[j]) / (z[j + 1] - z[j]), 0.0, 1.0)
+    lower = np.take_along_axis(levels, j[None], axis=0)[0]
+    upper = np.take_along_axis(levels, (j + 1)[None], axis=0)[0]
+    out = (1.0 - w) * lower + w * upper
+    out[~finite] = np.nan
+    return out
 
 
-def los_unit_vector(f, xw: np.ndarray, yw: np.ndarray, height_m: float) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
+def los_unit_vector(f, xw: np.ndarray, yw: np.ndarray, height_m) -> tuple[np.ndarray, np.ndarray, np.ndarray]:
     """East, north, up components of the unit vector from the ground to the satellite."""
     east = interp_cube(f, "losUnitVectorX", xw, yw, height_m)
     north = interp_cube(f, "losUnitVectorY", xw, yw, height_m)
@@ -370,6 +388,7 @@ def process_pair(
     ref_half_window_px: int = 2,
     ref_min_px: int = 5,
     geometry_height_m: float = 50.0,
+    height_provider=None,
     apply_troposphere: bool = True,
     apply_solid_earth_tides: bool = True,
     mask_anomalies: bool = False,
@@ -386,6 +405,11 @@ def process_pair(
     and scalars describing the pair. The displacement is NOT yet tied to the reference
     station's GPS motion; build_stack.py adds that, so the tie can be changed without
     reading the granules again.
+
+    Heights: the troposphere, tide and LOS-vector cubes depend on height. By default they
+    are read at the constant `geometry_height_m`. Pass `height_provider(x, y, epsg)`
+    returning the terrain height (m above the ellipsoid) on the window grid to use real
+    terrain instead; where that height is NaN the constant is used.
 
     Anomaly-flagged pixels are kept by default and reported in `anomaly`: on the flagged
     dates of Track 034 / Frame 020 the phase step at the stripe edge is about 2 mm, and
@@ -425,15 +449,26 @@ def process_pair(
     if mask_anomalies:
         usable &= ~anomaly
 
+    height = geometry_height_m
+    if height_provider is not None:
+        terrain = np.asarray(height_provider(x, y, epsg), dtype=np.float64)
+        if terrain.shape != phase.shape:
+            raise ValueError(f"height grid {terrain.shape} does not match the window {phase.shape}")
+        height = np.where(np.isfinite(terrain), terrain, geometry_height_m)
+
     # Corrections. All screens are in radians of interferometric phase, to be subtracted.
     phase_iono = phase - iono
     extra = np.zeros_like(phase)
     if apply_troposphere:
-        extra += interp_cube(f, "wetTroposphericPhaseScreen", x, y, geometry_height_m)
-        extra += interp_cube(f, "hydrostaticTroposphericPhaseScreen", x, y, geometry_height_m)
+        extra += interp_cube(f, "wetTroposphericPhaseScreen", x, y, height)
+        extra += interp_cube(f, "hydrostaticTroposphericPhaseScreen", x, y, height)
     if apply_solid_earth_tides:
-        extra += interp_cube(f, "slantRangeSolidEarthTidesPhase", x, y, geometry_height_m)
+        extra += interp_cube(f, "slantRangeSolidEarthTidesPhase", x, y, height)
     phase_full = phase_iono - extra
+    east, north, up = los_unit_vector(f, x, y, height)
+    # Missing correction/geometry pixels are not measurements. In particular, a NaN
+    # in the reference block must not poison every otherwise valid pixel's offset.
+    usable &= np.isfinite(phase_full) & np.isfinite(east) & np.isfinite(north) & np.isfinite(up)
 
     # Reference: the connected component and median phase in a small block at the station.
     tr = Transformer.from_crs(4326, epsg, always_xy=True)
@@ -459,8 +494,6 @@ def process_pair(
         out[~valid] = np.nan
         return out.astype(np.float32)
 
-    east, north, up = los_unit_vector(f, x, y, geometry_height_m)
-
     return {
         "x": x,
         "y": y,
@@ -485,6 +518,7 @@ def process_pair(
         "set_applied": int(apply_solid_earth_tides),
         "coherence_threshold": coherence_threshold,
         "geometry_height_m": geometry_height_m,
+        "terrain_heights_used": int(height_provider is not None),
         "valid_fraction": float(valid.mean()),
         "water_fraction": float(water.mean()),
         "anomaly_fraction": float(anomaly.mean()),

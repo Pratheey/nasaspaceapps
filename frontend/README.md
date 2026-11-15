@@ -7,14 +7,29 @@ MapLibre GL JS for the map, hand-built SVG/canvas charts.
 cd frontend
 npm install
 npm run dev      # http://localhost:5173
+npm test         # frontend regression checks
 npm run build    # static site in dist/, deployable to GitHub Pages or Vercel
 ```
+
+## Basemap
+
+The default [OpenFreeMap basemap](https://openfreemap.org/quick_start/) needs no API key.
+For CARTO tiles, [request a Basemaps key](https://carto.com/basemaps/apikey), copy
+`.env.example` to `.env.local` in this directory, and set `VITE_CARTO_BASEMAP_API_KEY`.
+Restart the dev server or rebuild after changing it. Vite includes this public map key
+in the browser app, so use a key restricted to the app’s allowed origins. Keep
+`.env.local` outside Git.
+
+For GitHub Pages, the deploy workflow reads the optional repository Actions secret
+`CARTO_BASEMAP_API_KEY`. Without it, the default key-free map is used. A CARTO key
+restricted to `pratheey.github.io` is for that deployed site. Local testing needs its
+own localhost-restricted key, or the default map.
 
 ## Data
 Loads the four files from `contracts/app_data.md`:
 1. `public/data/{meta,grid,series,stations}.json`, written by the analysis lane (real NISAR).
-2. If those don't exist, `public/samples/` (synthetic copies of `contracts/samples/`), with a
-   striped "Synthetic data" banner. Never record the demo with that banner showing.
+2. If the real dataset is missing or incomplete, the app marks the fallback to
+   `public/samples/` (synthetic copies of `contracts/samples/`).
 
 Refresh samples: `python3 contracts/samples/make_samples.py && cp contracts/samples/*.json frontend/public/samples/`
 

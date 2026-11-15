@@ -58,10 +58,10 @@ export function Starfield({ className = "", density = 260 }) {
 }
 
 /** Our own drawing of NISAR: bus, 9 m boom, 12 m gold mesh reflector, solar array. */
-export function SatelliteArt({ className = "" }) {
+export function SatelliteArt({ className = "", moving = false }) {
   const ribs = Array.from({ length: 24 }, (_, i) => (i / 24) * Math.PI * 2);
   return (
-    <svg viewBox="0 0 600 420" className={className} role="img" aria-label="Illustration of the NISAR satellite with its gold mesh reflector">
+    <svg viewBox="0 0 600 420" className={`${className} ${moving ? "sat-moving" : ""}`} role="img" aria-label="Illustration of the NISAR satellite with its gold mesh reflector">
       <defs>
         <radialGradient id="mesh" cx="45%" cy="40%" r="70%">
           <stop offset="0" stopColor="#F5CF7A" stopOpacity="0.95" />
@@ -75,7 +75,7 @@ export function SatelliteArt({ className = "" }) {
           <stop offset="0" stopColor="#6FA8FF" stopOpacity="0.35" /><stop offset="1" stopColor="#6FA8FF" stopOpacity="0" />
         </linearGradient>
       </defs>
-      <polygon points="250,250 120,420 470,420" fill="url(#beam)" />
+      <polygon className="sat-beam" points="250,250 120,420 470,420" fill="url(#beam)" />
       <g transform="translate(250 175) rotate(-12)">
         <ellipse rx="150" ry="58" fill="url(#mesh)" stroke="#F5CF7A" strokeOpacity="0.8" />
         {ribs.map((a, i) => <line key={i} x1="0" y1="0" x2={Math.cos(a) * 150} y2={Math.sin(a) * 58} stroke="#FBE3A8" strokeOpacity="0.35" strokeWidth="0.8" />)}
@@ -89,6 +89,7 @@ export function SatelliteArt({ className = "" }) {
         <rect x="26" y="0" width="120" height="26" fill="url(#panel)" stroke="#5FC9E0" strokeOpacity="0.5" />
         {[1, 2, 3, 4, 5].map((i) => <line key={i} x1={26 + i * 20} x2={26 + i * 20} y1="0" y2="26" stroke="#5FC9E0" strokeOpacity="0.35" />)}
       </g>
+      <text x={592} y={412} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
     </svg>
   );
 }

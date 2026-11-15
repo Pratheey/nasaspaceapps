@@ -33,15 +33,15 @@ export function Numbers({ D }) {
   }, [D, G]);
   const items = [
     [<CountUp to={D.dates.length} run={seen} />, "radar passes, 12 days apart"],
-    [<CountUp to={s.area} run={seen} suffix="km²" />, "of farmland measured"],
+    [<CountUp to={s.area} run={seen} suffix="km²" />, "of ground measured"],
     [<CountUp to={(s.sinking / s.measured) * 100} run={seen} suffix="%" />, "of it sinking beyond the uncertainty"],
     [<CountUp to={s.worst * 100} decimals={1} run={seen} suffix="cm" />, "the most any spot moved in the record"],
   ];
   return (
     <section ref={ref} className="relative py-[12vh] border-y border-hair overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(240,112,90,.08),transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(208,139,91,.08),transparent_55%)]" />
       <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
-        <p className="font-serif italic text-accent-2 text-[22px] leading-none">By the numbers{D.synthetic ? ", from the preview data" : ""}</p>
+        <p className="text-[15px] text-mute">By the numbers{D.synthetic ? ", from the preview data" : ""}</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mt-10">
           {items.map(([num, label], n) => (
             <div key={n} className={`transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-6"}`} style={{ transitionDelay: `${n * 120}ms` }}>

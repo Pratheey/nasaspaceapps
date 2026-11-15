@@ -54,3 +54,25 @@ export function useScrollY() {
 export const clamp01 = (x) => Math.max(0, Math.min(1, x));
 export const seg = (p, a, b) => clamp01((p - a) / (b - a)); // progress within [a,b]
 export const ease = (t) => 1 - Math.pow(1 - t, 3);
+
+/** Eases a changing number toward its target every animation frame (smooth scroll-driven charts). */
+export function useSmooth(target, rate = 9) {
+  const [v, setV] = useState(target);
+  const cur = useRef(target);
+  const goal = useRef(target);
+  goal.current = target;
+  useEffect(() => {
+    let raf = 0, last = performance.now();
+    const step = (now) => {
+      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      const d = goal.current - cur.current;
+      if (Math.abs(d) < 0.0005) { cur.current = goal.current; setV(goal.current); raf = 0; return; }
+      cur.current += d * (1 - Math.exp(-rate * dt));
+      setV(cur.current);
+      raf = requestAnimationFrame(step);
+    };
+    if (!raf) raf = requestAnimationFrame(step);
+    return () => cancelAnimationFrame(raf);
+  }, [target, rate]);
+  return v;
+}

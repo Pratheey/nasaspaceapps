@@ -13,8 +13,8 @@ const LABEL_TEXT = { 0: "text-mute", 1: "text-sink", 2: "text-rise", 3: "text-vi
 function Section({ title, children, aside }) {
   return (
     <section className="border-t border-hair pt-4 mt-5">
-      <div className="flex items-baseline justify-between gap-3 mb-2">
-        <h3 className="font-display text-[17px] font-semibold">{title}</h3>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2 mb-2">
+        <h3 className="font-display text-[17px] font-semibold whitespace-nowrap">{title}</h3>
         {aside}
       </div>
       {children}
@@ -34,7 +34,7 @@ export default function Inspector({ D, S, set, actions, stationAt, placeName }) 
   useEffect(() => { if (last.current !== S.sel && scroller.current) scroller.current.scrollTop = 0; last.current = S.sel; }, [S.sel]);
 
   return (
-    <aside ref={scroller} aria-label="Selected spot" className="scroll-thin overflow-y-auto h-full px-6 pt-5 pb-12">
+    <aside ref={scroller} aria-label="Selected spot" className="scroll-thin overflow-y-auto overflow-x-hidden h-full max-lg:h-auto px-6 pt-5 pb-12 max-sm:px-4">
       {S.sel < 0 ? <Overview D={D} actions={actions} /> : <Spot {...{ D, S, set, actions, stationAt, placeName }} />}
     </aside>
   );
@@ -86,19 +86,25 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </p>
       <h2 className={`font-display text-[25px] leading-tight font-semibold mt-1 ${LABEL_TEXT[L]}`}>{D.meta.labels[String(L)]}</h2>
 
+      {G.net_change_m[i] == null ? (
+        <p className="text-[15px] text-ink/80 leading-relaxed mt-3">
+          No reliable change from first to last date here. The radar lost a clear signal on too many passes, which often
+          happens on ploughed fields. Any measurements it does have are in the record below.
+        </p>
+      ) : (
       <div className="grid grid-cols-[128px_1fr] gap-4 mt-4 items-start">
         <Gauge dates={D.dates} values={v} cursor={cursor ?? D.dates.length - 1} />
         <dl className="divide-y divide-hair">
           <div className="pb-3">
             <dt className="text-[13px] text-mute">Change, first to last date</dt>
-            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#F0705A" : "#E6EAF2", textShadow: G.net_change_m[i] < 0 ? "0 0 22px rgba(240,112,90,.35)" : "none" }}>{cm(net)}</dd>
+            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#D08B5B" : "#ECE9E2" }}>{cm(net)}</dd>
             <dd className="text-[12.5px] text-mute mt-1">{pm(G.net_change_sigma_m[i])}</dd>
           </div>
           <div className="py-3">
             <dt className="text-[13px] text-mute">Seasonal movement</dt>
             {sig ? (
               <>
-                <dd className="text-[16px]">{mm(G.amp_m[i])} up and down</dd>
+                <dd className="text-[16px]">{mm(G.amp_m[i])} seasonal amplitude</dd>
                 <dd className="text-[12.5px] text-mute">{pm(G.amp_sigma_m[i], "mm")}, highest in {MONTH_NAMES[(G.peak_month[i] || 1) - 1]}</dd>
               </>
             ) : <dd className="text-[15px] text-mute">Not significant here</dd>}
@@ -106,17 +112,20 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           <div className="pt-3">
             <dt className="text-[13px] text-mute">Fitted trend</dt>
             <dd className="text-[16px]">{G.trend_m_per_yr[i] == null ? "no value" : `${cm(G.trend_m_per_yr[i])} a year`}</dd>
-            <dd className="text-[12.5px] text-mute">{pm(G.trend_sigma_m_per_yr[i])}. Less than a year of data, so never the headline.</dd>
+            <dd className="text-[12.5px] text-mute">{G.trend_m_per_yr[i] == null && G.net_change_m[i] != null
+              ? "No fit here: this spot's usable dates don't cover all four seasons, so trend and seasonal can't be told apart."
+              : `${G.trend_sigma_m_per_yr[i] != null ? `${pm(G.trend_sigma_m_per_yr[i])}. ` : ""}Less than a year of data, so never the headline.`}</dd>
           </div>
         </dl>
       </div>
+      )}
 
-      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
+      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 max-sm:-mx-4 max-sm:px-4 pt-3 pb-0 mt-5 bg-[#1C1B19]/95 backdrop-blur border-b border-hair flex gap-1">
         {TABS.map(([id, name, Icon]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className={`relative inline-flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
+            className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
             <Icon size={14} /> {name}
-            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-accent shadow-[0_0_8px_#6FA8FF]" />}
+            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-accent" />}
           </button>
         ))}
       </div>
@@ -125,7 +134,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       {tab === "record" && <>
       <Section title="Every measurement here" aside={
         <label className="inline-flex items-center gap-2 text-[13px] text-ink/85 cursor-pointer">
-          <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#6FA8FF] w-4 h-4" />
+          <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#9DB08A] w-4 h-4" />
           Split trend and seasonal
         </label>}>
         <Chart dates={D.dates} values={v} tYears={D.tYears} fit={(t) => fitAt(D, i, t)} split={S.split} gps={gps} compare={compare}
@@ -133,7 +142,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           onPickDate={(k) => actions.scrubTo(k)} />
         <ChartKey split={S.split} gps={gps} seasonalSig={sig} compare={compare} />
         <div className="flex flex-wrap gap-1 mt-2 -ml-2">
-          <Tool icon={S.listenK != null ? VolumeX : Volume2} onClick={actions.toggleListen}>{S.listenK != null ? "Stop" : "Listen to this spot"}</Tool>
+          {v.some((value) => value != null) && <Tool icon={S.listenK != null ? VolumeX : Volume2} onClick={actions.toggleListen}>{S.listenK != null ? "Stop" : "Listen to this spot"}</Tool>}
           {compare
             ? <Tool icon={GitCompareArrows} onClick={() => actions.setPin(-1)}>Stop comparing</Tool>
             : <Tool icon={GitCompareArrows} onClick={() => set({ awaitPin: true })}>Compare with another spot</Tool>}
@@ -150,7 +159,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       {tab === "dates" && <>
       <Section title="Two dates">
         <p className="text-[14.5px] leading-relaxed">
-          From {fmtShort(D.dates[S.k1])} to {fmtShort(D.dates[S.k2])} ({days} days) this spot moved <strong className="text-ink">{cm(d12)}</strong>.
+          From {fmtShort(D.dates[S.k1])} to {fmtShort(D.dates[S.k2])} ({days} days), {d12 == null ? "there is a measurement missing." : <>this spot moved <strong className="text-ink">{cm(d12)}</strong>.</>}
           {expected != null && <> The fitted trend over the same {days} days is {cm(expected)}.</>}
         </p>
         {lie ? (
@@ -169,7 +178,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </>}
 
       {tab === "evidence" && <>
-      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the four stations on the map to see the radar checked against it.</p></Section>}
+      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the {D.stations.length} stations on the map to see the radar checked against it.</p></Section>}
 
       {st && (
         <Section title="GPS check">
@@ -190,6 +199,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             )}
         </Section>
       )}
+      {st && <HistoryCard station={st.station} />}
 
       <details open className="mt-6 rounded-lg border border-hair-2 bg-deck/60 open:bg-deck group">
         <summary className="cursor-pointer px-4 py-3 font-display text-[15.5px] font-semibold marker:text-accent">How we got these numbers</summary>
@@ -202,9 +212,10 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             ["Uncertainty", `${pm(D.meta.sigma_net_m)} on the net change, from ${D.meta.sigma_source}.`],
             ["Seasonal test", `${D.meta.significance}.`],
             ["Model", D.meta.fit.model],
+            ...(D.meta.notes || []).filter(Boolean).map((n, k) => [k ? "" : "Notes from the analysis", n]),
             ["First and last granule", `${pairs[0]?.granule_id ?? "?"} … ${pairs[pairs.length - 1]?.granule_id ?? "?"}`],
           ].map(([k, val]) => (
-            <div key={k}><dt className="text-mute">{k}</dt><dd className="break-all">{val}</dd></div>
+            <div key={k + val}><dt className="text-mute">{k}</dt><dd className="[overflow-wrap:anywhere]">{val}</dd></div>
           ))}
         </dl>
       </details>
@@ -237,7 +248,7 @@ function Leaders({ D, actions }) {
     <Section title="Where to look first" aside={
       <div className="flex rounded-md border border-hair overflow-hidden text-[12.5px]">
         {[["sink", "Sinking fastest"], ["breathe", "Breathing most"]].map(([id, t]) => (
-          <button key={id} onClick={() => setTab(id)} className={`px-2.5 py-1 ${tab === id ? "bg-accent/15 text-accent-2" : "text-mute hover:text-ink"}`}>{t}</button>
+          <button key={id} onClick={() => setTab(id)} className={`whitespace-nowrap px-2.5 py-1 ${tab === id ? "bg-accent/15 text-accent-2" : "text-mute hover:text-ink"}`}>{t}</button>
         ))}
       </div>}>
       <ol className="divide-y divide-hair">
@@ -246,7 +257,7 @@ function Leaders({ D, actions }) {
             <button onClick={() => actions.select(i, { fly: true })} className="w-full flex items-center gap-3 py-2 text-left hover:bg-deck-2/60 rounded px-1 -mx-1 group">
               <span className="font-display text-[15px] text-mute w-4">{n + 1}</span>
               <span className="flex-1 text-[13.5px] group-hover:text-accent-2">{name(i)}</span>
-              <Spark v={D.values[i] || []} color={tab === "sink" ? "#F0705A" : "#5FC9E0"} />
+              <Spark v={D.values[i] || []} color={tab === "sink" ? "#D08B5B" : "#6FA8C4"} />
               <span className={`font-display text-[16px] font-semibold w-[72px] text-right ${tab === "sink" ? "text-sink" : "text-rise"}`}>{tab === "sink" ? cm(val) : mm(val)}</span>
             </button>
           </li>
@@ -281,9 +292,9 @@ function Overview({ D, actions }) {
     const ymax = Math.max(...p.map((q) => q.ay)) * 1.1;
     const X = (v) => P.l + ((v - xmin) / (xmax - xmin)) * (W - P.l - P.r);
     const Y = (v) => H - P.b - (v / ymax) * (H - P.t - P.b);
-    x.strokeStyle = "rgba(170,190,230,0.25)"; x.lineWidth = 1.5;
+    x.strokeStyle = "rgba(236,233,226,0.25)"; x.lineWidth = 1.5;
     x.beginPath(); x.moveTo(X(0), P.t); x.lineTo(X(0), H - P.b); x.moveTo(P.l, H - P.b); x.lineTo(W - P.r, H - P.b); x.stroke();
-    x.fillStyle = "#8D97AB"; x.font = "22px 'Public Sans', sans-serif";
+    x.fillStyle = "#9E9A92"; x.font = "22px 'Public Sans', sans-serif";
     x.textAlign = "center"; x.fillText("Fitted trend, cm a year (sinking to the left)", (P.l + W - P.r) / 2, H - 14);
     x.save(); x.translate(24, (P.t + H - P.b) / 2); x.rotate(-Math.PI / 2); x.fillText("Seasonal size, mm", 0, 0); x.restore();
     x.fillText(xmin.toFixed(0), X(xmin) + 8, H - P.b + 26); x.fillText("0", X(0), H - P.b + 26);
@@ -307,7 +318,7 @@ function Overview({ D, actions }) {
 
   return (
     <div>
-      <h2 className="font-serif text-[34px] leading-[1.05]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
+      <h2 className="font-display font-bold tracking-[-0.01em] text-[30px] leading-[1.08]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Groundwater pumping lowers the water pressure underground, and the ground settles. Some of that comes back when the water returns each winter, and some doesn't. Compare the wrong two dates and sinking ground can look stable.</p>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Click anywhere on the map, or a GPS station, to see every measurement at that spot and how sure we are.</p>
       <div className="grid grid-cols-2 gap-2 mt-5">
@@ -327,5 +338,38 @@ function Overview({ D, actions }) {
         <p className="text-[13px] text-mute mt-1">Only spots where the seasonal cycle is significant. Click a dot to open it.</p>
       </Section>
     </div>
+  );
+}
+
+
+// Before NISAR: Sentinel-1 history at this GPS station from OPERA DISP-S1 (context only, never mixed with NISAR).
+let historyCache = null;
+function HistoryCard({ station }) {
+  const [H, setH] = useState(null);
+  useEffect(() => {
+    historyCache ||= fetch("./context/opera_history.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    historyCache.then(setH);
+  }, []);
+  const h = H?.stations?.[station];
+  if (!h) return null;
+  const W = 380, Ht = 120, t = h.dates.map((d) => new Date(d + "T00:00:00Z").getTime());
+  const v = h.los_m.map((x) => x * 100), lo = Math.min(...v, 0), hi = Math.max(...v, 0);
+  const X = (k) => 34 + ((t[k] - t[0]) / (t[t.length - 1] - t[0])) * (W - 44), Y = (y) => 10 + ((hi - y) / (hi - lo || 1)) * (Ht - 30);
+  const years = []; for (let y = new Date(t[0]).getUTCFullYear() + 1; y <= new Date(t[t.length - 1]).getUTCFullYear(); y += 2) years.push(y);
+  const nisar0 = Date.UTC(2025, 10, 24);
+  return (
+    <Section title="Before NISAR">
+      <svg viewBox={`0 0 ${W} ${Ht}`} className="w-full h-auto chart" role="img" aria-label={`Sentinel-1 history at ${station}, ${h.dates[0]} to ${h.dates[h.dates.length - 1]}`}>
+        <line x1="34" x2={W - 10} y1={Y(0)} y2={Y(0)} className="grid" />
+        {nisar0 < t[t.length - 1] && <rect x={X(0) + ((nisar0 - t[0]) / (t[t.length - 1] - t[0])) * (W - 44)} y="8" width={W - 10 - (X(0) + ((nisar0 - t[0]) / (t[t.length - 1] - t[0])) * (W - 44))} height={Ht - 26} fill="rgba(157,176,138,.12)" />}
+        <polyline points={v.map((y, k) => `${X(k)},${Y(y)}`).join(" ")} fill="none" stroke="#9E9A92" strokeWidth="1.4" />
+        <text x="30" y={Y(hi) + 4} textAnchor="end">{hi.toFixed(0)}</text><text x="30" y={Y(lo) + 4} textAnchor="end">{lo.toFixed(0)}</text>
+        {years.map((y) => { const x = 34 + ((Date.UTC(y, 0, 1) - t[0]) / (t[t.length - 1] - t[0])) * (W - 44); return <text key={y} x={x} y={Ht - 6} textAnchor="middle">{y}</text>; })}
+      </svg>
+      <p className="text-[12.5px] text-mute leading-snug mt-1">
+        cm, Sentinel-1 (C-band, OPERA DISP-S1) line of sight relative to {H.reference_station}, which moves too. Shaded: the NISAR window.
+        Context only: a different satellite and viewing angle, so it is never compared value for value with NISAR.
+      </p>
+    </Section>
   );
 }

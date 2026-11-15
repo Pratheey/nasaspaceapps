@@ -1,14 +1,14 @@
 # Contract: GPS outputs (gps → analysis, frontend)
 
-Produced by Daniel (`gps/`). Version 1. All files in `gps/processed/` (small, in git).
+Produced by Daniel (`gps/`). Version 1.1 (D5: more stations). All files in `gps/processed/` (small, in git).
 
 ## `stations.csv` (H-1)
 | Column | Meaning |
 |---|---|
-| `station` | P302, P303, P304, P307 |
+| `station` | The 14 stations in `data/processed/stations_ngl.csv` (D5) |
 | `lat`, `lon` | WGS84 decimal degrees |
 | `height_m` | Ellipsoidal height |
-| `role` | `reference` (P304) or `held_out` |
+| `role` | `reference` (P304) or `held_out` (every other station) |
 | `steps_removed` | Short note, e.g. `2025-11-xx antenna/receiver offset removed` (P307) |
 
 ## `gps_los.csv`
@@ -51,10 +51,10 @@ first-to-last net change.
 {
   "sigma_pair_m": 0.0,
   "sigma_net_m": 0.0,
-  "n_stations": 3,
+  "n_stations": 12,
   "n_pairs_used": 0,
   "method": "RMS of held-out residuals in LOS, flagged pairs excluded",
-  "note": "4 stations: a prototype check, not a valley-wide accuracy claim"
+  "note": "12 held-out stations in one frame: a prototype check, not a valley-wide accuracy claim"
 }
 ```
 Ismail uses `sigma_net_m` for the 2σ test on net change.

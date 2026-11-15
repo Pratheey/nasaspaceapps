@@ -33,20 +33,20 @@ export default function SeasonClock({ D, i }) {
     <div className="grid grid-cols-[1fr_auto] gap-3 items-center">
       <svg viewBox={`0 0 ${S} ${S}`} className="w-full max-w-[300px] h-auto" role="img" aria-label="The year as a circle: seasonal position of the ground at each pass">
         <defs>
-          <radialGradient id="clockbg"><stop offset="0.55" stopColor="#151C2B" /><stop offset="1" stopColor="#1C2538" /></radialGradient>
+          <radialGradient id="clockbg"><stop offset="0.55" stopColor="#1E1D1B" /><stop offset="1" stopColor="#272522" /></radialGradient>
         </defs>
-        <circle cx={C} cy={C} r={R + R * 0.48} fill="url(#clockbg)" stroke="rgba(170,190,230,.14)" />
-        <circle cx={C} cy={C} r={R} fill="none" stroke="rgba(230,234,242,.35)" strokeDasharray="3 4" />
+        <circle cx={C} cy={C} r={R + R * 0.48} fill="url(#clockbg)" stroke="rgba(236,233,226,.14)" />
+        <circle cx={C} cy={C} r={R} fill="none" stroke="rgba(236,233,226,.35)" strokeDasharray="3 4" />
         {MONTH_NAMES.map((m, j) => {
           const ang = (j / 12) * 2 * Math.PI;
           const [tx, ty] = [C + Math.sin(ang) * (R * 1.62), C - Math.cos(ang) * (R * 1.62)];
           const [l1x, l1y, l2x, l2y] = [C + Math.sin(ang) * R * 1.44, C - Math.cos(ang) * R * 1.44, C + Math.sin(ang) * R * 1.5, C - Math.cos(ang) * R * 1.5];
-          return <g key={m}><line x1={l1x} y1={l1y} x2={l2x} y2={l2y} stroke="rgba(170,190,230,.3)" /><text x={tx} y={ty + 4} textAnchor="middle" fontSize="11" fill="#8D97AB">{m.slice(0, 3)}</text></g>;
+          return <g key={m}><line x1={l1x} y1={l1y} x2={l2x} y2={l2y} stroke="rgba(236,233,226,.3)" /><text x={tx} y={ty + 4} textAnchor="middle" fontSize="11" fill="#9E9A92">{m.slice(0, 3)}</text></g>;
         })}
-        {sig && <polygon points={loop} fill="rgba(95,201,224,.10)" stroke="#5FC9E0" strokeWidth="2" style={{ filter: "drop-shadow(0 0 6px rgba(95,201,224,.6))" }} />}
-        {pts.map((p) => { const [x, y] = xy(p.ang, p.res); return <circle key={p.k} cx={x} cy={y} r="3" fill="#0F1420" stroke="#E6EAF2" strokeWidth="1.3" />; })}
-        <text x={C} y={C - 6} textAnchor="middle" fontSize="11" fill="#8D97AB">outside: higher</text>
-        <text x={C} y={C + 10} textAnchor="middle" fontSize="11" fill="#8D97AB">inside: lower</text>
+        {sig && <polygon points={loop} fill="rgba(111,168,196,.10)" stroke="#6FA8C4" strokeWidth="2" style={{ filter: "drop-shadow(0 0 6px rgba(111,168,196,.6))" }} />}
+        {pts.map((p) => { const [x, y] = xy(p.ang, p.res); return <circle key={p.k} cx={x} cy={y} r="3" fill="#161514" stroke="#ECE9E2" strokeWidth="1.3" />; })}
+        <text x={C} y={C - 6} textAnchor="middle" fontSize="11" fill="#9E9A92">outside: higher</text>
+        <text x={C} y={C + 10} textAnchor="middle" fontSize="11" fill="#9E9A92">inside: lower</text>
       </svg>
       <div className="text-[13px] text-mute max-w-[150px] leading-snug space-y-2">
         <p>Each dot is one pass, placed by its day of the year, with the trend taken out.</p>

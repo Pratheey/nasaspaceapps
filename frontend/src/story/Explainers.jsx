@@ -49,9 +49,19 @@ export function InsarExplainer() {
     <div className="rounded-2xl border border-hair-2 bg-deck/70 p-6">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={`The ground has moved ${d} cm; the radar phase shifts ${Math.round(phase)} degrees`}>
         <defs><linearGradient id="soil2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#4a3424" /><stop offset="1" stopColor="#151018" /></linearGradient></defs>
-        <g transform={`translate(${sat[0]} ${sat[1]}) rotate(-20)`}>
-          <ellipse rx="34" ry="12" fill="#E2B04A" opacity="0.75" />
-          <rect x="16" y="-26" width="18" height="16" fill="#2A3346" stroke="#8D97AB" />
+        {/* NISAR in miniature: the reflector faces the ground, the radar beam leaves its centre */}
+        <g transform={`translate(${sat[0]} ${sat[1]})`}>
+          <line x1="0" y1="0" x2="-30" y2="-26" stroke="#C9D2E4" strokeWidth="2" />
+          <g transform="translate(-30 -26)">
+            <rect x="-12" y="-10" width="24" height="20" rx="2" fill="#2A3346" stroke="#8D97AB" />
+            <rect x="-12" y="-10" width="24" height="5" fill="#E2B04A" opacity="0.85" />
+            <rect x="-62" y="-6" width="50" height="12" fill="#2E4A7A" stroke="#5FC9E0" strokeOpacity="0.5" />
+            {[1, 2, 3, 4].map((i) => <line key={i} x1={-62 + i * 10} x2={-62 + i * 10} y1="-6" y2="6" stroke="#5FC9E0" strokeOpacity="0.4" />)}
+          </g>
+          <g transform={`rotate(${(ang * 180) / Math.PI - 90})`}>
+            <ellipse rx="30" ry="9" fill="#E2B04A" fillOpacity="0.8" stroke="#F5CF7A" />
+            <ellipse rx="15" ry="4.5" fill="none" stroke="#FBE3A8" strokeOpacity="0.5" />
+          </g>
         </g>
         <line x1="0" x2={W} y1={g0} y2={g0} stroke="rgba(230,234,242,.35)" strokeDasharray="5 5" />
         <text x={W - 6} y={g0 - 8} textAnchor="end" fontSize="13" fill="#8D97AB">ground on the first pass</text>
@@ -65,10 +75,11 @@ export function InsarExplainer() {
           <circle r="34" fill="none" stroke={rgb(fringe(-d / 100))} strokeWidth="8" strokeDasharray={`${((phase % 360) / 360) * 213.6} 213.6`} transform="rotate(-90)" />
           <text y="5" textAnchor="middle" fontSize="13" fill="#E6EAF2">{Math.round(phase % 360)}°</text>
         </g>
+        <text x={W - 8} y={14} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
       </svg>
       <label className="block mt-4">
         <span className="text-[14px] text-mute">Move the ground away from the satellite</span>
-        <input type="range" min="0" max="24" step="0.1" value={d} onChange={(e) => setD(+e.target.value)} className="w-full mt-2 accent-[#6FA8FF]" />
+        <input type="range" min="0" max="24" step="0.1" value={d} onChange={(e) => setD(+e.target.value)} className="w-full mt-2 accent-[#9DB08A]" />
       </label>
       <div className="grid grid-cols-3 gap-px bg-hair rounded-lg overflow-hidden mt-4 text-center">
         {[["Ground moved", `${d.toFixed(1)} cm`], ["Extra round trip", `${(2 * d).toFixed(1)} cm`], ["Fringes", (d / (FRINGE_M * 100)).toFixed(2)]].map(([k, v]) => (
@@ -90,12 +101,12 @@ export function AquiferExplainer() {
   const [playing, setPlaying] = useState(false);
   const tRef = useRef(0);
   useEffect(() => {
-    if (!playing || reduceMotion) return;
+    if (!playing) return; // the reader pressed Play, so it runs even with reduced motion
     let raf, last = performance.now();
     const step = (now) => {
       const dt = (now - last) / 1000; last = now;
       tRef.current += dt;
-      const p = 0.55 + 0.4 * Math.sin(tRef.current * 1.4);
+      const p = 0.5 + 0.45 * Math.sin(tRef.current * 1.6);
       setPressure(p);
       setLost((l) => Math.min(1, l + dt * 0.03 * (p < 0.4 ? 2 : 1)));
       raf = requestAnimationFrame(step);
@@ -103,7 +114,7 @@ export function AquiferExplainer() {
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [playing]);
-  const squeeze = (1 - pressure) * 10 + lost * 22; // px of clay compaction
+  const squeeze = (1 - pressure) * 16 + lost * 26; // px of clay compaction
   const W = 640, H = 330, surf = 70 + squeeze;
   const clays = [[150, 26], [215, 22], [272, 18]];
   let shift = 0;
@@ -133,7 +144,9 @@ export function AquiferExplainer() {
         </g>
         <line x1="40" x2="40" y1="70" y2={surf} stroke="#F0705A" strokeWidth="2" />
         <text x="48" y={(70 + surf) / 2 + 5} fontSize="13" fill="#F0705A">{squeeze > 1 ? "surface dropped" : ""}</text>
+        <text x={W - 10} y="24" textAnchor="end" fontSize="14" fill="#E6EAF2">{pressure > 0.6 ? "Wet season: water recharged" : pressure < 0.4 ? "Dry season: pumping" : ""}</text>
         <text x={W - 10} y={H - 10} textAnchor="end" fontSize="12" fill="#8D97AB">Concept diagram, not measured data. Purple: clay layers.</text>
+        <text x={W - 8} y={14} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
       </svg>
       <div className="flex flex-wrap items-center gap-3 mt-4">
         <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-1.5 rounded-full bg-accent text-space font-semibold text-sm px-4 py-2 hover:bg-accent-2">
@@ -143,11 +156,11 @@ export function AquiferExplainer() {
       </div>
       <label className="block mt-4">
         <span className="text-[14px] text-mute">Groundwater pressure: pumping (left) to recharged (right)</span>
-        <input type="range" min="0" max="1" step="0.01" value={pressure} onChange={(e) => { setPlaying(false); setPressure(+e.target.value); }} className="w-full mt-2 accent-[#6FA8FF]" />
+        <input type="range" min="0" max="1" step="0.01" value={pressure} onChange={(e) => { setPlaying(false); setPressure(+e.target.value); }} className="w-full mt-2 accent-[#9DB08A]" />
       </label>
       <p className="text-[14px] text-ink/80 mt-3 leading-relaxed">
         When pumps lower the water pressure, the grains and clay carry more of the weight above them and squeeze together. Some of that springs
-        back when water returns. In the clay, some doesn't. Play the seasons and watch the surface breathe while it slowly goes down.
+        back when water returns. In the clay, some doesn't. Play the seasons to see the surface rise and fall while it slowly goes down.
       </p>
     </div>
   );

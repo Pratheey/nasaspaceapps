@@ -14,7 +14,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
   const { cells, N, dom, nLie } = useMemo(() => {
     const v = D.values[i] || [];
     const B = D.grid.trend_m_per_yr[i];
-    const sig = D.grid.net_change_sigma_m[i] ?? D.meta.sigma_net_m ?? 0.01;
+    const sig = D.grid.net_change_sigma_m[i] ?? D.meta.sigma_net_m;
     let dom = 0.005;
     const cells = [];
     for (let b = 1; b < v.length; b++) for (let a = 0; a < b; a++) {
@@ -23,7 +23,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
       dom = Math.max(dom, Math.abs(d));
       const days = (D.dates[b] - D.dates[a]) / 864e5;
       const exp = B == null ? null : B * (days / 365.25);
-      cells.push({ a, b, d, exp, lie: exp != null && days >= 90 && d > -sig && exp < -2 * sig });
+      cells.push({ a, b, d, exp, lie: sig != null && exp != null && days >= 90 && d > -sig && exp < -2 * sig });
     }
     return { cells, N: v.length, dom, nLie: cells.filter((c) => c.lie).length };
   }, [D, i]);
@@ -40,16 +40,16 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
     x.clearRect(0, 0, Wd, Hd);
     cells.forEach((k) => {
-      x.fillStyle = k.d == null ? "rgba(170,190,230,0.07)" : rgb(diverging(k.d, dom));
+      x.fillStyle = k.d == null ? "rgba(236,233,226,0.07)" : rgb(diverging(k.d, dom));
       x.fillRect(px(k.a), py(k.b), CELL - 1, CELL - 1);
     });
-    x.strokeStyle = "#E6EAF2"; x.lineWidth = 1.4;
+    x.strokeStyle = "#ECE9E2"; x.lineWidth = 1.4;
     cells.forEach((k) => k.lie && x.strokeRect(px(k.a) + 0.7, py(k.b) + 0.7, CELL - 2.4, CELL - 2.4));
     if (k2 > k1) {
-      x.strokeStyle = "#6FA8FF"; x.lineWidth = 2.5;
+      x.strokeStyle = "#9DB08A"; x.lineWidth = 2.5;
       x.strokeRect(px(k1) - 1, py(k2) - 1, CELL + 1, CELL + 1);
     }
-    x.fillStyle = "#8D97AB"; x.font = "11px 'Public Sans', sans-serif";
+    x.fillStyle = "#9E9A92"; x.font = "11px 'Public Sans', sans-serif";
     let lastM = -1;
     D.dates.forEach((d, k) => {
       const m = d.getUTCMonth();
@@ -66,7 +66,9 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
 
   const hit = (e) => {
     const r = ref.current.getBoundingClientRect();
-    const a = Math.floor((e.clientX - r.left - PL) / CELL), b = Math.floor((e.clientY - r.top - PT) / CELL) + 1;
+    const x = (e.clientX - r.left) * Wd / r.width;
+    const y = (e.clientY - r.top) * Hd / r.height;
+    const a = Math.floor((x - PL) / CELL), b = Math.floor((y - PT) / CELL) + 1;
     if (a < 0 || b < 1 || b >= N || a >= b) return null;
     return cells.find((k) => k.a === a && k.b === b);
   };
@@ -78,8 +80,8 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
       </p>
       <canvas
         ref={ref}
-        style={{ width: Wd, height: Hd }}
-        className="block max-w-full cursor-pointer"
+        style={{ width: Wd, aspectRatio: `${Wd} / ${Hd}` }}
+        className="block h-auto max-w-full cursor-pointer"
         aria-label="Every pair of dates at this spot. Click a square to compare those two dates."
         onMouseMove={(e) => setRead(hit(e))}
         onMouseLeave={() => setRead(null)}

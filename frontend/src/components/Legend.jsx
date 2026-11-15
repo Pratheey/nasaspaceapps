@@ -2,9 +2,10 @@ import { legendGradient, fringeGradient, LABEL_COLORS, rgb, FRINGE_M } from "../
 import { cm, fmtShort } from "../lib/fmt.js";
 import { viewTitle } from "../lib/view.js";
 import { RELIEF_H } from "./MapView.jsx";
+import { hiddenSinking, motionPatterns, PATTERN_COLORS } from "../lib/patterns.js";
 
 const Hatch = () => (
-  <span className="inline-block w-4 h-3 rounded-sm border border-hair-2 bg-[repeating-linear-gradient(-45deg,transparent_0_3px,rgba(170,190,230,.5)_3px_4px)]" />
+  <span className="inline-block w-4 h-3 rounded-sm border border-hair-2 bg-[repeating-linear-gradient(-45deg,transparent_0_3px,rgba(236,233,226,.5)_3px_4px)]" />
 );
 
 export default function Legend({ D, S, domain }) {
@@ -21,6 +22,17 @@ export default function Legend({ D, S, domain }) {
           ))}
           <li className="flex gap-2 items-center"><Hatch />{D.meta.labels["0"]}</li>
         </ul>
+      ) : S.mode === "patterns" ? (
+        <PatternsLegend D={D} />
+      ) : S.mode === "hidden" ? (
+        <>
+          <div className="h-3 rounded-sm" style={{ background: legendGradient() }} />
+          <p className="mt-1.5 text-ink/90 leading-snug">
+            Coloured spots sank beyond 2σ over the whole record, yet some pair of dates at least four months apart shows the ground there rising by 1 cm or more.
+            {" "}{(() => { const h = hiddenSinking(D); return `${h.count.toLocaleString()} of ${h.sinking.toLocaleString()} sinking spots (${Math.round((100 * h.count) / Math.max(1, h.sinking))}%).`; })()}
+          </p>
+          <p className="mt-1 text-mute leading-snug">Grey: measured, not in this group. Colour is the sinking over the whole record. Seasonal rebound and single-date noise (about 1.8 cm per pair) both cause it. Click a spot, then open "Two dates".</p>
+        </>
       ) : S.mode === "fringe" ? (
         <>
           <div className="h-3 rounded-sm" style={{ background: fringeGradient() }} />
@@ -41,5 +53,29 @@ export default function Legend({ D, S, domain }) {
       )}
       <p className="mt-1.5 text-mute leading-snug max-md:hidden">Along the radar's line of sight, relative to GPS station {D.meta.reference_station}. {prov}.</p>
     </div>
+  );
+}
+
+function PatternsLegend({ D }) {
+  const P = motionPatterns(D);
+  const T = P.centers[0].length;
+  const lo = Math.min(...P.centers.flat()), hi = Math.max(...P.centers.flat());
+  const pts = (m) => m.map((v, k) => `${(k / (T - 1)) * 70},${2 + ((hi - v) / (hi - lo || 1)) * 20}`).join(" ");
+  return (
+    <>
+      <ul className="space-y-1.5">
+        {P.centers.map((m, g) => (
+          <li key={g} className="flex items-center gap-2 leading-tight">
+            <span className="w-4 h-3 rounded-sm shrink-0" style={{ background: rgb(PATTERN_COLORS[g]) }} />
+            <svg viewBox="0 0 70 24" className="w-[70px] h-6 shrink-0" aria-hidden="true"><polyline points={pts(m)} fill="none" stroke={rgb(PATTERN_COLORS[g])} strokeWidth="1.8" /></svg>
+            <span className="min-w-0">{P.describe[g]}<span className="text-mute"> · {P.counts[g].toLocaleString()} spots</span></span>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-mute leading-snug">
+        Exploratory machine learning: k-means groups {P.used.toLocaleString()} spots whose 11-month records have a similar shape (curves: group averages, relative to the first date).
+        It describes the measurements; it does not say why the ground moves or whether the sinking is permanent.
+      </p>
+    </>
   );
 }

@@ -21,6 +21,7 @@ import numpy as np
 import xarray as xr
 
 import common
+import make_dem
 import nisar_gunw as ng
 
 GRID_VARS = ["los_disp_ref_m", "los_disp_iono_only_ref_m", "coherence", "valid", "anomaly",
@@ -28,7 +29,8 @@ GRID_VARS = ["los_disp_ref_m", "los_disp_iono_only_ref_m", "coherence", "valid",
 STATION_KEYS = ["los_disp_ref_m", "los_disp_iono_only_ref_m", "coherence", "n_valid_px", "anomaly",
                 "los_east", "los_north", "los_up"]
 SCALARS = ["epsg", "wavelength_m", "polarization", "ref_connected_component", "ref_n_px",
-           "iono_applied", "tropo_applied", "set_applied", "anomalies_masked", "coherence_threshold",
+           "iono_applied", "tropo_applied", "set_applied", "anomalies_masked", "terrain_heights_used",
+           "coherence_threshold",
            "geometry_height_m", "valid_fraction", "water_fraction", "anomaly_fraction"]
 ENCODING = {name: {"zlib": True, "complevel": 4} for name in GRID_VARS}
 
@@ -87,6 +89,8 @@ def main() -> int:
     ap.add_argument("--no-tides", action="store_true")
     ap.add_argument("--mask-anomalies", action="store_true",
                     help="also mask pixels the product flags as input-data anomalies (default: keep, flag)")
+    ap.add_argument("--flat-height", action="store_true",
+                    help="read the troposphere/tide/LOS cubes at a constant 50 m instead of terrain height")
     ap.add_argument("--overwrite", action="store_true")
     args = ap.parse_args()
 
@@ -96,6 +100,11 @@ def main() -> int:
     out_dir = common.pair_dir(args.track, args.frame)
     out_dir.mkdir(parents=True, exist_ok=True)
     window = ng.Window(*args.window)
+
+    def terrain(x, y, epsg):
+        return make_dem.load_or_build(args.track, args.frame, x, y, epsg)
+
+    height_provider = None if args.flat_height else terrain
 
     failed = []
     for p in common.parse_pairs(args.pairs, len(granules)):
@@ -113,6 +122,7 @@ def main() -> int:
                     apply_troposphere=not args.no_troposphere,
                     apply_solid_earth_tides=not args.no_tides,
                     mask_anomalies=args.mask_anomalies,
+                    height_provider=height_provider,
                 )
         except Exception as exc:  # keep going: one bad pair must not stop the rest
             failed.append(p)

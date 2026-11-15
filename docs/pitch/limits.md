@@ -20,13 +20,26 @@
 - "Insufficient evidence" means we could not tell, not that the ground is stable.
 
 **How we checked it**
-- GPS stations P302, P303 and P307 were never used to calibrate the radar. Their
-  disagreement with NISAR is shown in the GPS reveal.
-- Three check stations make a prototype check, not a valley-wide accuracy claim.
+- GPS stations that were never used to calibrate the radar are compared with NISAR in the
+  GPS reveal, including the one that disagrees most.
+- NISAR and GPS agree to about 1.8 cm per 12-day pair (root mean square, held-out stations
+  checked so far; the station count is shown next to it and comes from
+  `gps/processed/uncertainty.json`). A separate check at 13 stations gives 1.2 to 2.2 cm.
+  Motion smaller than that is not resolved at a single spot.
+- Toward the east edge of the map, NISAR reads about 2 to 3 cm less sinking than GPS, so
+  sinking there is understated, not overstated. For the same reason we never quote a trend
+  from NISAR alone.
+- A handful of check stations in one radar frame make a prototype check, not a valley-wide
+  accuracy claim.
 
 **About the data**
 - NISAR data here is provisional. NASA and ISRO will release reprocessed, validated
   versions in 2027.
-- Corrected for the ionosphere using the product's own correction layer.
+- Corrected for the ionosphere, the troposphere and solid Earth tides using the product's
+  own correction layers, read at each spot's ground height.
+- A second NISAR viewing direction (descending track) is used only as a cross-check of
+  vertical vs east-west motion. It is noisier (about 3 cm per pair) and misses Hanford.
+- Each map cell is the median of the radar pixels inside it. Single pixels on farmland can
+  show soil-moisture effects that look like sinking.
 - Published figures (levee heights, canal capacity, valley-wide subsidence) are other
   people's measurements, credited where shown.

@@ -41,20 +41,23 @@ def write_csv(path: Path, rows: list[dict], columns: list[str]) -> None:
 
 
 def load_stations() -> list[dict]:
-    """Station coordinates. Daniel's gps/processed/stations.csv wins once it exists (H-1);
-    until then data/processed/stations_ngl.csv, which holds the same NGL coordinates."""
-    official = REPO_ROOT / "gps" / "processed" / "stations.csv"
-    path = official if official.exists() else PROCESSED / "stations_ngl.csv"
-    return [
-        {
-            "station": r["station"],
-            "lat": float(r["lat"]),
-            "lon": float(r["lon"]),
-            "height_m": float(r["height_m"]),
-            "source_file": path.relative_to(REPO_ROOT).as_posix(),
-        }
-        for r in read_csv(path)
-    ]
+    """Station coordinates: every station in data/processed/stations_ngl.csv, with the
+    coordinates from Daniel's gps/processed/stations.csv (H-1) wherever he lists the
+    station. His file wins on coordinates but does not shrink the list, so the station
+    table keeps all stations while his file still covers only some of them."""
+    stations: dict[str, dict] = {}
+    for path in (PROCESSED / "stations_ngl.csv", REPO_ROOT / "gps" / "processed" / "stations.csv"):
+        if not path.exists():
+            continue
+        for r in read_csv(path):
+            stations[r["station"]] = {
+                "station": r["station"],
+                "lat": float(r["lat"]),
+                "lon": float(r["lon"]),
+                "height_m": float(r["height_m"]),
+                "source_file": path.relative_to(REPO_ROOT).as_posix(),
+            }
+    return list(stations.values())
 
 
 def parse_pairs(spec: str, n: int) -> list[int]:

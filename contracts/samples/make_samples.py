@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
-"""Generate SYNTHETIC app data files in the contracts/app_data.md v1 shape.
+"""Generate SYNTHETIC app data files in the contracts/app_data.md v1.2 shape.
 
-This is fake data for building the app before real NISAR results exist. Every file says
-"is_synthetic": true. Never present it as NASA data. Station coordinates are placeholders
-until Daniel's gps/processed/stations.csv (H-1) exists.
+This is fake data for building the app without the real NISAR results. Every file says
+"is_synthetic": true. Never present it as NASA data. Station coordinates are the real NGL
+positions (D5 stations inside the app bbox); every displacement value is invented.
 
 Run: python3 contracts/samples/make_samples.py   (numpy only)
 """
@@ -36,7 +36,8 @@ nd = len(dates)
 def bowl(lat0, lon0, width):
     return np.exp(-(((lat - lat0) ** 2 + (lon - lon0) ** 2) / (2 * width ** 2)))
 
-b1, b2 = bowl(36.10, -119.56, 0.15), bowl(36.60, -120.20, 0.10)
+# bowls near Corcoran/Hanford (CAHA) and Five Points (CAFP), the D5 demo stations
+b1, b2 = bowl(36.15, -119.58, 0.15), bowl(36.42, -120.08, 0.10)
 trend = -0.25 * b1 - 0.12 * b2 - 0.004                      # m/yr
 amp = 0.004 + 0.004 * np.clip(b1 + b2, 0, 1)                # m
 phase = 2 * np.pi * (2.5 / 12)                              # max around early March
@@ -113,12 +114,19 @@ for i in range(ncell):
 
 grid = {"is_synthetic": True, **out}
 
-# --- stations (PLACEHOLDER coordinates, replace with H-1) ---
+# --- stations: real NGL coordinates of the D5 stations inside the app bbox (values synthetic) ---
 stations_def = [
-    ("P302", 36.70, -120.45, "held_out"),
-    ("P303", 36.30, -119.80, "held_out"),
-    ("P304", 36.55, -119.55, "reference"),
-    ("P307", 36.30, -119.45, "held_out"),
+    ("P304", 36.7390, -120.3566, "reference"),
+    ("P307", 36.9473, -120.0579, "held_out"),
+    ("P294", 36.1232, -120.4399, "held_out"),
+    ("P297", 35.9741, -120.5519, "held_out"),
+    ("P298", 36.0158, -120.2941, "held_out"),
+    ("P300", 36.3044, -120.2770, "held_out"),
+    ("CAFP", 36.4240, -120.1020, "held_out"),
+    ("CAFR", 36.8144, -119.7475, "held_out"),
+    ("CAHA", 36.3234, -119.6228, "held_out"),
+    ("CAKC", 36.0080, -119.9674, "held_out"),
+    ("TRAN", 36.6508, -120.2490, "held_out"),
 ]
 stations = []
 for sid, slat, slon, role in stations_def:
@@ -130,7 +138,6 @@ for sid, slat, slon, role in stations_def:
     resid = nis - gps
     stations.append({
         "station": sid, "lat": slat, "lon": slon, "role": role, "cell_index": idx,
-        "coords_are_placeholder": True,
         "gps": {"dates": [d.isoformat() for d in dates], "los_m": [r4(v) for v in gps],
                 "sigma_m": [0.002] * nd},
         "nisar": {"dates": [d.isoformat() for d in dates], "los_m": [r4(v) for v in nis]},
@@ -149,12 +156,15 @@ for sid, slat, slon, role in stations_def:
     })
 
 meta = {
-    "contract_version": 1, "is_synthetic": True,
+    "contract_version": 1.2, "is_synthetic": True,
     "created_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
     "product": "SYNTHETIC (shape of NISAR L2 GUNW)", "product_maturity": "synthetic",
     "track": 34, "direction": "ascending", "frame": 20,
     "sign_convention": "positive toward satellite (≈ uplift); negative ≈ sinking",
-    "units": "m", "reference_station": "P304", "held_out_stations": ["P302", "P303", "P307"],
+    "units": "m", "reference_station": "P304",
+    "held_out_stations": [s[0] for s in stations_def if s[3] == "held_out"],
+    "demo_stations": {"sinking": ["CAFP", "CAHA"], "calm": "P300"},
+    "canal_profiles": ["canal_profile_california_aqueduct.json"],
     "grid": {"lat_max": LAT_MAX, "lon_min": LON_MIN, "step_deg": STEP, "nrows": NROWS, "ncols": NCOLS},
     "dates": [d.isoformat() for d in dates],
     "pairs": [{"pair": k + 1, "ref_date": dates[k].isoformat(), "sec_date": dates[k + 1].isoformat(),
@@ -168,7 +178,7 @@ meta = {
                "2": "Seasonal movement, no resolved trend",
                "3": "Persistent sinking, seasonal component uncertain"},
     "notes": ["SYNTHETIC DATA for building the app. Not NASA data.",
-              "Station coordinates are placeholders until gps/processed/stations.csv exists."],
+              "Station coordinates are real NGL positions; every value at them is synthetic."],
 }
 
 def dump(name, obj):
@@ -178,6 +188,45 @@ dump("meta.json", meta)
 dump("grid.json", grid)
 dump("series.json", {"is_synthetic": True, "values_m": [[r4(v) for v in row] for row in flat]})
 dump("stations.json", {"is_synthetic": True, "stations": stations})
+
+# --- canal profile sample (contracts/app_data.md section 5): real centre line, synthetic values ---
+CANALS = OUT.parents[1] / "context" / "canals" / "canals_bbox.geojson"
+if CANALS.exists():
+    feat = json.loads(CANALS.read_text(encoding="utf-8"))["features"][0]
+    ll = np.asarray(feat["geometry"]["coordinates"], dtype=float)[:, :2]
+    R = 6371008.8
+    dx = np.radians(np.diff(ll[:, 0])) * np.cos(np.radians(ll[:-1, 1])) * R
+    dy = np.radians(np.diff(ll[:, 1])) * R
+    cum = np.concatenate([[0.0], np.cumsum(np.hypot(dx, dy))])
+    dist = np.append(np.arange(0.0, cum[-1], 500.0), cum[-1])
+    plon, plat = np.interp(dist, cum, ll[:, 0]), np.interp(dist, cum, ll[:, 1])
+    rr = ((LAT_MAX - plat) / STEP).astype(int); cc2 = ((plon - LON_MIN) / STEP).astype(int)
+    ok = (rr >= 0) & (rr < NROWS) & (cc2 >= 0) & (cc2 < NCOLS)
+    idx = np.where(ok, rr * NCOLS + cc2, -1)
+    pick = lambda arr: [arr[i] if i >= 0 else None for i in idx]
+    net_p = pick(grid["net_change_m"])
+    netf = np.array([np.nan if v is None else v for v in net_p], dtype=float)
+    dkm = dist / 1000.0
+    grad = np.full(len(dkm), np.nan)
+    for i in range(len(dkm)):
+        lo = np.searchsorted(dkm, dkm[i] - 1.0); hi = np.searchsorted(dkm, dkm[i] + 1.0, side="right") - 1
+        if hi > lo and np.isfinite(netf[lo]) and np.isfinite(netf[hi]):
+            grad[i] = (netf[hi] - netf[lo]) / (dkm[hi] - dkm[lo])
+    name = feat["properties"]["name"]
+    dump("canal_profile_" + name.lower().replace(" ", "_") + ".json", {
+        "is_synthetic": True, "name": name,
+        "geometry_source": feat["properties"].get("source_layer", ""),
+        "spacing_m": 500.0, "gradient_baseline_km": 2.0,
+        "distance_km": [round(float(v), 3) for v in dkm],
+        "lat": [round(float(v), 5) for v in plat], "lon": [round(float(v), 5) for v in plon],
+        "cell_index": [int(i) if i >= 0 else None for i in idx],
+        "net_change_m": net_p, "net_change_sigma_m": pick(grid["net_change_sigma_m"]),
+        "trend_m_per_yr": pick(grid["trend_m_per_yr"]), "trend_sigma_m_per_yr": pick(grid["trend_sigma_m_per_yr"]),
+        "label": [int(v) if v is not None else 0 for v in pick(grid["label"])],
+        "net_change_gradient_m_per_km": [r4(v) if np.isfinite(v) else None for v in grad],
+        "net_change_gradient_sigma_m_per_km": [round(float(np.sqrt(2) * SIGMA_NET / 2.0), 5) if np.isfinite(v) else None for v in grad],
+        "note": "Screening tool: where to look closer along the canal. Not a measure of damage or capacity.",
+    })
 
 counts = np.bincount(np.array(grid["label"]), minlength=4)
 print("labels 0..3:", counts.tolist(), "| dates:", nd, "| sigma_net_m:", round(SIGMA_NET, 4))

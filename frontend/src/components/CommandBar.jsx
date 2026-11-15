@@ -18,7 +18,7 @@ export default function CommandBar({ open, onClose, items }) {
   return (
     <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm grid place-items-start justify-center pt-[12vh] px-4" onClick={onClose}>
       <div role="dialog" aria-label="Command bar" onClick={(e) => e.stopPropagation()}
-        className="w-[620px] max-w-full rounded-xl border border-hair-2 bg-deck shadow-[0_30px_90px_rgba(0,0,0,.6),0_0_0_1px_rgba(111,168,255,.08)] overflow-hidden [animation:rise-in_.18s_both]">
+        className="w-[620px] max-w-full rounded-xl border border-hair-2 bg-deck shadow-[0_30px_90px_rgba(0,0,0,.6),0_0_0_1px_rgba(157,176,138,.08)] overflow-hidden [animation:rise-in_.18s_both]">
         <div className="flex items-center gap-3 px-4 border-b border-hair">
           <Search size={17} className="text-accent" />
           <input ref={input} value={q} onChange={(e) => { setQ(e.target.value); setK(0); }} placeholder="Search places, stations, views and tools"
@@ -48,7 +48,7 @@ export default function CommandBar({ open, onClose, items }) {
               </li>
             );
           })}
-          {!list.length && <li className="px-4 py-6 text-mute text-[14px]">Nothing matches. Try a station name like P307, or a view like fringes.</li>}
+          {!list.length && <li className="px-4 py-6 text-mute text-[14px]">Nothing matches. Try a station name, or a view like fringes.</li>}
         </ul>
       </div>
     </div>
