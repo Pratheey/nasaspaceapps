@@ -1,8 +1,8 @@
 {
-  "sigma_pair_m": 0.0174,
-  "sigma_net_m": 0.0175,
-  "n_stations": 3,
-  "n_pairs_used": 75,
+  "sigma_pair_m": 0.0184,
+  "sigma_net_m": 0.0198,
+  "n_stations": 13,
+  "n_pairs_used": 313,
   "method": "RMS of held-out residuals in LOS, flagged pairs excluded",
-  "note": "Stations: P302, P303, P307. Net change is measured from 2025-11-24 to 2026-10-14. Prototype check, not a valley-wide accuracy claim"
+  "note": "Stations: CAFP, CAFR, CAHA, CAKC, P294, P297, P298, P300, P302, P303, P307, P725, TRAN. Net change runs to 2026-10-14 and starts on 2025-11-24, except CAFP, CAFR, CAHA, CAKC, TRAN (no GPS on the first date: from 2025-12-06). No net for P297. Prototype check, not a valley-wide accuracy claim"
 }
