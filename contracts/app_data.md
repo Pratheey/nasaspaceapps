@@ -1,6 +1,6 @@
 # Contract: app data files (analysis → frontend)
 
-Produced by Ismail into `frontend/public/data/`. Read by Avi's app. Version 1.1 (D5: station list and how cells are made; no shape change).
+Produced by Ismail into `frontend/public/data/`. Read by Avi's app. Version 1.2 (D10: adds `demo_stations` to `meta.json`, the canal profile file (section 5) and the vertical cross-check folder (section 6); the four core files keep their shape).
 Samples in exactly this shape: `contracts/samples/`. Four files, all JSON.
 
 ## Grid
@@ -18,7 +18,7 @@ valid pixels at a date is missing for that date and for every later cumulative v
 ## 1. `meta.json`
 ```json
 {
-  "contract_version": 1,
+  "contract_version": 1.2,
   "is_synthetic": false,
   "created_utc": "2026-11-14T20:00:00Z",
   "product": "NISAR L2 GUNW",
@@ -98,6 +98,41 @@ GPS `los_m` is absolute LOS (tied to P304, like NISAR), daily, decimated to the 
 or weekly to keep the file small. The reference station's residuals are `null` (it is not a check).
 `stations.json` lists only stations inside the app bbox; P302, P303 and P725 are held out
 too but lie outside it, so they appear only in `gps/processed/residuals.csv`.
+
+## 5. `canal_profile_<slug>.json` (optional, v1.2)
+Written by `analysis/canal.py` (`run.py --canal <geojson>`) next to the four core files, one file
+per canal line in `context/canals/`. `<slug>` is the canal name in lower case with `_` for spaces
+(`canal_profile_california_aqueduct.json`). **Screening only:** where to look closer, never damage
+or capacity. Points every `spacing_m` along the line; all arrays have one value per point.
+```json
+{
+  "is_synthetic": false,
+  "name": "California Aqueduct",
+  "geometry_source": "DWR i17_StateWaterProject_Centerline …",
+  "spacing_m": 500.0,
+  "gradient_baseline_km": 2.0,
+  "distance_km": [0.0, 0.5, ...],          // along the line, in flow order
+  "lat": [...], "lon": [...],
+  "cell_index": [...],                     // app grid cell, null outside the grid
+  "net_change_m": [...], "net_change_sigma_m": [...],
+  "trend_m_per_yr": [...], "trend_sigma_m_per_yr": [...],
+  "label": [...],                          // as grid.json; 0 outside the grid
+  "net_change_gradient_m_per_km": [...],   // change in net change per km over the baseline, centred
+  "net_change_gradient_sigma_m_per_km": [...],
+  "note": "Screening tool: where to look closer along the canal. Not a measure of damage or capacity."
+}
+```
+The app lists the profiles in `meta.json` → `canal_profiles` (array of file names), so it never
+guesses file names. Missing key = no profiles.
+
+## 6. `vertical/` (optional, v1.2): vertical cross-check
+`frontend/public/data/vertical/` holds the same four files (sections 1–4) from
+`python -m analysis.run --component up --var up_disp_m --out frontend/public/data/vertical`
+on Steven's two-track stack. Differences from the LOS files:
+- `meta.json` → `sign_convention`: `"positive up"`; `component`: `"up"`; a note that says
+  **cross-check only** (D7, D9) and that Hanford (CAHA) has no descending coverage.
+- `stations.json` compares with GPS **up**, not LOS.
+- The app labels every vertical view "cross-check" and never uses it for the headline map.
 
 ## Size
 Keep every file under 5 MB. At 0.01° the grid is 12,000 cells; round values to 4 decimals
