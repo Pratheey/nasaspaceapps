@@ -1,6 +1,7 @@
 import { useRef } from "react";
 import { Pause, Play, StepBack, StepForward } from "lucide-react";
 import { fmtDate, fmtShort } from "../lib/fmt.js";
+import { linePath } from "../lib/chart.js";
 
 // The orbit track: one mark per NISAR pass, 12 days apart. Gaps are missed passes.
 // In Two dates you drag A and B; elsewhere you scrub through time.
@@ -31,11 +32,11 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
     if (drag.current === "cursor") onScrub(k); else onPair(drag.current, k);
   };
 
-  let tracePts = "";
+  let tracePath = "";
   if (trace) {
     const ok = trace.filter((x) => x != null);
     const lo = Math.min(0, ...ok), hi = Math.max(0, ...ok), sp = hi - lo || 1;
-    tracePts = trace.map((x, k) => (x == null ? null : `${(frac(k) * 1000).toFixed(1)},${(6 + (1 - (x - lo) / sp) * 40).toFixed(1)}`)).filter(Boolean).join(" ");
+    tracePath = linePath(trace.map((x, k) => x == null ? null : [frac(k) * 1000, 6 + (1 - (x - lo) / sp) * 40]));
   }
   const months = [];
   let lastM = -1;
@@ -45,25 +46,25 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
   return (
     <section aria-label="Radar passes" className="border-t border-hair bg-deck/80 backdrop-blur px-3 pt-2 pb-1">
       <div className="flex items-center gap-2 px-2">
-        <button onClick={() => onStep(-1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2" aria-label="Previous pass"><StepBack size={16} /></button>
+        <button disabled={S.mode === "pair"} onClick={() => onStep(-1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2 disabled:opacity-40" aria-label="Previous pass"><StepBack size={16} /></button>
         <button onClick={onPlay} aria-pressed={S.playing}
           className="flex items-center gap-1.5 rounded-md bg-accent text-space font-semibold text-sm px-3 py-1.5 hover:bg-accent-2 shadow-[0_0_18px_rgba(111,168,255,.35)]">
           {S.playing ? <Pause size={15} /> : <Play size={15} />} {S.playing ? "Pause" : "Play"}
         </button>
-        <button onClick={() => onStep(1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2" aria-label="Next pass"><StepForward size={16} /></button>
+        <button disabled={S.mode === "pair"} onClick={() => onStep(1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2 disabled:opacity-40" aria-label="Next pass"><StepForward size={16} /></button>
         <p className="ml-2 text-[13.5px] text-mute truncate" aria-live="polite">
           {S.mode === "pair"
             ? <>Comparing <span className="text-ink">{fmtDate(D.dates[S.k1])}</span> with <span className="text-ink">{fmtDate(D.dates[S.k2])}</span>, {days} days apart. Drag A or B.</>
             : S.mode === "breathe"
               ? <><span className="font-mono text-ink">pass {String(S.cursor + 1).padStart(2, "0")}/{N}</span>, <span className="font-mono text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}.</>
-              : <>{N} radar passes, every 12 days. Press Play to watch the valley move.</>}
+              : <>{N} available radar passes on a 12-day schedule. Press Play to watch the valley move.</>}
         </p>
       </div>
-      <div ref={ref} onPointerDown={down} onPointerMove={move} onPointerUp={() => (drag.current = null)}
+      <div ref={ref} onPointerDown={down} onPointerMove={move} onLostPointerCapture={() => (drag.current = null)}
         className="relative h-[64px] cursor-pointer select-none touch-none">
         {trace && (
           <svg viewBox="0 0 1000 52" preserveAspectRatio="none" aria-hidden="true" className="absolute left-5 right-5 top-1 w-[calc(100%-40px)] h-[46px]">
-            <polyline points={tracePts} fill="none" stroke="#F0705A" strokeWidth="2" vectorEffect="non-scaling-stroke" opacity="0.7" />
+            <path d={tracePath} fill="none" stroke="#F0705A" strokeWidth="2" vectorEffect="non-scaling-stroke" opacity="0.7" />
           </svg>
         )}
         <div className="absolute left-5 right-5 top-[27px] h-px bg-hair-2" />

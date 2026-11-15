@@ -98,7 +98,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             <dt className="text-[13px] text-mute">Seasonal movement</dt>
             {sig ? (
               <>
-                <dd className="text-[16px]">{mm(G.amp_m[i])} up and down</dd>
+                <dd className="text-[16px]">{mm(G.amp_m[i])} seasonal amplitude</dd>
                 <dd className="text-[12.5px] text-mute">{pm(G.amp_sigma_m[i], "mm")}, highest in {MONTH_NAMES[(G.peak_month[i] || 1) - 1]}</dd>
               </>
             ) : <dd className="text-[15px] text-mute">Not significant here</dd>}
@@ -135,7 +135,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           onPickDate={(k) => actions.scrubTo(k)} />
         <ChartKey split={S.split} gps={gps} seasonalSig={sig} compare={compare} />
         <div className="flex flex-wrap gap-1 mt-2 -ml-2">
-          <Tool icon={S.listenK != null ? VolumeX : Volume2} onClick={actions.toggleListen}>{S.listenK != null ? "Stop" : "Listen to this spot"}</Tool>
+          {v.some((value) => value != null) && <Tool icon={S.listenK != null ? VolumeX : Volume2} onClick={actions.toggleListen}>{S.listenK != null ? "Stop" : "Listen to this spot"}</Tool>}
           {compare
             ? <Tool icon={GitCompareArrows} onClick={() => actions.setPin(-1)}>Stop comparing</Tool>
             : <Tool icon={GitCompareArrows} onClick={() => set({ awaitPin: true })}>Compare with another spot</Tool>}
@@ -152,7 +152,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       {tab === "dates" && <>
       <Section title="Two dates">
         <p className="text-[14.5px] leading-relaxed">
-          From {fmtShort(D.dates[S.k1])} to {fmtShort(D.dates[S.k2])} ({days} days) this spot moved <strong className="text-ink">{cm(d12)}</strong>.
+          From {fmtShort(D.dates[S.k1])} to {fmtShort(D.dates[S.k2])} ({days} days), {d12 == null ? "there is a measurement missing." : <>this spot moved <strong className="text-ink">{cm(d12)}</strong>.</>}
           {expected != null && <> The fitted trend over the same {days} days is {cm(expected)}.</>}
         </p>
         {lie ? (
