@@ -86,12 +86,18 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </p>
       <h2 className={`font-display text-[25px] leading-tight font-semibold mt-1 ${LABEL_TEXT[L]}`}>{D.meta.labels[String(L)]}</h2>
 
+      {G.net_change_m[i] == null ? (
+        <p className="text-[15px] text-ink/80 leading-relaxed mt-3">
+          No reliable change from first to last date here. The radar lost a clear signal on too many passes, which often
+          happens on ploughed fields. Any measurements it does have are in the record below.
+        </p>
+      ) : (
       <div className="grid grid-cols-[128px_1fr] gap-4 mt-4 items-start">
         <Gauge dates={D.dates} values={v} cursor={cursor ?? D.dates.length - 1} />
         <dl className="divide-y divide-hair">
           <div className="pb-3">
             <dt className="text-[13px] text-mute">Change, first to last date</dt>
-            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#F0705A" : "#E6EAF2", textShadow: G.net_change_m[i] < 0 ? "0 0 22px rgba(240,112,90,.35)" : "none" }}>{cm(net)}</dd>
+            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#F0705A" : "#E6EAF2" }}>{cm(net)}</dd>
             <dd className="text-[12.5px] text-mute mt-1">{pm(G.net_change_sigma_m[i])}</dd>
           </div>
           <div className="py-3">
@@ -112,13 +118,14 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           </div>
         </dl>
       </div>
+      )}
 
       <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 max-sm:-mx-4 max-sm:px-4 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
         {TABS.map(([id, name, Icon]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
             className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
             <Icon size={14} /> {name}
-            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-accent shadow-[0_0_8px_#6FA8FF]" />}
+            {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-accent" />}
           </button>
         ))}
       </div>

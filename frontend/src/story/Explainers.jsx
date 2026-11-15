@@ -90,12 +90,12 @@ export function AquiferExplainer() {
   const [playing, setPlaying] = useState(false);
   const tRef = useRef(0);
   useEffect(() => {
-    if (!playing || reduceMotion) return;
+    if (!playing) return; // the reader pressed Play, so it runs even with reduced motion
     let raf, last = performance.now();
     const step = (now) => {
       const dt = (now - last) / 1000; last = now;
       tRef.current += dt;
-      const p = 0.55 + 0.4 * Math.sin(tRef.current * 1.4);
+      const p = 0.5 + 0.45 * Math.sin(tRef.current * 1.6);
       setPressure(p);
       setLost((l) => Math.min(1, l + dt * 0.03 * (p < 0.4 ? 2 : 1)));
       raf = requestAnimationFrame(step);
@@ -103,7 +103,7 @@ export function AquiferExplainer() {
     raf = requestAnimationFrame(step);
     return () => cancelAnimationFrame(raf);
   }, [playing]);
-  const squeeze = (1 - pressure) * 10 + lost * 22; // px of clay compaction
+  const squeeze = (1 - pressure) * 16 + lost * 26; // px of clay compaction
   const W = 640, H = 330, surf = 70 + squeeze;
   const clays = [[150, 26], [215, 22], [272, 18]];
   let shift = 0;
@@ -133,6 +133,7 @@ export function AquiferExplainer() {
         </g>
         <line x1="40" x2="40" y1="70" y2={surf} stroke="#F0705A" strokeWidth="2" />
         <text x="48" y={(70 + surf) / 2 + 5} fontSize="13" fill="#F0705A">{squeeze > 1 ? "surface dropped" : ""}</text>
+        <text x={W - 10} y="24" textAnchor="end" fontSize="14" fill="#E6EAF2">{pressure > 0.6 ? "Wet season: water recharged" : pressure < 0.4 ? "Dry season: pumping" : ""}</text>
         <text x={W - 10} y={H - 10} textAnchor="end" fontSize="12" fill="#8D97AB">Concept diagram, not measured data. Purple: clay layers.</text>
       </svg>
       <div className="flex flex-wrap items-center gap-3 mt-4">
@@ -147,7 +148,7 @@ export function AquiferExplainer() {
       </label>
       <p className="text-[14px] text-ink/80 mt-3 leading-relaxed">
         When pumps lower the water pressure, the grains and clay carry more of the weight above them and squeeze together. Some of that springs
-        back when water returns. In the clay, some doesn't. Play the seasons and watch the surface breathe while it slowly goes down.
+        back when water returns. In the clay, some doesn't. Play the seasons to see the surface rise and fall while it slowly goes down.
       </p>
     </div>
   );

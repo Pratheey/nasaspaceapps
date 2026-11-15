@@ -20,7 +20,7 @@ export default function FieldsScene() {
         <Chapter n={12} title="The fields" />
         <div className="grid lg:grid-cols-[0.9fr_1.4fr] gap-12 items-start mt-4">
           <div>
-            <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)]">Two echoes from the same field.</h2>
+            <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)]">Polarization over crop fields</h2>
             <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
               NISAR sends its radar wave out horizontal and listens twice: for the echo that comes back horizontal (HH),
               and for the part that comes back turned on its side (HV). Leaves and branches scatter the wave many times
@@ -38,7 +38,7 @@ export default function FieldsScene() {
 
         <div className="grid lg:grid-cols-[0.9fr_1.4fr] gap-12 items-start mt-[12vh]">
           <div>
-            <h3 className="font-display font-bold tracking-[-0.01em] leading-[1.05] text-[clamp(28px,3vw,44px)]">Does the longer wave keep more fields usable?</h3>
+            <h3 className="font-display font-bold tracking-[-0.01em] leading-[1.05] text-[clamp(28px,3vw,44px)]">Usable coverage: NISAR and Sentinel-1</h3>
             <p className="text-[18px] leading-relaxed text-ink/80 mt-5">
               Not over these fields. We matched {cov.pairs.length} NISAR pairs with Sentinel-1 pairs of the same length, starting at most six days apart,
               and counted a field as usable when at least half its pixels had a valid coherence and the median was at least {cov.threshold_median_coherence.toFixed(2)}.

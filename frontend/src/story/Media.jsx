@@ -39,7 +39,7 @@ export function MissionTimeline() {
       <div className="sticky top-0 h-[100svh] overflow-hidden flex flex-col justify-center">
         <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto">
           <Chapter n={5} title="Mission log" />
-          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Three years to get here.</h2>
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">NISAR mission timeline</h2>
         </div>
         <div ref={track} className="flex gap-6 mt-10 pl-6 md:pl-14 will-change-transform" style={{ transform: `translate3d(${-p * tw}px,0,0)` }}>
           {STEPS.map((s, k) => (
@@ -139,7 +139,7 @@ export function SeenWall() {
   return (
     <section ref={ref} className="relative py-[12vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <Chapter n={8} title="First light" />
-      <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Radar sees through clouds and dark.</h2>
+      <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">First NISAR images</h2>
       <div className={`grid md:grid-cols-4 auto-rows-[230px] gap-4 mt-10 transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         {tiles.map((x) => (
           <figure key={x.id} className={`group relative overflow-hidden rounded-2xl border border-hair-2 bg-deck ${x.cls || ""}`}>

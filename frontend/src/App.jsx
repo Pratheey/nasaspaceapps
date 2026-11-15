@@ -1,12 +1,13 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
+import ToolsMenu from "./components/ToolsMenu.jsx";
 import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
 import Timeline from "./components/Timeline.jsx";
 import Legend from "./components/Legend.jsx";
-import { ProfilePanel, TourCard, Limits, DataStatus } from "./components/Panels.jsx";
+import { ProfilePanel, TourCard, Limits } from "./components/Panels.jsx";
 import { loadData, cellAt, cellBounds, fitAt } from "./lib/data.js";
 import { cellValue, netDomain, MODES } from "./lib/view.js";
 import { cm } from "./lib/fmt.js";
@@ -227,16 +228,14 @@ function Explorer({ D, onStory, startTour }) {
             <h1 className="font-display font-bold text-[21px] max-sm:text-[18px] leading-none truncate">The Breathing Ground</h1>
             <p className="text-[12px] text-mute mt-1 truncate max-[1500px]:hidden">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
           </div>
-          <DataStatus D={D} />
         </div>
         <nav aria-label="Map view" className="flex gap-1 mx-auto max-lg:order-3 max-lg:w-full max-lg:overflow-x-auto">
           {MODES.map((m) => {
             const Icon = MODE_ICONS[m.id], on = S.mode === m.id;
             return (
               <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
-                className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 font-display text-[15px] font-medium transition-colors ${on ? "text-accent-2 bg-accent/10" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
-                <Icon size={15} className="shrink-0" /> <span className="lg:max-2xl:sr-only">{m.name}</span>
-                {on && <span className="absolute left-3 right-3 -bottom-[11px] h-[2px] bg-accent shadow-[0_0_10px_#6FA8FF] max-lg:hidden" />}
+                className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[14px] transition-colors ${on ? "text-ink bg-deck-2 font-medium" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
+                <Icon size={15} className="shrink-0" /> <span>{m.name}</span>
               </button>
             );
           })}
@@ -262,11 +261,7 @@ function Explorer({ D, onStory, startTour }) {
               onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} onField={(f) => set({ field: f })} />
             {S.fields && <FieldCard field={S.field} onClose={() => set({ field: null })} />}
 
-            {S.mode === "breathe" && !S.relief && (
-              // a radar swath sweeps the map on every new pass
-              <div key={S.cursor} aria-hidden="true" className="pointer-events-none absolute inset-y-0 left-0 w-[38%] z-[3] bg-[linear-gradient(90deg,transparent,rgba(111,168,255,.16)_45%,rgba(169,203,255,.32)_50%,rgba(111,168,255,.16)_55%,transparent)] animate-[sweep_.9s_ease-out_both] motion-reduce:hidden" />
-            )}
-            <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] overflow-x-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur shadow-[0_8px_30px_rgba(0,0,0,.4)]">
+            <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] rounded-lg border border-hair-2 bg-space/95">
               <button onClick={() => setCmd(true)} title="Search (Ctrl+K)" aria-label="Search places, views and tools"
                 className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
                 <Search size={15} className="text-accent" /><kbd className="font-mono text-[11px] text-mute border border-hair-2 rounded px-1 whitespace-nowrap @max-[700px]:hidden">Ctrl K</kbd>
@@ -283,22 +278,17 @@ function Explorer({ D, onStory, startTour }) {
                   {D.stations.map((st) => <option key={st.station} value={`s${st.station}`}>GPS {st.station}{st.role === "reference" ? " (reference)" : ""}</option>)}
                 </select>
               </label>
-              {[
-                { icon: Route, label: "Cross-section", on: !!S.profile && !S.profile.canal, act: toggleProfile, key: "P" },
-                { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: toggleSwipe, key: "S" },
-                ...(D.canal ? [{ icon: Droplets, label: "Aqueduct", on: !!S.profile?.canal, act: toggleCanal, key: "A" }] : []),
-                { icon: ScanSearch, label: "Lens", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
-                { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },
-                { icon: Sprout, label: "Fields", on: S.fields, act: () => set({ fields: !S.fields, field: null }), key: "F" },
-                { icon: Share2, label: "Share view", on: false, act: share },
-              ].map(({ icon: Icon, label, on, act, key }) => (
-                <button key={label} onClick={act} aria-pressed={key ? on : undefined} title={key ? `${label} (${key})` : label}
-                  className={`inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] ${on ? "bg-accent text-space font-semibold" : "text-ink/90 hover:bg-deck-2"}`}>
-                  <Icon size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[1080px]:sr-only">{label}</span>
-                </button>
-              ))}
-              <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-accent-2 hover:bg-deck-2">
-                <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[1080px]:sr-only">Walkthrough</span>
+              <ToolsMenu tools={[
+                { icon: Route, label: "Cross-section", hint: "Draw a line, see the ground along it", on: !!S.profile && !S.profile.canal, act: toggleProfile, key: "P" },
+                ...(D.canal ? [{ icon: Droplets, label: "California Aqueduct", hint: "Motion along the canal", on: !!S.profile?.canal, act: toggleCanal, key: "A" }] : []),
+                { icon: SplitSquareHorizontal, label: "Swipe compare", hint: "Two dates side by side", on: S.swipe != null, act: toggleSwipe, key: "S" },
+                { icon: Box, label: "3D view", hint: "Sinking shown as depth", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },
+                { icon: Sprout, label: "Crop fields", hint: "Polarization and coverage", on: S.fields, act: () => set({ fields: !S.fields, field: null }), key: "F" },
+                { icon: ScanSearch, label: "Radar lens", hint: "Fringes under the cursor", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
+                { icon: Share2, label: "Copy link to this view", act: share },
+              ]} />
+              <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2">
+                <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">Walkthrough</span>
               </button>
             </div>
 
@@ -316,19 +306,12 @@ function Explorer({ D, onStory, startTour }) {
               <div className="pointer-events-none absolute z-20 flex items-center gap-2 rounded-md bg-space/95 border border-hair-2 px-2 py-1 text-[12.5px] shadow-lg"
                 style={{ transform: `translate(${hover.x + 14}px, ${hover.y + 12}px)`, left: 0, top: 0 }}>
                 <span>{hv.text}</span>
-                {hv.pts && <svg viewBox="0 0 90 24" className="w-[90px] h-6" aria-hidden="true"><polyline points={hv.pts} fill="none" stroke="#F0705A" strokeWidth="1.6" /></svg>}
               </div>
             )}
 
             {S.tour >= 0 && (
               <TourCard step={steps[S.tour]} k={S.tour} n={steps.length}
                 onPrev={() => goStep(S.tour - 1)} onNext={() => (S.tour >= steps.length - 1 ? endTour() : goStep(S.tour + 1))} onClose={endTour} />
-            )}
-            {S.sel < 0 && S.tour < 0 && !S.drawing && S.swipe == null && (
-              <div className="pointer-events-none absolute left-1/2 top-[68px] -translate-x-1/2 z-10 flex items-center gap-2.5 rounded-full border border-accent/40 bg-space/85 backdrop-blur px-4 py-2 text-[13.5px] shadow-[0_0_30px_rgba(111,168,255,.18)] [animation:rise-in_.6s_.4s_both] max-md:hidden">
-                <span className="relative flex w-2.5 h-2.5"><span className="absolute inset-0 rounded-full bg-accent animate-ping opacity-60" /><span className="relative w-2.5 h-2.5 rounded-full bg-accent" /></span>
-                <MousePointerClick size={15} className="text-accent" /> Click any spot to open its record
-              </div>
             )}
           </div>
 
