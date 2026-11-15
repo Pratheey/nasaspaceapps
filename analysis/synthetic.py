@@ -7,8 +7,7 @@
 Noise is added per DATE and then differenced, like real data: neighbouring pairs share a
 date, so their errors are correlated.
 
-The dates follow the brief (26 dates, 12-day repeat from 2025-11-24, two gaps) until
-Pratheek confirms the real list in data/README.md.
+The dates are the 26 real Track 034 / Frame 020 acquisition dates.
 """
 from __future__ import annotations
 
@@ -19,10 +18,12 @@ import numpy as np
 from .timebase import to_years
 
 
+# The 26 real Track 034 / Frame 020 acquisition dates (stack v2, data/README.md).
+REAL_DATES = ("2025-11-24", "2025-12-06", "2025-12-18", "2025-12-30", "2026-01-11", "2026-01-23", "2026-02-04", "2026-02-16", "2026-02-28", "2026-03-12", "2026-03-24", "2026-04-05", "2026-04-17", "2026-04-29", "2026-05-11", "2026-05-23", "2026-06-04", "2026-06-16", "2026-06-28", "2026-07-10", "2026-07-22", "2026-08-15", "2026-08-27", "2026-09-08", "2026-09-20", "2026-10-14")
+
+
 def nisar_like_dates() -> list:
-    start = dt.date(2025, 11, 24)
-    all_dates = [start + dt.timedelta(days=12 * k) for k in range(28)]
-    return [d for k, d in enumerate(all_dates) if k not in (6, 19)]
+    return [dt.date.fromisoformat(d) for d in REAL_DATES]
 
 
 def series_from_params(t, B, a, b) -> np.ndarray:

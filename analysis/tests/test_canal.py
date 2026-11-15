@@ -8,6 +8,13 @@ def test_densify_known_length():
     lon, lat, d = canal.densify(np.array([[-120.0, 36.0], [-119.9, 36.0]]), spacing_m=500)
     assert abs(d[-1] - 9.0) < 0.1
     assert np.all(np.diff(d) > 0) and np.all(np.diff(d) <= 0.5 + 1e-9)
+    assert np.allclose(np.diff(d)[:-1], 0.5)           # even spacing, except the last step to the end
+
+
+def test_densify_many_vertices_gives_even_samples():
+    lon = np.linspace(-120.0, -119.9, 400); line = np.column_stack([lon, np.full_like(lon, 36.0)])
+    _, _, d = canal.densify(line, spacing_m=500)
+    assert len(d) == int(np.ceil(d[-1] / 0.5)) + 1     # ~19 samples, not 400
 
 
 def test_profile_samples_the_right_cells_and_outside_is_null():
