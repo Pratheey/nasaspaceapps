@@ -87,8 +87,12 @@ class Box:
     lon_max: float
 
 
-# D5: "hill cells at the window's north-east and south-west corners". These boxes are the
-# analysis lane's reading of that; confirm the exact areas with Pratheek before the real run.
+# D5: "hill cells at the window's north-east and south-west corners". Checked by Pratheek on the
+# real stack (2026-11-14): north-east = 394 m median height, 98% valid in all 25 pairs, no anomaly
+# flags; south-west = 714 m, 73% valid in all 25 pairs, no anomaly flags.
+# CAUTION: the south-west box sits on or next to the creeping section of the San Andreas fault, so
+# it can have a steady TREND. That is fine here, because the seasonal test fits a trend and asks
+# only whether the yearly wave is real. Never use these boxes as "zero-trend" ground.
 STABLE_CONTROL_BOXES = (
     Box("north-east corner hills", 36.85, 36.95, -119.50, -119.40),
     Box("south-west corner hills", 35.95, 36.05, -120.60, -120.50),

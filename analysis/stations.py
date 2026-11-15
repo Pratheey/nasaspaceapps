@@ -34,7 +34,7 @@ def gps_files_present(gps_dir) -> bool:
 
 
 def _read(path) -> list[dict]:
-    with open(path, newline="", encoding="utf-8") as fh:
+    with open(path, newline="", encoding="utf-8-sig") as fh:  # -sig: tolerate a Windows BOM
         return [{k.strip(): (v or "").strip() for k, v in row.items()} for row in csv.DictReader(fh)]
 
 

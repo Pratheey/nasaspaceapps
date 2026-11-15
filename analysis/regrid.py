@@ -11,6 +11,12 @@ cell's series drifts like a random walk (found in testing: 13 mm drift with 3 pi
 
 A cell is kept for a date only if at least `min_valid_fraction` of its pixels are valid.
 
+Default 0.2, set from the first real stack (2026-11-14). Cells hold ~155 pixels (80 m), but only
+49% of pixels stay valid through all 25 pairs (farmland decorrelates). With 0.5, only 44% of cells
+had a net change and the demo station CAFP had none. With 0.2 (still >= ~31 pixels), 68% of cells
+have one, CAFP tracks GPS (correlation +0.81, net within 0.7 cm), and agreement at every other
+held-out station is unchanged.
+
 Grid layout (contracts/app_data.md): row-major, north->south then west->east;
 cell (row, col) centre: lat = lat_max - (row+0.5)*step, lon = lon_min + (col+0.5)*step.
 """
@@ -20,6 +26,9 @@ import warnings
 from dataclasses import dataclass
 
 import numpy as np
+
+
+MIN_VALID_FRACTION = 0.2
 
 
 @dataclass(frozen=True)
@@ -66,7 +75,7 @@ def pixel_latlon(x, y, crs):
     return np.asarray(lat), np.asarray(lon)
 
 
-def aggregate(values, idx, ncells: int, min_valid_fraction: float = 0.5):
+def aggregate(values, idx, ncells: int, min_valid_fraction: float = MIN_VALID_FRACTION):
     """Median of pixels per cell.
 
     values: (n_layers, n_pixels), NaN = invalid. idx: (n_pixels,) from cell_index.
