@@ -8,10 +8,31 @@ NASA Harmony finished exporting frequency A HH and HV for 26 provisional GCOV ac
 on Track 034, Frame 020 between November 24, 2025 and October 14, 2026. The export is cropped
 to the field study area. [NASA export order](https://search.earthdata.nasa.gov/downloads/9629331473).
 
-[Real HH preview for November 24](results/nisar-hh-nov24.png) and [field table](results/nisar-hh-nov24.csv).
-All 30 fields had valid HH pixels for this scene. Group medians were −3.4 dB for almond fields,
-−11.0 dB for alfalfa, and −11.7 dB for cotton. This describes the HH return on a single date.
-The complete HH/HV comparison awaits authenticated downloads of the paired GeoTIFFs.
+All 780 field-by-date measurements (30 fields × 26 dates) passed the paired validity check.
+Median HV/HH across dates was −6.1 dB for almonds, −7.7 dB for alfalfa, and −7.9 dB for cotton.
+These groups use 2025 USDA crop labels.
+
+- [Polarization chart](results/nisar-polarization.png)
+- [Per-field HH, HV, and HV/HH](results/nisar-polarization-fields.csv)
+- [Crop medians by acquisition](results/nisar-polarization-by-crop.csv)
+- [H-6 handoff summary](results/ryan-hour6-summary.txt)
+
+## Coverage (H-10)
+
+All 23 matched pairs were processed at 80 m pixel spacing using the Track 034/020 v2 NISAR
+coherence stack and ASF Sentinel-1 GAMMA products. The pairs have equal temporal baselines
+(21 pairs at 12 days and two at 24 days), and their start dates are within six days.
+A field passed when at least half its pixel centers had valid coherence values and its median
+coherence reached 0.30. All 30 fields count in each denominator.
+
+Sentinel-1 passed **558/690 checks (80.9%)** and NISAR passed **542/690 (78.6%)**.
+Sentinel-1 led on 13 pairs, NISAR on six, and four tied. Radar wavelength, acquisition timing,
+viewing geometry, and product processing all affect the comparison.
+
+- [Coverage chart](results/matched-radar-coverage.png)
+- [Counts and dates by pair](results/matched-radar-coverage-by-pair.csv)
+- [Coherence and pass flags by field](results/matched-radar-coverage-by-field.csv)
+- [H-10 handoff summary](results/ryan-coverage-summary.txt)
 
 ## Fixed fields and granule lists
 
@@ -23,9 +44,7 @@ The complete HH/HV comparison awaits authenticated downloads of the paired GeoTI
   [descending GUNW](catalog/descending_gunw.csv) list the NASA provisional granules.
 - [Sentinel-1 date matches](catalog/sentinel_matches.csv) and the [HyP3 job list](catalog/hyp3_jobs.json)
   contain 23 candidate pairs. Each candidate has the same time interval as the corresponding
-  NISAR pair and starts within six days of it. ASF accepted five jobs at the last verified
-  submission. The job list includes submitted candidates and can be used to check for duplicates
-  against ASF Submitted Products.
+  NISAR pair and starts within six days of it. All 23 jobs completed and are included in the coverage results above.
 - `catalog.py` regenerates the catalog from CMR exports `gcov.json` and `gunw.json`, ASF
   GeoJSON `sentinel.json`, USDA 2022 boundaries `csb_candidates.geojson` and USDA CDL_WM
   raster 40 `cdl_2025.tif`. The field query used −119.76°, 35.96°, −119.40°, 36.25° and
