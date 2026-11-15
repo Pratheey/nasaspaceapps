@@ -16,8 +16,17 @@ async function tryLoad(base) {
 }
 
 export async function loadData() {
-  const d = (await tryLoad("./data")) || (await tryLoad("./samples"));
+  const real = await tryLoad("./data");
+  const d = real || (await tryLoad("./samples"));
   if (!d) throw new Error("No data files found in public/data or public/samples.");
+  // Optional canal profile (analysis lane, H-19): loaded only next to the real data files.
+  let canal = null;
+  if (real) {
+    try {
+      const r = await fetch("./data/canal_profile_california_aqueduct.json");
+      if (r.ok && (r.headers.get("content-type") || "").includes("json")) canal = await r.json();
+    } catch { canal = null; }
+  }
 
   const { meta, grid, series, stations } = d;
   const g = meta.grid;
@@ -31,6 +40,7 @@ export async function loadData() {
     grid,
     values: series.values_m,
     stations: stations.stations,
+    canal,
     synthetic: !!(meta.is_synthetic || grid.is_synthetic),
     n,
     dates,

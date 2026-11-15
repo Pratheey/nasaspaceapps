@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
 import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
@@ -141,6 +141,7 @@ function Explorer({ D, onStory, startTour }) {
       { id: "t-lens", group: "Tools", label: "Radar lens", key: "L", icon: ScanSearch, run: () => set({ lens: true, relief: false }) },
       { id: "t-3d", group: "Tools", label: "3D view", key: "D", icon: Box, run: () => set({ relief: true, lens: false }) },
       { id: "t-prof", group: "Tools", label: "Draw a cross-section", key: "P", icon: Route, run: () => set({ profile: { a: null }, drawing: true }) },
+      ...(D.canal ? [{ id: "t-canal", group: "Tools", label: "California Aqueduct profile", key: "A", icon: Droplets, run: () => set({ profile: { canal: true }, drawing: false }) }] : []),
       { id: "t-gps", group: "Tools", label: S.gps ? "Hide GPS check" : "Show GPS check", key: "G", icon: Satellite, run: () => set({ gps: !Sref.current.gps }) },
       { id: "t-fields", group: "Tools", label: "Crop fields: polarization and coverage", key: "F", icon: Sprout, run: () => set({ fields: true, field: null }) },
       { id: "t-tour", group: "Tools", label: "Walkthrough", key: "W", icon: Compass, run: () => goStep(0) },
@@ -172,6 +173,7 @@ function Explorer({ D, onStory, startTour }) {
       else if (k === "l") set({ lens: !s.lens, relief: false });
       else if (k === "s") set(s.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false });
       else if (k === "p") set(s.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true });
+      else if (k === "a" && D.canal) set(s.profile?.canal ? { profile: null, drawing: false } : { profile: { canal: true }, drawing: false });
       else if (k === "w") goStep(0);
       else if (k === "f") set({ fields: !s.fields, field: null });
       else if (k === "arrowright") step(1);
@@ -260,7 +262,8 @@ function Explorer({ D, onStory, startTour }) {
                 </select>
               </label>
               {[
-                { icon: Route, label: "Cross-section", on: !!S.profile, act: () => set(S.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true }), key: "P" },
+                { icon: Route, label: "Cross-section", on: !!S.profile && !S.profile.canal, act: () => set(S.profile && !S.profile.canal ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true }), key: "P" },
+                ...(D.canal ? [{ icon: Droplets, label: "Aqueduct", on: !!S.profile?.canal, act: () => set(S.profile?.canal ? { profile: null, drawing: false } : { profile: { canal: true }, drawing: false }), key: "A" }] : []),
                 { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: () => set(S.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }), key: "S" },
                 { icon: ScanSearch, label: "Lens", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
                 { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },

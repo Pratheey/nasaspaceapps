@@ -22,6 +22,15 @@ export function sampleLine(a, b, step, valueAt) {
   return { L, pts: out };
 }
 
+// The California Aqueduct: sample the current view at the canal's own points (every 500 m, flow order).
+export function sampleCanal(canal, valueAt) {
+  const pts = canal.distance_km.map((km, j) => {
+    const p = [canal.lon[j], canal.lat[j]];
+    return { km, p, v: valueAt(p[0], p[1]) };
+  });
+  return { L: canal.distance_km[canal.distance_km.length - 1], pts };
+}
+
 const W = 900, H = 150, P = { l: 52, r: 14, t: 14, b: 26 };
 
 export function profileSVG(sample, title) {
