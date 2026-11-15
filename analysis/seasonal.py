@@ -90,6 +90,9 @@ class Box:
 # D5: "hill cells at the window's north-east and south-west corners". Checked by Pratheek on the
 # real stack (2026-11-14): north-east = 394 m median height, 98% valid in all 25 pairs, no anomaly
 # flags; south-west = 714 m, 73% valid in all 25 pairs, no anomaly flags.
+# D11 (2026-11-15): the north-east box is stable ground. Its apparent signal (+2.2 cm net, 15 mm
+# "seasonal") is broad atmospheric error shared date by date with the valley floor next to it
+# (correlation 0.90), so the box measures the error at the far side of the map; keep it.
 # CAUTION: the south-west box sits on or next to the creeping section of the San Andreas fault, so
 # it can have a steady TREND. That is fine here, because the seasonal test fits a trend and asks
 # only whether the yearly wave is real. Never use these boxes as "zero-trend" ground.

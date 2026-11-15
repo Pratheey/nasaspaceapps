@@ -139,12 +139,12 @@ correlation +0.95 to +1.00 at all 11 stations in the bbox; RMS difference 0.1–
 - **Calm demo station: P298** (`analysis/export.py` → `DEMO_STATIONS`). P300's cell has 7 valid radar
   dates and no net change. P298 has all 26, GPS −0.7 cm over the window, and NISAR within 0.9 cm of GPS.
   P294 is also complete but disagrees by 2.4 cm. Ryan can swap it in one line.
-- **Seasonal threshold: both control boxes kept (conservative).** On v3 the north-east box behaves like
-  ground that moves, not bedrock: 78% of its cells pass the F-test, median amplitude 16 mm, trend +4.3 cm/yr,
-  net +2.1 cm. The south-west box behaves like bedrock: 0% pass, 3.6 mm. Keeping both sets an 18.5 mm bar;
-  dropping the north-east box removes the extra bar (≈1,300 more seasonal cells, including CAHA). The
-  conservative choice can only hide seasonal motion, never invent it. To change it, remove the north-east
-  `Box` from `seasonal.STABLE_CONTROL_BOXES` and rerun. Pratheek and Ryan decide.
+- **Seasonal threshold: both control boxes kept — confirmed by D11.** The north-east box is stable
+  ground (Sierra foothills, 98% valid, no farmland). Its apparent motion (+2.2 cm net, 15 mm "seasonal")
+  is broad atmospheric error that the valley floor next to it shares date by date (correlation 0.90), so
+  the box measures the error at the far side of the map (data/README.md, answers of 2026-11-15). The
+  18.5 mm bar stays; cells near P304 are held to a stricter bar than they need. Dropping the box would add
+  about 1,300 "seasonal" cells partly made of that error.
 
 ## Stack v3 = data-lane freeze (2026-11-14, hour ~12)
 
@@ -171,12 +171,15 @@ The optional vertical and canal outputs follow v1.2 of `contracts/app_data.md`.
 
 ## Not done yet
 
-- **North-east control box:** kept as stable ground for now (conservative; see "Decisions taken at the
-  analysis freeze"). Pratheek and Ryan decide; a change is one line plus a rerun.
 - **Vertical cross-check in the app** (contracts v1.2 section 6): optional; needs Steven's two-track stack
   from the Drive and GPS up.
-- **Second canal (Delta-Mendota):** needs a working source (the Federal layer link returned 404).
-- **NISAR vs GPS trend gap** (about +2 cm/yr at held-out stations, not the tie): open for the data and gps lanes.
+- **Second canal (Delta-Mendota):** needs a working source (gps lane).
+
+**Explained, not corrected (D11):** NISAR net change sits about 1 cm above GPS on average, from a shared
+date-by-date wobble at the reference P304 and a tilt of about 0.34 mm per km toward the east (2–3 cm across
+the map). Toward the east edge, sinking is understated, not overstated. Correcting it would use the
+held-out stations for calibration, so it stays as measured and the limits panel says so. No NISAR-only
+trend is quoted anywhere.
 
 What each other lane needs to send is in `REQUESTS.md`. Numbers shown in the app: `NUMBERS.md`.
 Other lanes' numbers checked by this lane: `SECOND_CHECK.md`.
