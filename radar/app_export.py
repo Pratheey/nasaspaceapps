@@ -1,7 +1,7 @@
 """Turn the radar lane's result tables into the small app files in frontend/public/radar/.
 
 Reads radar/results/ (polarization and Sentinel-1 coverage, hour 28) and radar/catalog/fields.geojson.
-Writes polarization.json, coverage.json and fields.geojson (shape: contracts/radar_app.md).
+Writes polarization.json, coverage.json and fields.json (GeoJSON) (shape: contracts/radar_app.md).
 
     python3 radar/app_export.py
 """
@@ -83,7 +83,7 @@ def main():
             "hv_over_hh_db_median": r4(st.median(rat[fid])) if rat[fid] else None,
             "nisar_usable": pas[fid]["NISAR"][0], "s1_usable": pas[fid]["Sentinel-1"][0], "pairs": pas[fid]["NISAR"][1],
             "hv_over_hh_db": [ser[fid].get(d) for d in dates]}})
-    for name, obj in [("polarization.json", pol), ("coverage.json", cov), ("fields.geojson", {"type": "FeatureCollection", "features": feats})]:
+    for name, obj in [("polarization.json", pol), ("coverage.json", cov), ("fields.json", {"type": "FeatureCollection", "features": feats})]:
         (OUT / name).write_text(json.dumps(obj, separators=(",", ":")), encoding="utf-8")
         print(name, (OUT / name).stat().st_size, "bytes")
     print("NISAR", cov["totals"]["nisar"], "S1", cov["totals"]["s1"], "medians", summary)

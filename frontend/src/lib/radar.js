@@ -10,7 +10,7 @@ export function loadRadar() {
       if (!r.ok) throw new Error(n);
       return r.json();
     });
-    cache = Promise.all([get("polarization.json"), get("coverage.json"), get("fields.geojson")])
+    cache = Promise.all([get("polarization.json"), get("coverage.json"), get("fields.json")])
       .then(([pol, cov, fields]) => ({ pol, cov, fields }))
       .catch(() => { cache = null; return null; });
   }

@@ -28,7 +28,7 @@ Field checks: a field is usable in a pair when its median coherence ≥ `thresho
  "caveat": "…"}
 ```
 
-## `fields.geojson`
+## `fields.json` (GeoJSON; .json so every static host serves it)
 The 30 field polygons (lon/lat, 5 decimals). Properties: `field_id`, `crop`, `acres`, `lon`, `lat`,
 `hv_over_hh_db_median`, `hv_over_hh_db` (one value per `polarization.json` date, 2 decimals),
 `nisar_usable`, `s1_usable`, `pairs`.
