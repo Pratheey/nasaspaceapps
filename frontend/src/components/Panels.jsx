@@ -149,7 +149,7 @@ export function Limits({ D, onClose }) {
         ))}
         <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-accent-2">Keyboard</h3>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[14px]">
-          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["F", "Crop fields"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
+          {[["1–7", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["F", "Crop fields"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
             <li key={k} className="flex items-center gap-2"><kbd className="font-sans text-[12px] font-semibold border border-hair-2 border-b-2 rounded px-1.5 py-0.5 bg-space">{k}</kbd><span className="text-ink/85">{d}</span></li>
           ))}
         </ul>

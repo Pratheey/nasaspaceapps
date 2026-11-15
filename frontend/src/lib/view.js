@@ -1,5 +1,6 @@
 // What each map view shows at a cell, shared by the map, hover, profile and 3D.
 import { pairDiff } from "./data.js";
+import { hiddenSinking } from "./patterns.js";
 
 export const MODES = [
   { id: "net", name: "Net change", key: "1" },
@@ -7,6 +8,8 @@ export const MODES = [
   { id: "breathe", name: "Breathe", key: "3" },
   { id: "fringe", name: "Radar fringes", key: "4" },
   { id: "labels", name: "What we can say", key: "5" },
+  { id: "hidden", name: "Hidden sinking", key: "6" },
+  { id: "patterns", name: "Motion patterns", key: "7" },
 ];
 
 export function cellValue(D, S, i) {
@@ -19,6 +22,8 @@ export function cellValue(D, S, i) {
     }
     case "breathe": return D.values[i]?.[S.cursor] ?? null;
     case "labels": return D.grid.net_change_m[i];
+    case "hidden": return hiddenSinking(D).value[i];
+    case "patterns": return D.grid.net_change_m[i];
     default: return D.grid.net_change_m[i]; // net, fringe
   }
 }
@@ -36,5 +41,7 @@ export function viewTitle(D, S, fmtShort) {
     breathe: `Change from ${first} to ${fmtShort(D.dates[S.cursor])}`,
     fringe: `Change from ${first} to ${last}, as radar fringes`,
     labels: "What we can say at each spot",
+    hidden: "Where two dates can hide the sinking",
+    patterns: "Spots grouped by the shape of their record",
   }[S.mode];
 }
