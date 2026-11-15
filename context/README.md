@@ -12,13 +12,27 @@ Clip everything to the app bounding box (lon -120.60 to -119.40, lat 35.95 to 36
 - **What it is not:** ground measurement, and not an independent check. DWR products may already use GPS calibration, so DWR-vs-GPS agreement must not be counted as validation.
 - Sanity check (not validation): change from 2025-01-01 to 2026-04-01, DWR vs GPS vertical (cm): P302 -0.7 vs -0.4; P303 -4.5 vs -4.3; P304 -0.6 vs -0.8; P307 -7.5 vs -7.2. Corcoran (no GPS): DWR -6.8.
 
+### `canals/` canal centre lines for the profile (H-15)
+- `canals/canals_bbox.geojson`: canal centre lines clipped to the app bbox, one LineString per canal, vertex order = flow order. Properties: `name`, `source_layer`, `source_url`, `download_date`, `operator`, `flow_direction`, `length_km_in_bbox`, `clipped_to`, `note`.
+- **Made by Ismail's side (analysis lane), committed here because `context/` is the gps lane.** Checked here only for shape: one feature, 4,629 vertices, 113.6 km, latitude never increases along the line (north to south), inside the bbox.
+
+| Canal | Source layer | Downloaded | In bbox |
+|---|---|---|---|
+| California Aqueduct | DWR `i17_StateWaterProject_Centerline` (CNRA open data item 0c1e0a5ca1ba488ea740fa0d654df4c8), features with Conveyance = "California Aqueduct", Conv_Type = "canal" | 2026-11-14 | 114.0 km, north to south; one 138 m join where a short pipeline section replaces the open canal |
+
+Not included, and why:
+- **Delta-Mendota Canal** (and Friant-Kern, if any of it is inside the bbox): the DWR `i12_Canals_and_Aqueducts_Federal` service returned HTTP 404 on 2026-11-14 from Ismail's side. Open. Fallbacks: USBR "Reclamation Conveyance Lines" (`https://data.usbr.gov/catalog/6406/item/72731`) or USGS NHD canal flowlines. Its metadata says it is "intended mainly for uses internal to Reclamation"; record that if it is used.
+- **DWR `i12_Canals_and_Aqueducts_local`** (CNRA item b43dc55d1e1448f2b384ebb8efac9042): local canals only. Its "San Luis Canal" inside the bbox is a Kings River Water Association canal, **not** the California Aqueduct's San Luis reach.
+- **Corcoran levee**: DWR `i17_LeveeCenterlineClass_2012` (CNRA item 7d791817d1dc4c33b43d9b727d6c2e3b) has no levee inside the bbox. No source yet; if none is found the levee profile is dropped.
+
+Screening use only: a profile shows where to look closer, not damage or capacity.
+
 ## Candidate sources, NOT downloaded yet
 My sandbox cannot reach these hosts, so each needs to be downloaded and clipped from a normal connection. Record the release or download date in this file when you do.
 
 | Layer | Candidate | Where | Check before use |
 |---|---|---|---|
-| Canals and aqueducts | DWR GIS Atlas "i12 Canals and Aqueducts local" (shapefile / GeoJSON) | CNRA open data: `https://gis.data.cnra.ca.gov/api/download/v1/items/b43dc55d1e1448f2b384ebb8efac9042/geojson?layers=0` | Whether it includes the Delta-Mendota Canal, California Aqueduct / San Luis Canal and Friant-Kern |
-| Canals and aqueducts | "State Water Project Centerline" (DWR / CNRA) | data.cnra.ca.gov | State canals only, not federal |
+| Federal canals (Delta-Mendota, Friant-Kern) | USBR "Reclamation Conveyance Lines" or DWR i12 Federal service | `https://data.usbr.gov/catalog/6406/item/72731` | Open: see `canals/` above. Not downloaded |
 | Communities | Census TIGER/Line places, California | `https://www2.census.gov/geo/tiger/TIGER2025/PLACE/tl_2025_06_place.zip` | Pick Mendota, Corcoran and neighbours; clip to bbox |
 | Groundwater levels | DWR Periodic Groundwater Level Measurements | `https://data.cnra.ca.gov/dataset/periodic-groundwater-level-measurements` (also Water Data Library and SGMA Data Viewer) | Pick wells inside the bbox; note each well's date range. The "continuous" dataset lists no Fresno or Kings wells, so use the periodic one |
 | Historical subsidence | DWR / TRE Altamira rasters (the samples above came from these) and OPERA DISP-S1, **unfiltered** layer | DWR service directory in `sources.json` of the feasibility zip; OPERA via Earthdata | Record the release. The OPERA portal's filtered layer can create false uplift around subsidence bowls |
