@@ -33,7 +33,7 @@ def gps_at(enu, station, date):
     radius = pd.Timedelta(days=3)
     samples = series.loc[day - radius:day + radius]
     positions = samples[GPS_COLUMNS].copy()
-    transient = samples.flag.str.contains("post-swap noisy", na=False)
+    transient = samples.flag.astype("string").str.contains("post-swap noisy", na=False)
     positions.loc[transient, [GPS_COLUMNS[0], GPS_COLUMNS[2]]] = np.nan
     if day in samples.index and transient.loc[day]:
         positions.loc[:, [GPS_COLUMNS[0], GPS_COLUMNS[2]]] = np.nan
@@ -109,7 +109,22 @@ def grid(stack):
     dx, dy = x[1] - x[0], y[1] - y[0]
     if not (np.allclose(np.diff(x), dx) and np.allclose(np.diff(y), dy)):
         raise ValueError("The source raster grid is irregular")
-    return x, y, CRS.from_user_input(stack.attrs["crs"].decode())
+    return x, y, CRS.from_user_input(attribute_text(stack.attrs["crs"]))
+
+
+def attribute_text(value):
+    """NetCDF writers may store text attributes as UTF-8 strings or bytes."""
+    value = np.asarray(value).item()
+    return value.decode("utf-8") if isinstance(value, bytes) else str(value)
+
+
+def validate_stack_metadata(stack, track, frame):
+    if (attribute_text(stack.attrs["reference_station"]) != REFERENCE
+            or attribute_text(stack.attrs["product_maturity"]) != "provisional"
+            or attribute_text(stack.attrs["sign_convention"]) != "positive toward satellite"
+            or np.asarray(stack.attrs["track"]).item() != track
+            or np.asarray(stack.attrs["frame"]).item() != frame):
+        raise ValueError("Unexpected input stack metadata")
 
 
 def regrid_to(source, target):
@@ -218,8 +233,8 @@ def stack_outputs(asc, desc, dates, stations, out):
         f.dimensions = {"pair": n, "y": len(y), "x": len(x)}
         f.attrs.update(
             crs=crs.to_string(), reference_station=REFERENCE, sign_convention="positive up",
-            product_maturity="provisional", notes=NOTES, ascending_source="stack_t034_f020_v2.nc",
-            descending_source="stack_t042_f070.nc",
+            product_maturity="provisional", notes=NOTES, ascending_source=Path(asc.filename).name,
+            descending_source=Path(desc.filename).name,
         )
         for dim, coord in (("pair", np.arange(1, n + 1, dtype="int32")), ("y", y), ("x", x)):
             f.create_variable(dim, (dim,), data=coord)
@@ -358,11 +373,7 @@ def main():
         return
     with h5py.File(args.asc) as asc, h5py.File(args.desc) as desc:
         for stack, track, frame in ((asc, 34, 20), (desc, 42, 70)):
-            if (stack.attrs["reference_station"] != b"P304" or stack.attrs["product_maturity"] != b"provisional"
-                    or stack.attrs["sign_convention"] != b"positive toward satellite"
-                    or np.asarray(stack.attrs["track"]).item() != track
-                    or np.asarray(stack.attrs["frame"]).item() != frame):
-                raise ValueError("Unexpected input stack metadata")
+            validate_stack_metadata(stack, track, frame)
         dates = align_dates(stack_dates(asc), stack_dates(desc))
         dates.to_csv(args.out / "vertical_date_matches.csv", index=False)
         matches = dates.loc[dates.matched]

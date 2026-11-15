@@ -17,6 +17,25 @@ def test_densify_many_vertices_gives_even_samples():
     assert len(d) == int(np.ceil(d[-1] / 0.5)) + 1     # ~19 samples, not 400
 
 
+def test_duplicate_vertices_and_actual_gradient_distance():
+    from pytest import raises
+
+    line = np.array([[-120.0, 36.0], [-120.0, 36.0], [-119.9, 36.0]])
+    for actual, expected in zip(canal.densify(line), canal.densify(line[1:])):
+        np.testing.assert_allclose(actual, expected)
+    with raises(ValueError, match="line length"):
+        canal.densify(line[:2])
+
+    grid = regrid.AppGrid()
+    values = np.linspace(0, 0.1, grid.ncells)
+    sigma = np.full(grid.ncells, 0.005)
+    p = canal.profile("test", line, grid, net=values, net_sigma=sigma, trend=values,
+                      trend_sigma=sigma, label=np.zeros(grid.ncells, int), is_synthetic=True, source="test")
+    # At the line end the two samples span 1 km, half the nominal full baseline.
+    assert p["distance_km"][2] == 1.0
+    assert p["net_change_gradient_sigma_m_per_km"][0] == round(np.hypot(0.005, 0.005), 5)
+
+
 def test_profile_samples_the_right_cells_and_outside_is_null():
     g = regrid.AppGrid()
     net = np.arange(g.ncells, dtype=float) * 1e-4

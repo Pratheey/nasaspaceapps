@@ -13,10 +13,53 @@ export const RELIEF_H = 5000; // metres of map height across the full color rang
 const reduceMotion = typeof window !== "undefined" && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 const box = (b) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: [[[b.w, b.n], [b.e, b.n], [b.e, b.s], [b.w, b.s], [b.w, b.n]]] } });
+const BASEMAP = {
+  version: 8,
+  glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+  sources: { basemap: { type: "vector", url: "https://tiles.openfreemap.org/planet" } },
+  layers: [
+    { id: "bg", type: "background", paint: { "background-color": "#0F1420" } },
+    { id: "water", type: "fill", source: "basemap", "source-layer": "water", paint: { "fill-color": "#162740" } },
+    { id: "waterway", type: "line", source: "basemap", "source-layer": "waterway", paint: { "line-color": "#213852", "line-width": 1.2 } },
+    {
+      id: "roads", type: "line", source: "basemap", "source-layer": "transportation",
+      filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk", "primary", "secondary", "tertiary", "minor"]]],
+      paint: { "line-color": "#39465b", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.7, 14, 2.2] },
+    },
+    {
+      id: "places", type: "symbol", source: "basemap", "source-layer": "place",
+      filter: ["in", ["get", "class"], ["literal", ["city", "town", "village"]]],
+      layout: {
+        "text-field": ["coalesce", ["get", "name:en"], ["get", "name"]],
+        "text-font": ["Noto Sans Regular"],
+        "text-size": ["interpolate", ["linear"], ["zoom"], 8, 11, 13, 15],
+      },
+      paint: { "text-color": "#c0cbdb", "text-halo-color": "#101724", "text-halo-width": 1.5 },
+    },
+  ],
+};
+const cartoKey = import.meta.env.VITE_CARTO_BASEMAP_API_KEY?.trim();
+function cartoStyle(key) {
+  const tiles = (style) => [`https://basemaps.cartocdn.com/${style}/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}`];
+  return {
+    version: 8,
+    sources: {
+      basemap: { type: "raster", tileSize: 256, tiles: tiles("dark_nolabels"),
+        attribution: '<a href="https://www.openstreetmap.org/copyright">© OpenStreetMap contributors</a>, <a href="https://carto.com/attributions">© CARTO</a>' },
+      labels: { type: "raster", tileSize: 256, tiles: tiles("dark_only_labels") },
+    },
+    layers: [
+      BASEMAP.layers[0],
+      { id: "base", type: "raster", source: "basemap", paint: { "raster-saturation": -0.4, "raster-brightness-max": 0.85 } },
+      { id: "places", type: "raster", source: "labels", paint: { "raster-opacity": 0.75 } },
+    ],
+  };
+}
 
 /** The map. Imperative inside (MapLibre), declarative outside (props in, events out). */
 const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onSwipe, onField }, ref) {
   const [, setTick] = useState(0); // re-render the swipe handle when the camera moves
+  const [unavailable, setUnavailable] = useState(false);
   const el = useRef(null);
   const map = useRef(null);
   const ready = useRef(false);
@@ -35,7 +78,9 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     const x = c.getContext("2d");
     const dpr = window.devicePixelRatio || 1;
     const Wc = c.clientWidth, Hc = c.clientHeight;
-    if (c.width !== Wc * dpr) { c.width = Wc * dpr; c.height = Hc * dpr; }
+    if (c.width !== Math.round(Wc * dpr) || c.height !== Math.round(Hc * dpr)) {
+      c.width = Math.round(Wc * dpr); c.height = Math.round(Hc * dpr);
+    }
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
     x.clearRect(0, 0, Wc, Hc);
     if (!pt || !latest.current.S.lens || latest.current.S.relief) return;
@@ -80,28 +125,25 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   // create once
   useEffect(() => {
     const b = D.bbox;
-    const m = new maplibregl.Map({
-      container: el.current,
-      attributionControl: { compact: true },
-      style: {
-        version: 8,
-        sources: {
-          base: { type: "raster", tileSize: 256, attribution: "© OpenStreetMap contributors © CARTO",
-            tiles: ["a", "b", "c"].map((s) => `https://${s}.basemaps.cartocdn.com/dark_nolabels/{z}/{x}/{y}.png`) },
-          labels: { type: "raster", tileSize: 256, tiles: ["https://a.basemaps.cartocdn.com/dark_only_labels/{z}/{x}/{y}.png"] },
-        },
-        layers: [
-          { id: "bg", type: "background", paint: { "background-color": "#0F1420" } },
-          { id: "base", type: "raster", source: "base", paint: { "raster-saturation": -0.4, "raster-brightness-max": 0.85 } },
-        ],
-      },
-      bounds: [[b.west, b.south], [b.east, b.north]],
-      fitBoundsOptions: { padding: 40 },
-      maxBounds: [[b.west - 1.6, b.south - 1.3], [b.east + 1.6, b.north + 1.3]],
-      dragRotate: false,
-      pitchWithRotate: false,
-    });
+    ready.current = false;
+    let m;
+    try {
+      m = new maplibregl.Map({
+        container: el.current,
+        attributionControl: { compact: false },
+        style: cartoKey ? cartoStyle(cartoKey) : BASEMAP,
+        bounds: [[b.west, b.south], [b.east, b.north]],
+        fitBoundsOptions: { padding: 40 },
+        maxBounds: [[b.west - 1.6, b.south - 1.3], [b.east + 1.6, b.north + 1.3]],
+        dragRotate: false,
+        pitchWithRotate: false,
+      });
+    } catch {
+      setUnavailable(true);
+      return;
+    }
     map.current = m;
+    setUnavailable(false);
     m.touchZoomRotate.disableRotation();
     m.addControl(new maplibregl.NavigationControl({ showCompass: false }), "top-right");
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
@@ -109,8 +151,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     m.on("load", () => {
       const coords = [[b.west, b.north], [b.east, b.north], [b.east, b.south], [b.west, b.south]];
       m.addSource("grid", { type: "image", coordinates: coords });
-      m.addLayer({ id: "grid", type: "raster", source: "grid", paint: { "raster-opacity": 0.9, "raster-resampling": "nearest", "raster-fade-duration": 0 } });
-      m.addLayer({ id: "labels", type: "raster", source: "labels", paint: { "raster-opacity": 0.75 } });
+      m.addLayer({ id: "grid", type: "raster", source: "grid", paint: { "raster-opacity": 0.9, "raster-resampling": "nearest", "raster-fade-duration": 0 } }, "places");
       m.addSource("frame", { type: "geojson", data: { type: "Feature", geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } } });
       m.addLayer({ id: "frame", type: "line", source: "frame", paint: { "line-color": "#6FA8FF", "line-width": 1, "line-opacity": 0.55, "line-dasharray": [4, 3] } });
       m.addSource("relief", { type: "geojson", data: emptyFC() });
@@ -124,7 +165,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       const crop = ["match", ["get", "crop"], ...Object.entries(CROP_COLORS).flat(), "#8D97AB"];
       m.addLayer({ id: "fields-fill", type: "fill", source: "fields", layout: { visibility: "none" }, paint: { "fill-color": crop, "fill-opacity": ["case", ["boolean", ["feature-state", "on"], false], 0.75, 0.42] } });
       m.addLayer({ id: "fields-line", type: "line", source: "fields", layout: { visibility: "none" }, paint: { "line-color": crop, "line-width": 1.6 } });
-      loadRadar().then((R) => R && m.getSource("fields")?.setData(R.fields));
+      loadRadar().then((R) => { if (R && map.current === m) m.getSource("fields")?.setData(R.fields); });
       m.addSource("prof", { type: "geojson", data: emptyFC() });
       m.addLayer({ id: "prof-glow", type: "line", source: "prof", paint: { "line-color": "#6FA8FF", "line-width": 8, "line-opacity": 0.25, "line-blur": 5 } });
       m.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#A9CBFF", "line-width": 2.2 } });
@@ -133,20 +174,26 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
         const btn = document.createElement("button");
         btn.className = "group flex items-center gap-1 -translate-x-1.5";
         btn.setAttribute("aria-label", `GPS station ${st.station}${st.role === "reference" ? ", reference" : ""}`);
-        btn.innerHTML = `<span class="block w-3 h-3 ${st.role === "reference" ? "rotate-45" : "rounded-full"} border-2 border-accent-2 bg-space group-hover:bg-accent shadow-[0_0_10px_rgba(111,168,255,.6)]"></span>
-          <span class="font-display text-[12px] font-semibold tracking-wide text-ink bg-space/85 px-1.5 py-0.5 rounded border border-hair-2">${st.station}</span>`;
+        const point = document.createElement("span");
+        point.className = `block w-3 h-3 ${st.role === "reference" ? "rotate-45" : "rounded-full"} border-2 border-accent-2 bg-space group-hover:bg-accent shadow-[0_0_10px_rgba(111,168,255,.6)]`;
+        const label = document.createElement("span");
+        label.className = "font-display text-[12px] font-semibold tracking-wide text-ink bg-space/85 px-1.5 py-0.5 rounded border border-hair-2";
+        label.textContent = st.station;
+        btn.append(point, label);
+        btn.style.opacity = latest.current.S.gps ? 1 : 0.55;
         btn.onclick = (ev) => { ev.stopPropagation(); latest.current.onStation(st); };
         new maplibregl.Marker({ element: btn, anchor: "left" }).setLngLat([st.lon, st.lat]).addTo(m);
         return btn;
       });
       ready.current = true;
       m.fire("bg:ready");
+      setTick((t) => t + 1);
     });
 
     m.on("click", (e) => {
       const { S, onCell, onProfilePoint } = latest.current;
       if (S.drawing) { onProfilePoint([e.lngLat.lng, e.lngLat.lat]); return; }
-      if (S.fields) {
+      if (S.fields && ready.current) {
         const f = m.queryRenderedFeatures(e.point, { layers: ["fields-fill"] })[0];
         if (f) { latest.current.onField(f.properties); return; }
       }
@@ -161,7 +208,14 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     });
     m.on("mouseout", () => { latest.current.onHover(null); drawLens(null); });
     m.on("move", () => latest.current.S.swipe != null && setTick((t) => t + 1));
-    return () => m.remove();
+    return () => {
+      ready.current = false;
+      map.current = null;
+      stationEls.current = [];
+      profMarkers.current = [];
+      probe.current = null;
+      m.remove();
+    };
   }, [D]);
 
   // redraw whenever anything that changes the picture changes
@@ -169,7 +223,8 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     const m = map.current;
     if (!m) return;
     const draw = () => {
-      if (!ready.current) return;
+      const source = ready.current && m.getSource("grid");
+      if (!source) return;
       const g = D.meta.grid;
       const c = document.createElement("canvas");
       c.width = g.ncols * PX; c.height = g.nrows * PX;
@@ -179,12 +234,6 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       for (let i = 0; i < D.n; i++) {
         let col = null;
         if (S.mode === "labels") col = LABEL_COLORS[D.grid.label[i]] || null;
-        else if (S.swipe != null) {
-          // swipe: left of the divider shows the ground on date A, right shows date B
-          const left = g.lon_min + ((i % g.ncols) + 0.5) * g.step_deg < S.swipe;
-          const v = D.values[i]?.[left ? S.k1 : S.k2];
-          if (v != null) col = diverging(v, domain);
-        }
         else { const v = cellValue(D, S, i); if (v != null) col = S.mode === "fringe" ? fringe(v) : diverging(v, domain); }
         if (!col) { if (D.grid.n_valid_dates[i] > 0 || D.grid.label[i] === 0) hatch.push(i); continue; }
         const r0 = Math.floor(i / g.ncols) * PX, c0 = (i % g.ncols) * PX;
@@ -198,7 +247,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       x.beginPath();
       hatch.forEach((i) => { const cx = (i % g.ncols) * PX, cy = Math.floor(i / g.ncols) * PX; x.moveTo(cx, cy + PX); x.lineTo(cx + PX, cy); });
       x.stroke();
-      m.getSource("grid").updateImage({ image: c });
+      source.updateImage({ image: c });
 
       // 3D
       m.setLayoutProperty("relief", "visibility", S.relief ? "visible" : "none");
@@ -218,14 +267,19 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       }
     };
     if (ready.current) draw(); else m.once("bg:ready", draw);
+    return () => { m.off("bg:ready", draw); };
   }, [D, S.mode, S.k1, S.k2, S.cursor, S.relief, S.swipe, domain]);
 
   // camera for 3D
   useEffect(() => {
     const m = map.current;
-    if (!m || !ready.current) return;
-    if (S.relief) { m.dragRotate.enable(); m.easeTo({ pitch: 58, bearing: -18, duration: reduceMotion ? 0 : 1400 }); }
-    else { m.dragRotate.disable(); m.easeTo({ pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 900 }); }
+    if (!m) return;
+    const update = () => {
+      if (S.relief) { m.dragRotate.enable(); m.easeTo({ pitch: 58, bearing: -18, duration: reduceMotion ? 0 : 1400 }); }
+      else { m.dragRotate.disable(); m.easeTo({ pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 900 }); }
+    };
+    if (ready.current) update(); else m.once("bg:ready", update);
+    return () => { m.off("bg:ready", update); };
   }, [S.relief]);
 
   // crop fields (radar lane)
@@ -239,6 +293,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       if (S.field) m.setFeatureState({ source: "fields", id: S.field.field_id }, { on: true });
     };
     if (ready.current) go(); else m?.once("bg:ready", go);
+    return () => { m?.off("bg:ready", go); };
   }, [S.fields, S.field]);
 
   // outlines
@@ -249,6 +304,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       m.getSource("pin").setData(S.pin >= 0 ? box(cellBounds(D, S.pin)) : emptyFC());
     };
     if (ready.current) go(); else m?.once("bg:ready", go);
+    return () => { m?.off("bg:ready", go); };
   }, [D, S.sel, S.pin]);
 
   // stations dim unless GPS check is on
@@ -278,26 +334,32 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       });
     };
     if (ready.current) go(); else m?.once("bg:ready", go);
+    return () => { m?.off("bg:ready", go); };
   }, [S.profile]);
 
   // MapLibre's own CSS sets position: relative on the container, so size it from a wrapper
   const sx = S.swipe != null && map.current && ready.current ? map.current.project([S.swipe, (D.bbox.north + D.bbox.south) / 2]).x : null;
+  const moveSwipe = (lon) => onSwipe(Math.max(D.bbox.west, Math.min(D.bbox.east, lon)));
   const dragSwipe = (e) => {
-    e.preventDefault();
+    const m = map.current;
+    if (!m || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
     const host = el.current.getBoundingClientRect();
-    const mv = (ev) => { const p = map.current.unproject([ev.clientX - host.left, host.height / 2]); latest.current.onSwipe(Math.max(D.bbox.west, Math.min(D.bbox.east, p.lng))); };
-    const up = () => { window.removeEventListener("pointermove", mv); window.removeEventListener("pointerup", up); };
-    window.addEventListener("pointermove", mv); window.addEventListener("pointerup", up);
+    moveSwipe(m.unproject([e.clientX - host.left, host.height / 2]).lng);
   };
   return (
     <div className="absolute inset-0">
       <div ref={el} className="w-full h-full" />
+      {unavailable && <p role="status" className="absolute inset-x-4 top-28 rounded-md border border-hair-2 bg-space p-4 text-ink">The interactive map needs WebGL. You can still read the story and open station records from the search menu.</p>}
       <canvas ref={lens} className="absolute inset-0 w-full h-full pointer-events-none z-[4]" aria-hidden="true" />
       {sx != null && (
         <div className="absolute top-0 bottom-0 z-[5] w-0" style={{ left: sx }}>
           <div className="absolute inset-y-0 -left-px w-[2px] bg-accent shadow-[0_0_14px_#6FA8FF]" />
-          <button onPointerDown={dragSwipe} aria-label="Drag to compare date A and date B"
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize shadow-[0_0_20px_rgba(111,168,255,.6)] font-display font-bold text-[13px]">A|B</button>
+          <button onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} onPointerMove={dragSwipe}
+            onKeyDown={(e) => {
+              const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
+              if (step) { e.preventDefault(); e.stopPropagation(); moveSwipe(S.swipe + step * D.meta.grid.step_deg); }
+            }} aria-label="Drag or use arrow keys to compare date A and date B"
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize touch-none shadow-[0_0_20px_rgba(111,168,255,.6)] font-display font-bold text-[13px]">A|B</button>
           <span className="absolute top-[64px] right-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">A: {fmtShort(D.dates[S.k1])}</span>
           <span className="absolute top-[64px] left-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">B: {fmtShort(D.dates[S.k2])}</span>
         </div>

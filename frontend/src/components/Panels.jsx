@@ -11,12 +11,13 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
   const P = S.profile;
   const smp = useMemo(() => (P?.canal ? (D.canal ? sampleCanal(D.canal, valueAt) : null)
     : P?.b ? sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt) : null), [P, valueAt, D]);
-  const [read, setRead] = useState(null);
+  const [readFrac, setReadFrac] = useState(null);
   if (!P) return null;
 
   let body;
   if (!smp && P.canal) body = <p className="text-[14px] text-ink/85">The canal profile is not available with this data.</p>;
   else if (!smp) body = <p className="text-[14px] text-ink/85">Click two points on the map to draw a line. A canal, a road, a levee: anything you want to see in cross-section.</p>;
+  else if (!smp.L) body = <p className="text-mute">Drag one end to a different spot to see a cross-section.</p>;
   else {
     const ok = smp.pts.filter((s) => s.v != null);
     if (!ok.length) body = <p className="text-mute">No measurements along this line.</p>;
@@ -35,6 +36,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
       if (seg.length) segs.push(seg);
       const frac = (e) => { const r = e.currentTarget.getBoundingClientRect(); return Math.max(0, Math.min(1, (((e.clientX - r.left) / r.width) * PW - PP.l) / (PW - PP.l - PP.r))); };
       const at = (f) => smp.pts[Math.round(f * (smp.pts.length - 1))];
+      const read = readFrac == null ? null : at(readFrac);
       body = (
         <>
           <p className="text-[13px] text-mute mb-1 min-h-[1.4em]" aria-live="polite">
@@ -43,8 +45,8 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
               : "Point along the profile to find that spot on the map. Drag the numbered ends to move the line."}
           </p>
           <svg viewBox={`0 0 ${PW} ${PH}`} preserveAspectRatio="none" className="chart w-full h-[132px] block"
-            onMouseMove={(e) => { const p = at(frac(e)); setRead(p); onProbe(p.p); }}
-            onMouseLeave={() => { setRead(null); onProbe(null); }}
+            onMouseMove={(e) => { const f = frac(e); setReadFrac(f); onProbe(at(f).p); }}
+            onMouseLeave={() => { setReadFrac(null); onProbe(null); }}
             onClick={(e) => { const p = at(frac(e)); const i = cellAt(D, ...p.p); if (i >= 0) onPick(i); }}>
             <defs>
               <linearGradient id="profFill" x1="0" x2="0" y1="0" y2="1">
@@ -161,15 +163,18 @@ export function DataStatus({ D }) {
   const [open, setOpen] = useState(false);
   const draft = isDraft(D);
   if (!D.synthetic && !draft) return null;
+  const incomplete = D.fallback === "incomplete";
   const text = D.synthetic
-    ? "The real NISAR files are not in public/data yet, so the map shows synthetic data in the same format. Nothing here is a NISAR measurement."
+    ? incomplete
+      ? "The map could only load part of its NISAR dataset. It is showing synthetic sample data."
+      : "NISAR displacement data is unavailable here. The map is showing synthetic sample data."
     : "First real NISAR results. Labels can still change until the checks pass: sign at the moving GPS stations, the seasonal test on stable ground, and the held-out residual table.";
   return (
     <div className="relative shrink-0">
       <button onClick={() => setOpen(!open)} aria-expanded={open}
         className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-medium ${D.synthetic ? "border-sink/60 text-sink bg-sink/10" : "border-accent/50 text-accent-2 bg-accent/10"}`}>
         <span className={`w-1.5 h-1.5 rounded-full ${D.synthetic ? "bg-sink" : "bg-accent"}`} />
-        {D.synthetic ? "Synthetic preview" : "Draft results"}
+        {incomplete ? "Incomplete NISAR data" : D.synthetic ? "Synthetic preview" : "Draft results"}
       </button>
       {open && <p className="absolute left-0 top-full mt-2 z-40 w-[300px] rounded-lg border border-hair-2 bg-deck p-3 text-[13px] leading-snug text-ink/90 shadow-xl">{text}</p>}
     </div>
@@ -178,13 +183,14 @@ export function DataStatus({ D }) {
 
 // Shown only while the app runs on the synthetic sample files. Disappears by itself when the
 // real NISAR files are in public/data/ (AGENTS.md rule 6: never present placeholder data as NASA data).
-export function PreviewTag() {
+export function PreviewTag({ D }) {
   const [open, setOpen] = useState(false);
+  const incomplete = D.fallback === "incomplete";
   return (
     <button onClick={() => setOpen(!open)} aria-expanded={open}
       className={`fixed right-3 bottom-3 z-50 max-w-[300px] text-left ${open ? "rounded-lg" : "rounded-full"} border border-hair-2 bg-space/90 backdrop-blur px-3 py-1.5 text-[12px] text-mute hover:text-ink shadow-lg`}>
-      <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-2 align-middle" />Preview data
-      {open && <span className="block mt-1 leading-snug text-ink/85">These charts use synthetic data in the real file format while the NISAR results are processed. This tag disappears when the real data is loaded.</span>}
+      <span className="inline-block w-1.5 h-1.5 rounded-full bg-accent mr-2 align-middle" />{incomplete ? "Incomplete NISAR data" : "Preview data"}
+      {open && <span className="block mt-1 leading-snug text-ink/85">{incomplete ? "The app could only load part of its NISAR dataset. The ground motion charts show synthetic sample data." : "The ground motion charts show synthetic sample data."}</span>}
     </button>
   );
 }

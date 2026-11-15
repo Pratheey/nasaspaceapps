@@ -1,4 +1,5 @@
 import { fmtShort, monthAbbr } from "../lib/fmt.js";
+import { linePath } from "../lib/chart.js";
 
 const W = 400, H = 220, P = { l: 40, r: 10, t: 12, b: 26 };
 const lin = (d0, d1, r0, r1) => (v) => r0 + ((v - d0) * (r1 - r0)) / (d1 - d0 || 1);
@@ -17,7 +18,13 @@ export default function Chart({ dates, values, tYears, fit, split, gps, compare,
   const ys = values.filter((v) => v != null).map((v) => v * 100);
   gps?.los.forEach((v) => v != null && ys.push(v * 100));
   compare?.values.forEach((v) => v != null && ys.push(v * 100));
-  if (f0) dense.forEach((p) => p.f && ys.push((p.f.total - f0.total) * 100));
+  const fitValue = (p) => p.f && f0 ? (split ? p.f.trend - f0.trend : p.f.total - f0.total) * 100 : null;
+  const seasonalValue = (p) => split && seasonalSig && p.f ? p.f.seasonal * 300 : null;
+  for (const p of dense) {
+    const v = fitValue(p), seasonal = seasonalValue(p);
+    if (v != null) ys.push(v);
+    if (seasonal != null) ys.push(seasonal);
+  }
   let lo = Math.min(0, ...ys), hi = Math.max(0, ...ys);
   const pad = Math.max(0.3, (hi - lo) * 0.12);
   lo -= pad; hi += pad;
@@ -30,9 +37,11 @@ export default function Chart({ dates, values, tYears, fit, split, gps, compare,
   let lastM = -1;
   dates.forEach((d) => { const m = d.getUTCMonth(); if (m !== lastM && m % 2 === 0) months.push(d); lastM = m; });
 
-  const path = (key, sub) => dense.map((p, j) => `${j ? "L" : "M"}${X(p.ms).toFixed(1)},${Y((p.f[key] - sub) * 100).toFixed(1)}`).join("");
-  const seasonalPath = () => dense.map((p, j) => `${j ? "L" : "M"}${X(p.ms).toFixed(1)},${(Y(0) + (Y(p.f.seasonal * 100) - Y(0)) * 3).toFixed(1)}`).join("");
-  const poly = (arr, ds) => arr.map((v, j) => (v == null ? null : `${X(+ds[j]).toFixed(1)},${Y(v * 100).toFixed(1)}`)).filter(Boolean).join(" ");
+  const fittedPath = (getValue) => linePath(dense.map((p) => {
+    const v = getValue(p);
+    return v == null ? null : [X(p.ms), Y(v)];
+  }));
+  const measurements = (arr, ds) => linePath(arr.map((v, j) => v == null ? null : [X(+ds[j]), Y(v * 100)]));
 
   const onClick = (e) => {
     if (!onPickDate) return;
@@ -57,14 +66,14 @@ export default function Chart({ dates, values, tYears, fit, split, gps, compare,
       {cursor != null && <line x1={X(+dates[cursor])} x2={X(+dates[cursor])} y1={P.t} y2={H - P.b} className="cursor" />}
       {f0 && (split
         ? <>
-            <path d={path("trend", f0.trend)} className="trend" />
-            {seasonalSig && <path d={seasonalPath()} className="seasonal" />}
+            <path d={fittedPath(fitValue)} className="trend" />
+            {seasonalSig && <path d={fittedPath(seasonalValue)} className="seasonal" />}
           </>
-        : <path d={path("total", f0.total)} className="fit glow" />)}
-      {gps && <polyline points={poly(gps.los, gps.dates)} className="gps" />}
+        : <path d={fittedPath(fitValue)} className="fit glow" />)}
+      {gps && <path d={measurements(gps.los, gps.dates)} className="gps" />}
       {compare && (
         <>
-          <polyline points={poly(compare.values, dates)} className="cmp" />
+          <path d={measurements(compare.values, dates)} className="cmp" />
           {compare.values.map((v, j) => v != null && <rect key={j} x={X(+dates[j]) - 2.2} y={Y(v * 100) - 2.2} width="4.4" height="4.4" className="cmppt" />)}
         </>
       )}

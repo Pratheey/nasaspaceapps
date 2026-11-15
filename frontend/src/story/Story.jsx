@@ -14,6 +14,7 @@ import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./h
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
 import { cm, fmtShort, fmtDate } from "../lib/fmt.js";
 import { fringe } from "../lib/colors.js";
+import { linePath } from "../lib/chart.js";
 
 /* ------------------------------------------------------------------ */
 export default function Story({ D, onExplore }) {
@@ -36,8 +37,8 @@ export default function Story({ D, onExplore }) {
       <PoleScene />
       <AquiferScene />
       <Chirp className="my-6" />
-      <BreatheScene D={D} demo={demo} />
-      <LieScene D={D} st={demo.lie} />
+      {demo.calm && demo.sinking.length > 0 && <BreatheScene D={D} demo={demo} />}
+      {demo.lie && <LieScene D={D} st={demo.lie} />}
       <Numbers D={D} />
       <MissionTimeline />
       <OrbitScene />
@@ -52,7 +53,7 @@ export default function Story({ D, onExplore }) {
       <Finale D={D} onExplore={onExplore} />
       <Team />
       <Credits D={D} />
-      {D.synthetic && <PreviewTag />}
+      {D.synthetic && <PreviewTag D={D} />}
     </div>
   );
 }
@@ -291,12 +292,14 @@ function BreatheScene({ D, demo }) {
   ].filter((s, n, a) => s.st && a.findIndex((x) => x.st === s.st) === n).map(({ st, color }) => ({ st, color, v: D.values[st.cell_index] || [] }));
   const all = series.flatMap((s) => s.v.filter((x) => x != null).map((x) => x * 100));
   const lo = Math.min(0, ...all) - 1, hi = Math.max(0, ...all) + 1;
-  const X = (k) => P.l + (k / (N - 1)) * (W - P.l - P.r);
+  const X = (k) => P.l + ((D.dates[k] - D.dates[0]) / (D.dates[N - 1] - D.dates[0])) * (W - P.l - P.r);
   const Y = (v) => P.t + ((hi - v) / (hi - lo)) * (H - P.t - P.b);
   const shown = Math.max(1, Math.round(draw * (N - 1)));
   const captions = [
     `${series.length} GPS stations, one radar. Scroll to play eleven months of NISAR passes.`,
-    `${demo.calm.station} stays almost level. ${demo.sinking.length > 1 ? "The others drop" : "The other drops"}, pass after pass.`,
+    D.grid.net_change_m[demo.calm.cell_index] == null
+      ? `${demo.calm.station} has gaps in its radar record. ${demo.sinking.map((st) => st.station).join(" and ")} show the ground sinking over the full record.`
+      : `${demo.calm.station} changes little over the full record. ${demo.sinking.length > 1 ? "The others sink" : "The other station sinks"}.`,
     "The ground rises a little in winter and settles in the dry months. Under that, the sinking keeps going.",
   ];
   const cap = split > 0.1 ? 2 : draw > 0.6 ? 1 : 0;
@@ -315,17 +318,17 @@ function BreatheScene({ D, demo }) {
           <p className="mt-6 font-mono text-[40px] font-medium leading-none tracking-tight">{fmtShort(D.dates[Math.min(N - 1, shown)])}</p>
           <p className="font-mono text-[12.5px] text-mute mt-1">pass {String(Math.min(N, shown + 1)).padStart(2, "0")}/{N}{D.synthetic ? ". Synthetic data." : "."}</p>
         </div>
-        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto chart" role="img" aria-label="Ground motion at two stations over the NISAR record">
+        <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto chart" role="img" aria-label="Ground motion near GPS stations over the NISAR record">
           {[-8, -6, -4, -2, 0, 2].filter((v) => v > lo && v < hi).map((v) => (
             <g key={v}><line x1={P.l} x2={W - P.r} y1={Y(v)} y2={Y(v)} className={v === 0 ? "zero" : "grid"} /><text x={P.l - 8} y={Y(v) + 4} textAnchor="end">{v > 0 ? "+" : v < 0 ? "−" : ""}{Math.abs(v)} cm</text></g>
           ))}
           {series.map((s) => {
-            const pts = s.v.slice(0, shown + 1).map((x, k) => (x == null ? null : `${X(k)},${Y(x * 100)}`)).filter(Boolean).join(" ");
+            const path = linePath(s.v.slice(0, shown + 1).map((x, k) => x == null ? null : [X(k), Y(x * 100)]));
             const f0 = fitAt(D, s.st.cell_index, D.tYears[0]);
             const trend = f0 && D.tYears.map((t, k) => `${k ? "L" : "M"}${X(k)},${Y((fitAt(D, s.st.cell_index, t).trend - f0.trend) * 100)}`).join("");
             return (
               <g key={s.st.station}>
-                <polyline points={pts} fill="none" stroke={s.color} strokeWidth="2.5" style={{ filter: `drop-shadow(0 0 6px ${s.color}88)`, opacity: 1 - split * 0.55 }} />
+                <path d={path} fill="none" stroke={s.color} strokeWidth="2.5" style={{ filter: `drop-shadow(0 0 6px ${s.color}88)`, opacity: 1 - split * 0.55 }} />
                 {s.v.slice(0, shown + 1).map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r="3.2" fill="#0F1420" stroke={s.color} strokeWidth="1.5" style={{ opacity: 1 - split * 0.5 }} />)}
                 {trend && <path d={trend} fill="none" stroke={s.color} strokeWidth="2.5" strokeDasharray="8 6" pathLength="1" style={{ strokeDasharray: `${split} 1`, opacity: split }} />}
               </g>
@@ -343,15 +346,15 @@ function BreatheScene({ D, demo }) {
 function LieScene({ D, st }) {
   const i = st.cell_index, v = D.values[i] || [], N = D.dates.length;
   const lie = useMemo(() => mostMisleadingPair(D, i), [D, i]);
-  const [a, setA] = useState(lie?.k1 ?? 2);
-  const [b, setB] = useState(lie?.k2 ?? 10);
+  const [a, setA] = useState(lie?.k1 ?? Math.min(2, N - 2));
+  const [b, setB] = useState(lie?.k2 ?? Math.min(10, N - 1));
   const svg = useRef(null);
   const drag = useRef(null);
   const [inRef, seen] = useInView(0.3);
   const W = 760, H = 300, P = { l: 50, r: 20, t: 46, b: 34 };
   const ok = v.filter((x) => x != null).map((x) => x * 100);
   const lo = Math.min(0, ...ok) - 1, hi = Math.max(0, ...ok) + 1;
-  const X = (k) => P.l + (k / (N - 1)) * (W - P.l - P.r);
+  const X = (k) => P.l + ((D.dates[k] - D.dates[0]) / (D.dates[N - 1] - D.dates[0])) * (W - P.l - P.r);
   const Y = (x) => P.t + ((hi - x) / (hi - lo)) * (H - P.t - P.b);
   const diff = v[a] != null && v[b] != null ? v[b] - v[a] : null;
   const days = Math.round((D.dates[b] - D.dates[a]) / 864e5);
@@ -359,10 +362,11 @@ function LieScene({ D, st }) {
   const exp = B == null ? null : B * (days / 365.25);
   const pick = (e) => {
     const r = svg.current.getBoundingClientRect();
-    const k = Math.round(((((e.clientX - r.left) / r.width) * W - P.l) / (W - P.l - P.r)) * (N - 1));
-    return Math.max(0, Math.min(N - 1, k));
+    const x = ((e.clientX - r.left) / r.width) * W;
+    return D.dates.reduce((nearest, _, k) => Math.abs(X(k) - x) < Math.abs(X(nearest) - x) ? k : nearest, 0);
   };
-  const misleading = diff != null && exp != null && diff > -(D.meta.sigma_net_m || 0.01) && exp < -2 * (D.meta.sigma_net_m || 0.01);
+  const sigma = D.grid.net_change_sigma_m[i] ?? D.meta.sigma_net_m;
+  const misleading = sigma != null && diff != null && exp != null && days >= 90 && diff > -sigma && exp < -2 * sigma;
   return (
     <section ref={inRef} className="relative py-[18vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.35fr] gap-12 items-center transition-all duration-1000 ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
@@ -388,9 +392,9 @@ function LieScene({ D, st }) {
         <svg ref={svg} viewBox={`0 0 ${W} ${H}`} className="w-full h-auto chart touch-none select-none"
           onPointerDown={(e) => { svg.current.setPointerCapture(e.pointerId); const k = pick(e); drag.current = Math.abs(k - a) <= Math.abs(k - b) ? "a" : "b"; (drag.current === "a" ? setA : setB)(drag.current === "a" ? Math.min(k, b - 1) : Math.max(k, a + 1)); }}
           onPointerMove={(e) => { if (!drag.current) return; const k = pick(e); drag.current === "a" ? setA(Math.min(k, b - 1)) : setB(Math.max(k, a + 1)); }}
-          onPointerUp={() => (drag.current = null)} role="img" aria-label="Record at one station with two draggable dates">
+          onLostPointerCapture={() => (drag.current = null)} role="img" aria-label="Record at one station with two draggable dates">
           <rect x={X(a)} y={P.t} width={X(b) - X(a)} height={H - P.t - P.b} fill="#6FA8FF" opacity="0.07" />
-          <polyline points={v.map((x, k) => (x == null ? null : `${X(k)},${Y(x * 100)}`)).filter(Boolean).join(" ")} fill="none" stroke="#F0705A" strokeWidth="2" opacity="0.8" />
+          <path d={linePath(v.map((x, k) => x == null ? null : [X(k), Y(x * 100)]))} fill="none" stroke="#F0705A" strokeWidth="2" opacity="0.8" />
           {v.map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r={k === a || k === b ? 6 : 3} fill={k === a || k === b ? "#6FA8FF" : "#0F1420"} stroke={k === a || k === b ? "#A9CBFF" : "#F0705A"} strokeWidth="1.5" />)}
           {[["A", a], ["B", b]].map(([n, k]) => (
             <g key={n} className="cursor-grab">
@@ -656,7 +660,7 @@ function Credits({ D }) {
         </div>
         <div>
           <p className="text-ink font-semibold mb-2">Images</p>
-          <p className="leading-relaxed">NISAR artist's concepts: NASA/JPL-Caltech (public domain). Illustrations and charts: our own. Basemap: OpenStreetMap contributors, CARTO.</p>
+          <p className="leading-relaxed">NISAR artist's concepts: NASA/JPL-Caltech (public domain). Illustrations and charts: our own. Basemap data from OpenStreetMap contributors.</p>
         </div>
       </div>
     </footer>

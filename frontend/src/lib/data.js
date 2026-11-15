@@ -2,27 +2,58 @@
 // Real files live in public/data/ (written by the analysis lane). Until they exist,
 // the app falls back to public/samples/ (synthetic, copied from contracts/samples/).
 
+const GRID_FIELDS = [
+  "net_change_m", "net_change_sigma_m", "label", "seasonal_significant", "amp_m",
+  "amp_sigma_m", "peak_month", "trend_m_per_yr", "trend_sigma_m_per_yr",
+  "fit_c_m", "fit_a_m", "fit_b_m", "n_valid_dates",
+];
+const isoDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)
+  && Number.isFinite(Date.parse(s + "T00:00:00Z"));
+
 async function tryLoad(base) {
   const names = ["meta", "grid", "series", "stations"];
-  try {
-    const res = await Promise.all(names.map((n) => fetch(`${base}/${n}.json`)));
-    // dev servers answer missing files with index.html, so check the type too
-    if (res.some((r) => !r.ok || !(r.headers.get("content-type") || "").includes("json"))) return null;
-    const json = await Promise.all(res.map((r) => r.json()));
-    return Object.fromEntries(names.map((n, i) => [n, json[i]]));
-  } catch {
-    return null;
-  }
+  const files = await Promise.all(names.map(async (name) => {
+    try {
+      const res = await fetch(`${base}/${name}.json`);
+      // The dev server returns the HTML entry point for missing files.
+      if (res.status === 404 || res.ok && res.headers.get("content-type")?.includes("text/html")) return { missing: true };
+      if (res.ok) return { data: await res.json() };
+    } catch {}
+    return {};
+  }));
+  const [meta, grid, series, stations] = files.map((file) => file.data);
+  const g = meta?.grid;
+  const n = g?.nrows * g?.ncols;
+  const nDates = meta?.dates?.length;
+  const ready = [meta, grid, series, stations].every((file) => file != null)
+    && Number.isInteger(g?.nrows) && Number.isInteger(g?.ncols)
+    && g.nrows > 0 && g.ncols > 0 && Number.isFinite(g.step_deg) && g.step_deg > 0
+    && Number.isFinite(g.lat_max) && Number.isFinite(g.lon_min)
+    && Array.isArray(meta.dates) && nDates >= 2
+    && meta.dates.every((date, k) => isoDate(date) && (k === 0 || date > meta.dates[k - 1]))
+    && isoDate(meta.fit?.t0)
+    && GRID_FIELDS.every((field) => Array.isArray(grid[field]) && grid[field].length === n)
+    && Array.isArray(series.values_m) && series.values_m.length === n
+    && series.values_m.every((row) => Array.isArray(row) && row.length === nDates)
+    && Array.isArray(stations.stations)
+    && stations.stations.every((st) => typeof st?.station === "string"
+      && Number.isFinite(st.lon) && Number.isFinite(st.lat)
+      && Number.isInteger(st.cell_index) && st.cell_index >= 0 && st.cell_index < n
+      && (st.gps == null || (Array.isArray(st.gps.dates) && st.gps.dates.every(isoDate)
+        && Array.isArray(st.gps.los_m) && st.gps.los_m.length === st.gps.dates.length)))
+    && [grid, series, stations].every((file) => file.is_synthetic === meta.is_synthetic);
+  if (ready) return { data: { meta, grid, series, stations } };
+  return { reason: files.every((file) => file.missing) ? "missing" : "incomplete" };
 }
 
 export async function loadData() {
   const real = await tryLoad("./data");
-  const d = real || (await tryLoad("./samples"));
-  if (!d) throw new Error("No data files found in public/data or public/samples.");
+  const { data } = real.data ? real : await tryLoad("./samples");
+  if (!data) throw new Error("Neither the NISAR files nor the sample files could be loaded as a complete dataset.");
   // Optional canal profile (contracts v1.2 section 5): the file named in meta.canal_profiles,
   // loaded only next to the real data files, so samples never mix with real canal data.
   let canal = null;
-  const canalFile = real && Array.isArray(real.meta.canal_profiles) ? real.meta.canal_profiles[0] : null;
+  const canalFile = real.data && Array.isArray(real.data.meta.canal_profiles) ? real.data.meta.canal_profiles[0] : null;
   if (canalFile) {
     try {
       const r = await fetch(`./data/${canalFile}`);
@@ -30,7 +61,7 @@ export async function loadData() {
     } catch { canal = null; }
   }
 
-  const { meta, grid, series, stations } = d;
+  const { meta, grid, series, stations } = data;
   const g = meta.grid;
   const n = g.nrows * g.ncols;
   const dates = meta.dates.map((s) => new Date(s + "T00:00:00Z"));
@@ -43,7 +74,8 @@ export async function loadData() {
     values: series.values_m,
     stations: stations.stations,
     canal,
-    synthetic: !!(meta.is_synthetic || grid.is_synthetic),
+    synthetic: Boolean(real.reason || meta.is_synthetic),
+    fallback: real.reason ?? null,
     n,
     dates,
     tYears,

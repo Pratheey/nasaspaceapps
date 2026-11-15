@@ -465,6 +465,10 @@ def process_pair(
     if apply_solid_earth_tides:
         extra += interp_cube(f, "slantRangeSolidEarthTidesPhase", x, y, height)
     phase_full = phase_iono - extra
+    east, north, up = los_unit_vector(f, x, y, height)
+    # Missing correction/geometry pixels are not measurements. In particular, a NaN
+    # in the reference block must not poison every otherwise valid pixel's offset.
+    usable &= np.isfinite(phase_full) & np.isfinite(east) & np.isfinite(north) & np.isfinite(up)
 
     # Reference: the connected component and median phase in a small block at the station.
     tr = Transformer.from_crs(4326, epsg, always_xy=True)
@@ -489,8 +493,6 @@ def process_pair(
         out = phase_to_los_m(ph - np.median(ph[blk][ok]), wavelength_m)
         out[~valid] = np.nan
         return out.astype(np.float32)
-
-    east, north, up = los_unit_vector(f, x, y, height)
 
     return {
         "x": x,

@@ -11,7 +11,12 @@ export const MODES = [
 
 export function cellValue(D, S, i) {
   switch (S.mode) {
-    case "pair": return pairDiff(D, i, S.k1, S.k2);
+    case "pair": {
+      if (S.swipe == null) return pairDiff(D, i, S.k1, S.k2);
+      const g = D.meta.grid;
+      const lon = g.lon_min + (i % g.ncols + 0.5) * g.step_deg;
+      return D.values[i]?.[lon < S.swipe ? S.k1 : S.k2] ?? null;
+    }
     case "breathe": return D.values[i]?.[S.cursor] ?? null;
     case "labels": return D.grid.net_change_m[i];
     default: return D.grid.net_change_m[i]; // net, fringe

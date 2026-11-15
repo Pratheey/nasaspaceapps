@@ -14,7 +14,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
   const { cells, N, dom, nLie } = useMemo(() => {
     const v = D.values[i] || [];
     const B = D.grid.trend_m_per_yr[i];
-    const sig = D.grid.net_change_sigma_m[i] ?? D.meta.sigma_net_m ?? 0.01;
+    const sig = D.grid.net_change_sigma_m[i] ?? D.meta.sigma_net_m;
     let dom = 0.005;
     const cells = [];
     for (let b = 1; b < v.length; b++) for (let a = 0; a < b; a++) {
@@ -23,7 +23,7 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
       dom = Math.max(dom, Math.abs(d));
       const days = (D.dates[b] - D.dates[a]) / 864e5;
       const exp = B == null ? null : B * (days / 365.25);
-      cells.push({ a, b, d, exp, lie: exp != null && days >= 90 && d > -sig && exp < -2 * sig });
+      cells.push({ a, b, d, exp, lie: sig != null && exp != null && days >= 90 && d > -sig && exp < -2 * sig });
     }
     return { cells, N: v.length, dom, nLie: cells.filter((c) => c.lie).length };
   }, [D, i]);
@@ -66,7 +66,9 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
 
   const hit = (e) => {
     const r = ref.current.getBoundingClientRect();
-    const a = Math.floor((e.clientX - r.left - PL) / CELL), b = Math.floor((e.clientY - r.top - PT) / CELL) + 1;
+    const x = (e.clientX - r.left) * Wd / r.width;
+    const y = (e.clientY - r.top) * Hd / r.height;
+    const a = Math.floor((x - PL) / CELL), b = Math.floor((y - PT) / CELL) + 1;
     if (a < 0 || b < 1 || b >= N || a >= b) return null;
     return cells.find((k) => k.a === a && k.b === b);
   };
@@ -78,8 +80,8 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
       </p>
       <canvas
         ref={ref}
-        style={{ width: Wd, height: Hd }}
-        className="block max-w-full cursor-pointer"
+        style={{ width: Wd, aspectRatio: `${Wd} / ${Hd}` }}
+        className="block h-auto max-w-full cursor-pointer"
         aria-label="Every pair of dates at this spot. Click a square to compare those two dates."
         onMouseMove={(e) => setRead(hit(e))}
         onMouseLeave={() => setRead(null)}

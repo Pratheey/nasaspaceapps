@@ -166,6 +166,39 @@ def test_unusable_reference_raises(fake_gunw):
             ng.process_pair(f, REF_LON_LAT, window=WINDOW)
 
 
+@pytest.mark.parametrize("layer", ["wetTroposphericPhaseScreen", "losUnitVectorX"])
+def test_missing_correction_or_geometry_rejects_reference(fake_gunw, layer):
+    with h5py.File(fake_gunw["path"], "r+") as f:
+        f[f"{ng.GUNW_ROOT}/metadata/radarGrid/{layer}"][...] = np.nan
+    with ng.open_gunw(str(fake_gunw["path"])) as f:
+        with pytest.raises(ValueError, match="reference station unusable"):
+            ng.process_pair(f, REF_LON_LAT, window=WINDOW)
+
+
+@pytest.mark.parametrize("at_reference", [False, True])
+def test_missing_correction_pixel_is_masked(fake_gunw, monkeypatch, at_reference):
+    original = ng.interp_cube
+    missing = []
+
+    def missing_pixel(*args, **kwargs):
+        result = original(*args, **kwargs)
+        if args[1] == "wetTroposphericPhaseScreen":
+            row, col = ((ng.nearest_index(args[3], fake_gunw["y0"]),
+                         ng.nearest_index(args[2], fake_gunw["x0"]))
+                        if at_reference else (30, 30))
+            result[row, col] = np.nan
+            missing.append((row, col))
+        return result
+
+    monkeypatch.setattr(ng, "interp_cube", missing_pixel)
+    result, _, _, _ = _run(fake_gunw)
+    row, col = missing[0]
+    assert result["valid"].any()
+    assert result["valid"][row, col] == 0
+    assert np.isnan(result["los_disp_ref_m"][row, col])
+    assert np.isfinite(result["los_disp_ref_m"][result["valid"].astype(bool)]).all()
+
+
 def test_window_outside_granule_raises(fake_gunw):
     with ng.open_gunw(str(fake_gunw["path"])) as f:
         with pytest.raises(ValueError, match="does not overlap"):

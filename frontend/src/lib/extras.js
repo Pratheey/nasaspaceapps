@@ -5,9 +5,10 @@ import { fmtDate } from "./fmt.js";
 let ctx, playingListen = null;
 export function listen(values, { stepMs = 190, onStep, onEnd } = {}) {
   stopListening();
-  ctx ||= new (window.AudioContext || window.webkitAudioContext)();
   const ok = values.filter((v) => v != null);
-  if (!ok.length) return;
+  const AudioContext = window.AudioContext || window.webkitAudioContext;
+  if (!ok.length || !AudioContext) return false;
+  try { ctx ||= new AudioContext(); } catch { return false; }
   const lo = Math.min(...ok), hi = Math.max(...ok), span = hi - lo || 1;
   const t0 = ctx.currentTime + 0.05;
   const nodes = [];
@@ -24,12 +25,17 @@ export function listen(values, { stepMs = 190, onStep, onEnd } = {}) {
     o.start(t); o.stop(t + stepMs / 1000 + 0.02);
     nodes.push(o);
   });
-  let k = 0;
+  let k = 1;
   const timer = setInterval(() => {
     if (k >= values.length) { stopListening(); onEnd?.(); return; }
     onStep?.(k++);
   }, stepMs);
-  playingListen = { nodes, timer };
+  const playback = { nodes, timer };
+  playingListen = playback;
+  if (ctx.state === "suspended") ctx.resume().catch(() => {
+    if (playingListen === playback) { stopListening(); onEnd?.(); }
+  });
+  return true;
 }
 export function stopListening() {
   if (!playingListen) return;
@@ -65,18 +71,20 @@ export function downloadCSV(D, i, fitAt, station) {
 }
 
 /* Shareable state in the URL hash. */
-const KEYS = ["mode", "a", "b", "t", "cell", "pin", "gps", "relief", "prof"];
+const KEYS = ["mode", "a", "b", "t", "cell", "pin", "gps", "relief", "prof", "swipe", "lens", "fields", "field", "split"];
 export function writeHash(S) {
-  const o = { mode: S.mode, a: S.k1, b: S.k2, t: S.cursor, cell: S.sel, pin: S.pin, gps: S.gps ? 1 : 0, relief: S.relief ? 1 : 0 };
+  const o = {
+    mode: S.mode, a: S.k1, b: S.k2, t: S.cursor, cell: S.sel, pin: S.pin,
+    gps: S.gps || null, relief: S.relief || null, lens: S.lens || null,
+    fields: S.fields || null, field: S.field?.field_id, split: S.split || null, swipe: S.swipe,
+  };
   if (S.profile?.b) o.prof = [...S.profile.a, ...S.profile.b].map((n) => n.toFixed(4)).join(",");
-  const q = Object.entries(o).filter(([, v]) => v !== -1 && v !== 0 && v != null && v !== "").map(([k, v]) => `${k}=${v}`).join("&");
+  const q = new URLSearchParams(Object.entries(o)
+    .filter(([, value]) => value !== -1 && value != null && value !== "")
+    .map(([key, value]) => [key, value === true ? "1" : value]));
   history.replaceState(null, "", "#" + q);
 }
-export function readHash() {
-  const o = {};
-  location.hash.slice(1).split("&").forEach((kv) => {
-    const [k, v] = kv.split("=");
-    if (KEYS.includes(k)) o[k] = decodeURIComponent(v ?? "");
-  });
-  return o;
+export function readHash(hash = location.hash) {
+  const params = new URLSearchParams(hash.slice(1));
+  return Object.fromEntries([...params].filter(([key, value]) => KEYS.includes(key) && value !== ""));
 }

@@ -33,10 +33,13 @@ export default function App() {
 
 // The story is the front door; the explorer is the instrument. A shared link opens the explorer directly.
 function Shell({ D }) {
-  const [view, setView] = useState(() => (location.hash.length > 1 ? "explore" : "story"));
+  const [view, setView] = useState(() => (Object.keys(readHash()).length ? "explore" : "story"));
   const [tourOnOpen, setTourOnOpen] = useState(false);
-  const go = (v, tour = false) => { setTourOnOpen(tour); setView(v); window.scrollTo(0, 0); if (v === "story") history.replaceState(null, "", location.pathname); };
-  useEffect(() => { document.documentElement.style.overflow = view === "explore" ? "hidden" : ""; }, [view]);
+  const go = (v, tour = false) => { setTourOnOpen(tour); setView(v); window.scrollTo(0, 0); if (v === "story") history.replaceState(null, "", location.pathname + location.search); };
+  useEffect(() => {
+    document.documentElement.style.overflow = view === "explore" ? "hidden" : "";
+    if (view === "story") document.getElementById(location.hash.slice(1))?.scrollIntoView();
+  }, [view]);
   return view === "story"
     ? <Story D={D} onExplore={() => go("explore")} />
     : <div className="h-[100svh] overflow-y-auto lg:overflow-hidden [animation:rise-in_.6s_both]"><Explorer D={D} onStory={() => go("story")} startTour={tourOnOpen} /></div>;
@@ -46,7 +49,11 @@ function Explorer({ D, onStory, startTour }) {
   const N = D.dates.length;
   const domain = useMemo(() => netDomain(D), [D]);
   const [S, setS] = useState(() => initialState(D));
-  const set = useCallback((patch) => setS((s) => ({ ...s, ...(typeof patch === "function" ? patch(s) : patch) })), []);
+  const set = useCallback((patch) => setS((s) => {
+    const next = { ...s, ...(typeof patch === "function" ? patch(s) : patch) };
+    if (next.mode !== "pair" || next.relief) next.swipe = null;
+    return next;
+  }), []);
   const Sref = useRef(S); Sref.current = S;
   const mapRef = useRef(null);
   const [hover, setHover] = useState(null);
@@ -69,15 +76,17 @@ function Explorer({ D, onStory, startTour }) {
     select,
     clearSel: () => { stopListening(); set({ sel: -1, listenK: null }); },
     setPin: (i) => set({ pin: i, awaitPin: false }),
-    showPair: (a, b) => set({ k1: a, k2: b, mode: "pair", playing: false }),
-    scrubTo: (k) => set((s) => (s.mode === "pair" ? {} : { cursor: k, mode: "breathe", playing: false })),
+    showPair: (a, b) => set({ k1: a, k2: b, mode: "pair", swipe: null, playing: false }),
+    scrubTo: (k) => set({ cursor: k, mode: "breathe", playing: false }),
     csv: () => downloadCSV(D, Sref.current.sel, (t) => fitAt(D, Sref.current.sel, t), stationAt(Sref.current.sel)),
     toggleListen: () => {
       if (Sref.current.listenK != null) { stopListening(); set({ listenK: null }); return; }
-      listen(D.values[Sref.current.sel] || [], { onStep: (k) => set({ listenK: k }), onEnd: () => set({ listenK: null }) });
-      set({ listenK: 0 });
+      if (listen(D.values[Sref.current.sel] || [], { onStep: (k) => set({ listenK: k }), onEnd: () => set({ listenK: null }) })) {
+        set({ listenK: 0 });
+      }
     },
   }), [D, select, set, stationAt]);
+  useEffect(() => stopListening, []);
 
   const onCell = useCallback((i, ev) => {
     const s = Sref.current;
@@ -87,7 +96,19 @@ function Explorer({ D, onStory, startTour }) {
   const onStation = useCallback((st) => { set({ gps: true }); select(st.cell_index); }, [select, set]);
   const onProfilePoint = useCallback((ll) => set((s) => (s.profile?.a && !s.profile.b ? { profile: { a: s.profile.a, b: ll }, drawing: false } : { profile: { a: ll } })), [set]);
   const onProfileDrag = useCallback((key, ll) => set((s) => ({ profile: { ...s.profile, [key]: ll } })), [set]);
-  const valueAt = useCallback((lng, lat) => { const i = cellAt(D, lng, lat); return i < 0 ? null : cellValue(D, S, i); }, [D, S.mode, S.k1, S.k2, S.cursor]); // eslint-disable-line
+  const valueAt = useCallback((lng, lat) => { const i = cellAt(D, lng, lat); return i < 0 ? null : cellValue(D, S, i); }, [D, S.mode, S.k1, S.k2, S.cursor, S.swipe]); // eslint-disable-line
+  const toggleSwipe = () => set((s) => s.swipe != null ? { swipe: null } : {
+    swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", relief: false, lens: false, playing: false,
+  });
+  const closeProfile = () => {
+    mapRef.current?.showProbe(null);
+    set({ profile: null, drawing: false });
+  };
+  const toggleProfile = () => Sref.current.profile && !Sref.current.profile.canal ? closeProfile() : set({ profile: { a: null }, drawing: true });
+  const toggleCanal = () => {
+    mapRef.current?.showProbe(null);
+    set(Sref.current.profile?.canal ? { profile: null, drawing: false } : { profile: { canal: true }, drawing: false });
+  };
 
   /* ---------- playback ---------- */
   useEffect(() => {
@@ -137,11 +158,11 @@ function Explorer({ D, onStory, startTour }) {
       ...fastest.slice(0, 3).map(([i, v], n) => ({ id: "f" + i, group: "Sinking fastest", label: placeName(i), hint: cm(v), icon: Activity, run: () => select(i, { fly: true }) })),
       ...MODES.map((m) => ({ id: "m" + m.id, group: "Views", label: m.name, key: m.key, icon: MODE_ICONS[m.id], run: () => setMode(m.id) })),
       { id: "t-play", group: "Tools", label: "Play the record", key: "Space", icon: Play, run: togglePlay },
-      { id: "t-swipe", group: "Tools", label: "Swipe date A against date B", key: "S", icon: SplitSquareHorizontal, run: () => set({ swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }) },
+      { id: "t-swipe", group: "Tools", label: "Swipe date A against date B", key: "S", icon: SplitSquareHorizontal, run: toggleSwipe },
       { id: "t-lens", group: "Tools", label: "Radar lens", key: "L", icon: ScanSearch, run: () => set({ lens: true, relief: false }) },
       { id: "t-3d", group: "Tools", label: "3D view", key: "D", icon: Box, run: () => set({ relief: true, lens: false }) },
-      { id: "t-prof", group: "Tools", label: "Draw a cross-section", key: "P", icon: Route, run: () => set({ profile: { a: null }, drawing: true }) },
-      ...(D.canal ? [{ id: "t-canal", group: "Tools", label: "California Aqueduct profile", key: "A", icon: Droplets, run: () => set({ profile: { canal: true }, drawing: false }) }] : []),
+      { id: "t-prof", group: "Tools", label: "Draw a cross-section", key: "P", icon: Route, run: toggleProfile },
+      ...(D.canal ? [{ id: "t-canal", group: "Tools", label: "California Aqueduct profile", key: "A", icon: Droplets, run: toggleCanal }] : []),
       { id: "t-gps", group: "Tools", label: S.gps ? "Hide GPS check" : "Show GPS check", key: "G", icon: Satellite, run: () => set({ gps: !Sref.current.gps }) },
       { id: "t-fields", group: "Tools", label: "Crop fields: polarization and coverage", key: "F", icon: Sprout, run: () => set({ fields: true, field: null }) },
       { id: "t-tour", group: "Tools", label: "Walkthrough", key: "W", icon: Compass, run: () => goStep(0) },
@@ -157,23 +178,24 @@ function Explorer({ D, onStory, startTour }) {
       const s = Sref.current;
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") { e.preventDefault(); setCmd((o) => !o); return; }
       if (e.key === "Escape") {
-        if (limits) setLimits(false);
+        if (cmd) setCmd(false);
+        else if (limits) setLimits(false);
         else if (s.tour >= 0) endTour();
         else if (s.field) set({ field: null });
-        else if (s.profile) { mapRef.current?.showProbe(null); set({ profile: null, drawing: false }); }
+        else if (s.profile) closeProfile();
         else if (s.awaitPin) set({ awaitPin: false });
         return;
       }
-      if (/INPUT|SELECT|TEXTAREA/.test(e.target.tagName) || e.target.getAttribute?.("role") === "slider" || e.metaKey || e.ctrlKey) return;
+      if (cmd || limits || e.defaultPrevented || e.target.closest?.("input, select, textarea, [contenteditable], [role='slider']") || e.metaKey || e.ctrlKey) return;
       const k = e.key.toLowerCase();
-      if (k === " ") { e.preventDefault(); togglePlay(); }
+      if (k === " " && !e.target.closest?.("button, a")) { e.preventDefault(); togglePlay(); }
       else if ("12345".includes(k) && k) setMode(MODES[+k - 1].id);
       else if (k === "g") set({ gps: !s.gps });
       else if (k === "d") set({ relief: !s.relief, lens: false });
       else if (k === "l") set({ lens: !s.lens, relief: false });
-      else if (k === "s") set(s.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false });
-      else if (k === "p") set(s.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true });
-      else if (k === "a" && D.canal) set(s.profile?.canal ? { profile: null, drawing: false } : { profile: { canal: true }, drawing: false });
+      else if (k === "s") toggleSwipe();
+      else if (k === "p") toggleProfile();
+      else if (k === "a" && D.canal) toggleCanal();
       else if (k === "w") goStep(0);
       else if (k === "f") set({ fields: !s.fields, field: null });
       else if (k === "arrowright") step(1);
@@ -198,11 +220,11 @@ function Explorer({ D, onStory, startTour }) {
   return (
     <div className="lg:h-full flex flex-col">
 
-      <header className="shrink-0 flex items-center gap-6 px-5 h-[60px] border-b border-hair bg-space max-lg:flex-wrap max-lg:h-auto max-lg:py-2 max-lg:gap-2">
+      <header className="shrink-0 flex items-center gap-3 2xl:gap-6 px-5 max-sm:px-3 h-[60px] border-b border-hair bg-space max-lg:flex-wrap max-lg:h-auto max-lg:py-2 max-lg:gap-2">
         <div className="flex items-center gap-3 min-w-0">
-          <button onClick={onStory} title="Back to the story" aria-label="Back to the story" className="rounded-full hover:scale-105 transition"><Mark size={32} /></button>
+          <button onClick={onStory} title="Back to the story" aria-label="Back to the story" className="shrink-0 rounded-full hover:scale-105 transition"><Mark size={32} /></button>
           <div className="min-w-0">
-            <h1 className="font-display font-bold text-[21px] leading-none whitespace-nowrap">The Breathing Ground</h1>
+            <h1 className="font-display font-bold text-[21px] max-sm:text-[18px] leading-none truncate">The Breathing Ground</h1>
             <p className="text-[12px] text-mute mt-1 truncate max-[1500px]:hidden">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
           </div>
           <DataStatus D={D} />
@@ -213,7 +235,7 @@ function Explorer({ D, onStory, startTour }) {
             return (
               <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
                 className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 font-display text-[15px] font-medium transition-colors ${on ? "text-accent-2 bg-accent/10" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
-                <Icon size={15} className="shrink-0" /> <span className="lg:max-xl:sr-only">{m.name}</span>
+                <Icon size={15} className="shrink-0" /> <span className="lg:max-2xl:sr-only">{m.name}</span>
                 {on && <span className="absolute left-3 right-3 -bottom-[11px] h-[2px] bg-accent shadow-[0_0_10px_#6FA8FF] max-lg:hidden" />}
               </button>
             );
@@ -254,7 +276,7 @@ function Explorer({ D, onStory, startTour }) {
                 <select aria-label="Go to a place" value="" onChange={(e) => {
                   const v = e.target.value;
                   if (v[0] === "p") { const p = PLACES[+v.slice(1)]; if (!p.ll) mapRef.current?.fitAll(); else { mapRef.current?.flyTo(p.ll, p.z); const i = cellAt(D, ...p.ll); if (i >= 0) select(i); } }
-                  if (v[0] === "s") { const st = D.stations.find((x) => x.station === v.slice(1)); select(st.cell_index, { fly: true }); }
+                  if (v[0] === "s") { const st = D.stations.find((x) => x.station === v.slice(1)); set({ gps: true }); select(st.cell_index, { fly: true }); }
                 }} className="appearance-none bg-transparent text-[14px] text-ink pl-9 pr-4 py-2 cursor-pointer outline-none [&>option]:bg-deck">
                   <option value="">Go to…</option>
                   {PLACES.map((p, k) => <option key={p.name} value={`p${k}`}>{p.name}</option>)}
@@ -262,9 +284,9 @@ function Explorer({ D, onStory, startTour }) {
                 </select>
               </label>
               {[
-                { icon: Route, label: "Cross-section", on: !!S.profile && !S.profile.canal, act: () => set(S.profile && !S.profile.canal ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true }), key: "P" },
-                ...(D.canal ? [{ icon: Droplets, label: "Aqueduct", on: !!S.profile?.canal, act: () => set(S.profile?.canal ? { profile: null, drawing: false } : { profile: { canal: true }, drawing: false }), key: "A" }] : []),
-                { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: () => set(S.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }), key: "S" },
+                { icon: Route, label: "Cross-section", on: !!S.profile && !S.profile.canal, act: toggleProfile, key: "P" },
+                { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: toggleSwipe, key: "S" },
+                ...(D.canal ? [{ icon: Droplets, label: "Aqueduct", on: !!S.profile?.canal, act: toggleCanal, key: "A" }] : []),
                 { icon: ScanSearch, label: "Lens", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
                 { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },
                 { icon: Sprout, label: "Fields", on: S.fields, act: () => set({ fields: !S.fields, field: null }), key: "F" },
@@ -312,7 +334,7 @@ function Explorer({ D, onStory, startTour }) {
 
           <div className="lg:hidden px-3 pt-3"><Legend D={D} S={S} domain={domain} /></div>
           {S.profile && (
-            <ProfilePanel D={D} S={S} valueAt={valueAt} onClose={() => { mapRef.current?.showProbe(null); set({ profile: null, drawing: false }); }}
+            <ProfilePanel D={D} S={S} valueAt={valueAt} onClose={closeProfile}
               onProbe={(ll) => mapRef.current?.showProbe(ll)} onPick={(i) => select(i)} />
           )}
           <Timeline D={D} S={S} trace={S.sel >= 0 ? D.values[S.sel] : null}
@@ -326,7 +348,7 @@ function Explorer({ D, onStory, startTour }) {
         </div>
       </main>
 
-      <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />
+      {cmd && <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />}
       {limits && <Limits D={D} onClose={() => setLimits(false)} />}
       {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(111,168,255,.45)]">{flash}</div>}
     </div>
@@ -347,7 +369,21 @@ function initialState(D) {
   if (h.pin) S.pin = int(h.pin, 0, D.n - 1) ?? -1;
   if (h.gps === "1") S.gps = true;
   if (h.relief === "1") S.relief = true;
-  if (h.prof) { const q = h.prof.split(",").map(Number); if (q.length === 4 && q.every(isFinite)) S.profile = { a: [q[0], q[1]], b: [q[2], q[3]] }; }
+  if (!S.relief && h.lens === "1") S.lens = true;
+  if (h.fields === "1") { S.fields = true; if (h.field) S.field = { field_id: h.field }; }
+  if (h.split === "1") S.split = true;
+  if (S.mode === "pair" && !S.relief && h.swipe != null) {
+    const swipe = Number(h.swipe);
+    if (Number.isFinite(swipe) && swipe >= D.bbox.west && swipe <= D.bbox.east) S.swipe = swipe;
+  }
+  if (h.prof) {
+    const parts = h.prof.split(",");
+    const q = parts.map(Number);
+    if (q.length === 4 && parts.every((part) => part.trim() !== "")
+      && q.every((n, k) => Number.isFinite(n) && Math.abs(n) <= (k % 2 ? 85 : 180))) {
+      S.profile = { a: [q[0], q[1]], b: [q[2], q[3]] };
+    }
+  }
   return S;
 }
 

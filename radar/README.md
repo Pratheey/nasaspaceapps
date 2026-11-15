@@ -87,6 +87,8 @@ by nearest neighbour and ascending acquisitions use the nearest distinct descend
 acquisition within six days. The 25 matched acquisitions are one day apart. February 4
 has no match and is omitted. For longer intervals the script adds observed consecutive
 increments on each track and masks pixels missing any of those increments.
+The output records the actual input filenames in its source metadata. The signed-off
+hour-33 results use v2; using a different input version requires a new check.
 
 Run with `--station-only` and no stack paths to reproduce the preliminary H-13
 check from Pratheek's published station samples and Daniel's cleaned GPS series.

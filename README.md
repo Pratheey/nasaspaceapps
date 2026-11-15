@@ -31,3 +31,11 @@ Then open your agent in the repo folder. It reads `AGENTS.md` (or `CLAUDE.md`) a
 | What | Command |
 |---|---|
 | Catch up with main | `./scripts/sync.sh` |
+| Install processing and test dependencies (Python 3.12) | `python -m pip install -r requirements-dev.txt` |
+| Check processing arithmetic and exports | `python -m pytest analysis/tests data/tests radar/tests -q` |
+| Install website dependencies | `cd frontend && npm ci` |
+| Check website behavior | `cd frontend && npm test` |
+| Build the website | `cd frontend && npm run build` |
+
+The automated tests use small synthetic fixtures and do not need an Earthdata login
+or a fresh satellite download. Run the website commands from the repository root.

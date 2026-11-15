@@ -8,7 +8,7 @@ const CORCORAN = [-119.56, 36.098];
 
 function findLie(D) {
   const st = lieStation(D);
-  const p = mostMisleadingPair(D, st.cell_index);
+  const p = st && mostMisleadingPair(D, st.cell_index);
   if (p) return { i: st.cell_index, p, station: st.station };
   let best = null;
   for (let i = 0; i < D.n; i++) {
@@ -59,23 +59,22 @@ export function tourSteps(D) {
       camera: "fit",
       body: (
         <>
-          <p>Each frame is one radar pass, every 12 days. Watch the ground ease up when water returns in winter and settle in the dry months, while the sinking areas keep going down underneath.</p>
+          <p>Each frame is an available radar pass on a 12-day schedule. Watch the ground ease up when water returns in winter and settle in the dry months, while the sinking areas keep going down underneath.</p>
           <p className="text-[12.5px] text-mute">Height in 3D is exaggerated so small movements are visible.</p>
         </>
       ),
     },
-    {
+    ...(st ? [{
       title: "Separate the breathing from the sinking",
       state: { mode: "net", relief: false, playing: false, split: true, sel: st.cell_index },
       camera: "sel",
       body: (
         <>
           <p>At {st.station} we fit a steady trend plus a once-a-year cycle. The chart splits the two, and the gauge shows where the ground stood on each date.</p>
-          <p>Where the seasonal cycle isn't statistically significant, we say so instead of drawing it.{calm && calm !== st ? ` Compare ${calm.station}, where the ground barely moves.` : ""}</p>
+          <p>Where the seasonal cycle isn't statistically significant, we say so instead of drawing it.{calm && calm !== st && D.grid.net_change_m[calm.cell_index] != null ? ` Compare with ${calm.station}, the calm demo station.` : ""}</p>
         </>
       ),
-    },
-    {
+    }, {
       title: "Check it against GPS",
       state: { gps: true, split: false, sel: st.cell_index, playing: false },
       body: (
@@ -84,6 +83,6 @@ export function tourSteps(D) {
           <p className="text-[19px] font-medium text-ink leading-snug pt-1">We don't tell you the ground is fine. We show you how sure we are.</p>
         </>
       ),
-    },
+    }] : []),
   ];
 }
