@@ -62,11 +62,12 @@ def build_series(*, is_synthetic, cumulative_cells) -> dict:
 def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_source,
                alpha, track=34, direction="ascending", frame=20, product_maturity="provisional",
                reference_station="P304", held_out=("P302", "P303", "P307"), labels=None, notes=(),
-               sign_convention=None, product=None, demo_stations=None, significance=None) -> dict:
+               sign_convention=None, product=None, demo_stations=None, significance=None,
+               canal_profiles=()) -> dict:
     from .labels import LABEL_TEXT
     from .timebase import T0
 
-    return {
+    meta = {
         "contract_version": 1,
         "is_synthetic": bool(is_synthetic),
         "created_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
@@ -89,6 +90,9 @@ def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_sour
         "labels": labels or LABEL_TEXT,
         "notes": list(notes),
     }
+    if canal_profiles:                       # contracts v1.2 section 5: missing key = no profiles
+        meta["canal_profiles"] = list(canal_profiles)
+    return meta
 
 
 def write_json(path: Path, obj) -> int:

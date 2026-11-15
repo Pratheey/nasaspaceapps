@@ -260,8 +260,9 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     const m = map.current;
     const go = () => {
       const P = S.profile;
-      m.getSource("prof").setData(P?.b ? { type: "Feature", geometry: { type: "LineString", coordinates: [P.a, P.b] } } : emptyFC());
-      const want = P?.a ? (P.b ? ["a", "b"] : ["a"]) : [];
+      const line = P?.canal ? (D.canal ? D.canal.lon.map((lo, j) => [lo, D.canal.lat[j]]) : null) : P?.b ? [P.a, P.b] : null;
+      m.getSource("prof").setData(line ? { type: "Feature", geometry: { type: "LineString", coordinates: line } } : emptyFC());
+      const want = P?.canal ? [] : P?.a ? (P.b ? ["a", "b"] : ["a"]) : [];
       profMarkers.current = profMarkers.current.filter((mk) => { if (!want.includes(mk._key)) { mk.remove(); return false; } return true; });
       want.forEach((key, n) => {
         let mk = profMarkers.current.find((x) => x._key === key);

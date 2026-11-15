@@ -1,6 +1,6 @@
 import { useMemo, useState } from "react";
 import { X, ChevronLeft, ChevronRight, Radar, Route } from "lucide-react";
-import { sampleLine, distKm } from "../lib/profile.js";
+import { sampleLine, sampleCanal, distKm } from "../lib/profile.js";
 import { cm, fmtDate } from "../lib/fmt.js";
 import { cellAt } from "../lib/data.js";
 import { AGREEMENT, isDraft } from "../lib/demo.js";
@@ -9,12 +9,14 @@ import { AGREEMENT, isDraft } from "../lib/demo.js";
 const PW = 900, PH = 150, PP = { l: 54, r: 14, t: 12, b: 26 };
 export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
   const P = S.profile;
-  const smp = useMemo(() => (P?.b ? sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt) : null), [P, valueAt, D]);
+  const smp = useMemo(() => (P?.canal ? (D.canal ? sampleCanal(D.canal, valueAt) : null)
+    : P?.b ? sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt) : null), [P, valueAt, D]);
   const [read, setRead] = useState(null);
   if (!P) return null;
 
   let body;
-  if (!smp) body = <p className="text-[14px] text-ink/85">Click two points on the map to draw a line. A canal, a road, a levee: anything you want to see in cross-section.</p>;
+  if (!smp && P.canal) body = <p className="text-[14px] text-ink/85">The canal profile is not available with this data.</p>;
+  else if (!smp) body = <p className="text-[14px] text-ink/85">Click two points on the map to draw a line. A canal, a road, a levee: anything you want to see in cross-section.</p>;
   else {
     const ok = smp.pts.filter((s) => s.v != null);
     if (!ok.length) body = <p className="text-mute">No measurements along this line.</p>;
@@ -36,7 +38,9 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
       body = (
         <>
           <p className="text-[13px] text-mute mb-1 min-h-[1.4em]" aria-live="polite">
-            {read ? <>{read.km.toFixed(1)} km along the line: <span className="text-ink">{read.v == null ? "no measurement" : cm(read.v)}</span></> : "Point along the profile to find that spot on the map. Drag the numbered ends to move the line."}
+            {read ? <>{read.km.toFixed(1)} km along the {P.canal ? "Aqueduct" : "line"}: <span className="text-ink">{read.v == null ? "no measurement" : cm(read.v)}</span></>
+              : P.canal ? "North to south along the California Aqueduct. Point along the profile to find that spot on the map. A screening tool: where to look closer, not damage or capacity."
+              : "Point along the profile to find that spot on the map. Drag the numbered ends to move the line."}
           </p>
           <svg viewBox={`0 0 ${PW} ${PH}`} preserveAspectRatio="none" className="chart w-full h-[132px] block"
             onMouseMove={(e) => { const p = at(frac(e)); setRead(p); onProbe(p.p); }}
@@ -75,7 +79,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
       <button onClick={onClose} aria-label="Close cross-section" className="absolute right-3 top-2.5 p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2"><X size={16} /></button>
       <h3 className="font-display text-[16px] font-semibold flex items-center gap-2 mb-1 pr-10">
         <Route size={16} className="text-accent" />
-        Cross-section{smp ? `, ${distKm(P.a, P.b).toFixed(1)} km` : ""}
+        {P.canal ? `California Aqueduct${smp ? `, ${smp.L.toFixed(0)} km` : ""}` : <>Cross-section{smp ? `, ${distKm(P.a, P.b).toFixed(1)} km` : ""}</>}
       </h3>
       {body}
     </section>

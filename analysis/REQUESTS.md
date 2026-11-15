@@ -1,65 +1,56 @@
-# What the analysis lane needs from other lanes
+# What the analysis lane needs from each teammate (updated 2026-11-14, hour ~13)
 
-Written by the analysis lane (Ismail). Each section can be pasted to that person. File
-shapes are in `contracts/`. Anything marked **new** is not in contracts v1 yet, so Ryan has
-to agree to it first.
+Written by the analysis lane (Ismail). Numbers come from `analysis/NUMBERS.md` (rerun with
+`python -m analysis.numbers` after any data change). Done items from earlier versions are removed.
 
-## Steven (radar): vertical motion for the seasonal fit
+## Ryan (integrator, pitch)
 
-Goal: the app shows **vertical** motion with the same net change, seasonal fit and labels
-as the line-of-sight map, and compares it with GPS **up**, which is the cleanest check there is.
+1. **Pitch line 2 (Pick Two Dates) needs new wording.** With Daniel's cleaned GPS, Hanford (CAHA)
+   from 2025-12-06 to 2026-02-04 moves **+0.1 cm in GPS** and **+0.7 cm in NISAR**: the two dates look
+   **flat**, not "a rise of about 1 cm". The full record from the same start is **−7.4 cm in GPS
+   (−3.9 cm NISAR)**. Suggested line: "Compare these two dates and the ground looks flat."
+2. **CAHA's seasonal term does not pass in NISAR** (GPS amplitude 16.3 mm is below the calibrated 18.5 mm
+   bar), so the app says "seasonal not significant" there. Use **CAFP for the breathing** (NISAR 30.3 mm vs
+   GPS 27.4 mm, both peaking in February) and **CAHA for the sinking**.
+3. **Calm demo station:** P300's cell has only 7 valid radar dates and no net change. **P294 or P298**
+   are calm and complete. Tell me which and I set `demo_stations` in `meta.json` (one line in `analysis/export.py`).
+4. **Amplitude wording:** the app's "29.6 mm up and down" is the amplitude A. Peak-to-trough is 2A
+   (about 59 mm). Pick one and make the label say which.
+5. **Decide whether the north-east control box is stable ground** (with Pratheek). It alone sets the
+   seasonal bar; without it about 1,100 more cells count as seasonal (`analysis/README.md`, sensitivity).
+6. **Canal:** the Aqueduct profile follows contracts v1.2 section 5 and is in the app (tool "Aqueduct", key A).
+   A standalone explorer for the project page or pitch: https://claude.ai/artifact/MvwyTvTDxKsEUsrosYcTqf
+   (shared on request). Sinking under the canal is mostly 5–17 cm, deepest −16.3 cm at km 84;
+   screening only.
 
-1. **Combine ascending (T034 F020) and descending (T042 F070) into vertical and east.**
-   Per pixel or cell: `los_asc = e_asc·E + u_asc·U`, `los_desc = e_desc·E + u_desc·U` (north
-   is poorly constrained; ignore it and say so). Use the `los_east`/`los_up` unit vectors
-   from each stack (`contracts/stack.md`).
-2. **Match dates.** The tracks don't share dates (ascending starts 2025-11-24, descending
-   2025-11-01). Suggestion: pair each ascending date with the nearest descending date
-   (≤ 6 days apart), solve on those matched epochs, and record the offset in days for each.
-   **Never interpolate across gaps.** If an epoch has no match, leave it out.
-3. **Reference** both tracks to P304, as ascending is (D3). Same sign rules: **up is positive**.
-   Units: metres.
-4. **Deliver a vertical stack in the same shape as `contracts/stack.md`**, so `analysis/run.py`
-   reads it unchanged:
-   - `up_disp_m (pair, y, x)`: a sequential chain of matched epochs (epoch i → i+1), NaN where missing
-   - `valid (pair, y, x)`, `ref_date`, `sec_date` (use the ascending date of each epoch), `x`, `y`
-     plus a `crs` attribute, **or** `lat`/`lon` variables
-   - attrs: `reference_station = "P304"`, `sign_convention = "positive up"`, `product_maturity = "provisional"`, and a note of the date matching used
-   - the east component too, as `east_disp_m` (not used by the fit yet)
-5. **Check it against GPS up** at the held-out stations before handing it over (H-13).
+## Avi (frontend)
 
-The analysis lane then runs:
-`python -m analysis.run --component up --var up_disp_m --stack <vertical.nc> --sigma-json <uncertainty for up> --out <folder>`
-**New:** the vertical app files need a place in the app (a folder like `public/data/vertical/`) and a Ryan decision.
-
-## Daniel (gps): files the analysis lane reads
-
-- `gps/processed/stations.csv`, `gps_los.csv`, `gps_fits.csv`, `residuals.csv`,
-  `uncertainty.json` exactly as in `contracts/gps.md`. **Without them there is no
-  `stations.json`, and the app silently shows the synthetic samples instead of real data.**
-- **Any number of stations works.** `stations.csv` can list all 13 NGL stations Pratheek found
-  (one `reference`, the rest `held_out`); the app files follow it automatically.
-- `residuals.csv`: mark ~12 cm unwrapping pairs with `unwrap_flag = 1`. The analysis lane drops them
-  from the fit with `--exclude-pairs`.
-- **For vertical:** `gps_fits.csv` rows with `component = up`, and a daily up series
-  (new: suggest `gps_up.csv` with the same columns as `gps_los.csv`).
-- **Canal profile (new):** canal centre lines clipped to the app bbox as GeoJSON
-  LineStrings in lon/lat, one file per canal in `context/`, with `name` and source/release in
-  the properties (California Aqueduct, Delta-Mendota Canal, and Friant-Kern if it falls inside).
+1. **Basemap:** CARTO tiles show "API KEY REQUIRED". Switch to a source that needs no key.
+2. **Crash:** `MapView.jsx` calls `m.getSource("grid").updateImage(...)` when the `grid` source is missing
+   (seen after a hot reload and once while clicking on unchanged main). Add a null check.
+3. **Review the Aqueduct tool** (`App.jsx`, `Panels.jsx`, `MapView.jsx`, `lib/profile.js`, `lib/data.js`);
+   change it as you like.
+4. **Check the public link** from Ryan's GitHub Pages workflow (D10) on a laptop and a phone.
+5. **Legend:** add "blue = stable or rising ground, not water". The western hills read as sea without a basemap.
 
 ## Pratheek (nisar)
 
-- Which does the stack carry: `lat`/`lon` variables, or `x`/`y` + `crs` (which EPSG)?
-  `run.py` handles either.
-- The real date list, so the synthetic tests can use it.
+1. **NISAR trends run about +2 cm/yr less negative than GPS** at the held-out stations (+1.3 to +5.6;
+   v3 did not change this, so it is not the tie). Worth a look before the pitch quotes any trend.
+2. **North-east control box:** is it stable ground (see Ryan item 5)?
+3. **Coverage:** mask tuning on pairs 9–13 and 21, and bridging pairs if ASF has them (details sent earlier).
 
-## Ryan (integrator): decisions needed
+## Daniel (gps, context)
 
-1. Sign-off on the weighted fit (see `analysis/README.md`, method notes).
-2. **Significance threshold calibrated on stable ground.** Pratheek's real-data test found the
-   standard F-test flags a "significant seasonal" signal on bedrock that shouldn't move.
-   Proposal: choose the threshold so that only 5% of cells on a fixed set of stable
-   control areas pass, and record those areas in DECISIONS.
-3. **New output files:** `canal_profile_<name>.json` and the vertical app files. Their shape is in
-   `analysis/canal.py` and `run.py`; please add them to `contracts/` if they go in the app.
-4. Demo stations: Pratheek proposes CAFP and CAHA instead of P302/P307 (needs Daniel to add them).
+1. **Delta-Mendota Canal:** the Federal canal service returns 404. A link that works, or the USGS NHD canal
+   flowlines, gives a second profile.
+2. **Corcoran levee:** no source yet (DWR's levee layer has none in the bbox). Send a source and its date,
+   or we drop the levee profile and say so.
+3. The hand-off branches `ismail/h15-canals-for-daniel` and `ismail/gps-tenv3-for-daniel` can be deleted
+   once the files are in `context/` and `gps/raw/`.
+
+## Steven (radar)
+
+1. **Vertical in the app is optional** (cross-check only, D7, D9). If wanted, I run
+   `python -m analysis.run --component up --var up_disp_m --out frontend/public/data/vertical` on your
+   two-track stack (contracts v1.2 section 6). It needs the stack from the Drive and GPS up for the comparison.
