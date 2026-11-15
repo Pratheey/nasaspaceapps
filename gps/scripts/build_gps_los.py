@@ -138,10 +138,12 @@ def main() -> int:
         return None if None in (e, n, u) else float(vec[st] @ np.array([e, n, u]))
 
     # ---- gps_los.csv: daily, NISAR window only, relative to the first NISAR date
+    nisar_dates = sorted({dt.date.fromisoformat(r[k]) for r in vals for k in ("ref_date", "sec_date")})
     daily, base = {}, {}
     for st in stations:
         days = [d for d in gps[st]["date"] if WINDOW[0] <= d <= WINDOW[1]]
-        first_ok = next((d for d in [WINDOW[0]] + days if los_series(st, d) is not None), None)
+        # baseline = first NISAR date that has GPS (2025-11-24, or 2025-12-06 for stations that start later)
+        first_ok = next((d for d in nisar_dates if los_series(st, d) is not None), None)
         base[st] = (first_ok, los_series(st, first_ok))
         s = gps[st]
         for d in days:
@@ -160,37 +162,55 @@ def main() -> int:
 
     # ---- residuals.csv (held-out stations; NISAR minus GPS, both relative to P304)
     pairs = sorted({(int(r["pair"]), r["ref_date"], r["sec_date"]) for r in vals})
-    res_rows, pair_res, net_res = [], [], []
+    res_rows, pair_res, net_res, used, net_names = [], [], [], [], []
+    net_start = {}
     for st in [s for s in stations if s != REFERENCE]:
-        nis_sum = gps_sum = 0.0; complete = True
+        rows_st, complete, started = [], True, False
         for p, a, b in pairs:
             r = next((x for x in vals if x["station"] == st and int(x["pair"]) == p), None)
             da, db = dt.date.fromisoformat(a), dt.date.fromisoformat(b)
             ga = [los_series(st, da), los_series(REFERENCE, da)]; gb = [los_series(st, db), los_series(REFERENCE, db)]
-            if r is None or r["valid"] != "1" or None in ga + gb:
-                complete = False; continue
+            ok = r is not None and r["valid"] == "1" and None not in ga + gb
+            if not ok:
+                if started: complete = False      # a gap after the first compared pair: no net
+                continue
+            if not started:
+                started = True; net_start[st] = a  # stations with no GPS on 2025-11-24 start later
             nis = float(r["los_disp_m"]) - float(r["ref_tie_m"])
             gp = (gb[0] - ga[0]) - (gb[1] - ga[1])
-            nis_sum += nis; gps_sum += gp
-            res = nis - gp
+            rows_st.append([p, nis, gp, nis - gp])
+        # unwrap flag: pair residual within UNWRAP_TOL_M of a nonzero whole number of cycles AND the
+        # running-sum residual is still shifted by that many cycles one pair later (data lane's
+        # persistence test: unwrapping error persists, one-date atmosphere reverses). The last
+        # pair cannot be tested, so it is flagged if it is near a cycle.
+        for i, (p, nis, gp, res) in enumerate(rows_st):
             k = round(res / CYCLE_M)
-            flag = int(k != 0 and abs(res - k * CYCLE_M) <= UNWRAP_TOL_M)
+            near = k != 0 and abs(res - k * CYCLE_M) <= UNWRAP_TOL_M
+            persists = near and (i + 1 >= len(rows_st) or abs(res + rows_st[i + 1][3] - k * CYCLE_M) <= UNWRAP_TOL_M)
+            flag = int(near and persists)
             res_rows.append({"pair": p, "station": st, "nisar_los_m": f"{nis:.5f}", "gps_los_m": f"{gp:.5f}",
                              "residual_m": f"{res:.5f}", "unwrap_flag": flag})
-            if not flag: pair_res.append(res)
-        if complete:
-            res_rows.append({"pair": "net", "station": st, "nisar_los_m": f"{nis_sum:.5f}", "gps_los_m": f"{gps_sum:.5f}",
-                             "residual_m": f"{nis_sum - gps_sum:.5f}", "unwrap_flag": 0})
-            net_res.append(nis_sum - gps_sum)
+            if not flag:
+                pair_res.append(res)
+        if rows_st:
+            used.append(st)
+        if rows_st and complete:
+            n_sum, g_sum = sum(x[1] for x in rows_st), sum(x[2] for x in rows_st)
+            res_rows.append({"pair": "net", "station": st, "nisar_los_m": f"{n_sum:.5f}", "gps_los_m": f"{g_sum:.5f}",
+                             "residual_m": f"{n_sum - g_sum:.5f}", "unwrap_flag": 0})
+            net_res.append(n_sum - g_sum); net_names.append(st)
     with open(out / "residuals.csv", "w", newline="") as f:
         w = csv.DictWriter(f, fieldnames=["pair", "station", "nisar_los_m", "gps_los_m", "residual_m", "unwrap_flag"])
         w.writeheader(); w.writerows(res_rows)
-    n_held = len({r["station"] for r in res_rows})
+    n_held = len(used)
     rms = lambda a: float(np.sqrt(np.mean(np.square(a)))) if len(a) else None
     unc = {"sigma_pair_m": round(rms(pair_res), 4), "sigma_net_m": round(rms(net_res), 4) if net_res else None,
            "n_stations": n_held, "n_pairs_used": len(pair_res),
            "method": "RMS of held-out residuals in LOS, flagged pairs excluded",
-           "note": f"PRELIMINARY: {n_held} held-out stations so far (not all 13). Prototype check, not a valley-wide accuracy claim"}
+           "note": ("Stations: " + ", ".join(used) + ". Net change runs to 2026-10-14 and starts on 2025-11-24"
+                    + ("" if all(net_start.get(x) == "2025-11-24" for x in used) else ", except " + ", ".join(x for x in used if net_start.get(x) != "2025-11-24") + " (no GPS on the first date: from 2025-12-06)")
+                    + (". No net for " + ", ".join(sorted(set(used) - set(net_names))) if set(used) - set(net_names) else "")
+                    + ". Prototype check, not a valley-wide accuracy claim")}
     (out / "uncertainty.json").write_text(json.dumps(unc, indent=2) + "\n")
 
     # ---- gps_fits.csv: LOS (relative to P304? no: absolute, as in gps_los.csv) and up
