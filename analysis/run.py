@@ -160,23 +160,27 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
     else:
         notes.append("stations.json not written: GPS files missing. The app falls back to samples without it.")
 
+    # canal profiles first, so meta.json can list them (contracts v1.2 section 5)
+    profiles = {}
+    for path in canals:
+        for name, line in canal.read_lines(path):
+            profiles[f"canal_profile_{canal.slug(name)}.json"] = canal.profile(
+                name, line, grid, net=net, net_sigma=net_sigma, trend=f.B, trend_sigma=f.sigma_B,
+                label=lab, is_synthetic=is_synthetic, source=Path(path).name)
+
     meta = export.build_meta(is_synthetic=is_synthetic, grid_meta=grid.as_meta(), dates=dates, pairs=pairs,
                              sigma_net_m=sigma_net_m, sigma_source=sigma_source, alpha=alpha, notes=notes,
                              sign_convention=comp["sign"], product=comp["product"] if not is_synthetic else None,
-                             significance=significance_text, **_station_roles(stations_json))
+                             significance=significance_text, canal_profiles=sorted(profiles),
+                             **_station_roles(stations_json))
     grid_json = export.build_grid(is_synthetic=is_synthetic, net=net, net_sigma=net_sigma, label=lab,
                                   seasonal=s, fit=f, c=c, n_valid_dates=netchange.n_valid_dates(cum))
     series = export.build_series(is_synthetic=is_synthetic, cumulative_cells=cum)
     sizes = export.write_all(out_dir, meta, grid_json, series, stations_json)
 
-    # 9. canal profiles (screening tool; not in contracts v1)
-    for path in canals:
-        for name, line in canal.read_lines(path):
-            prof = canal.profile(name, line, grid, net=net, net_sigma=net_sigma, trend=f.B,
-                                 trend_sigma=f.sigma_B, label=lab, is_synthetic=is_synthetic,
-                                 source=Path(path).name)
-            fname = f"canal_profile_{canal.slug(name)}.json"
-            sizes[fname] = export.write_json(out_dir / fname, prof)
+    # 9. canal profiles (screening tool; contracts v1.2 section 5)
+    for fname, prof in profiles.items():
+        sizes[fname] = export.write_json(out_dir / fname, prof)
 
     counts = np.bincount(lab, minlength=4).tolist()
     return {"label_counts": counts, "n_fitted": int(f.fitted.sum()), "n_significant": int(s.significant.sum()),

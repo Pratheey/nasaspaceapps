@@ -44,12 +44,12 @@ def test_contract_files_match_samples(synth):
 def test_stations_match_contract_and_make_sense(synth):
     out, _ = synth
     st = _load(out / "stations.json")
-    sample = _load(SAMPLES / "stations.json")["stations"][0]
+    sample = next(s for s in _load(SAMPLES / "stations.json")["stations"] if s["role"] == "held_out")
     meta = _load(out / "meta.json")
     series = _load(out / "series.json")["values_m"]
     assert {s["station"] for s in st["stations"]} == {"P302", "P303", "P304", "P307"}
     for s in st["stations"]:
-        assert set(s) == set(sample)
+        assert set(s) - {"coords_are_placeholder"} == set(sample) - {"coords_are_placeholder"}   # flag marks fake positions only
         for block in ("gps", "nisar", "gps_fit", "nisar_fit"):
             assert set(s[block]) == set(sample[block])
         assert s["gps"]["dates"] == meta["dates"] and len(s["gps"]["los_m"]) == len(meta["dates"])
@@ -125,3 +125,10 @@ def test_trend_guard_on_synthetic_keeps_good_cells(synth):
     assert g is not None and g.counts["fitted"] > 0
     assert g.counts["hidden"] / g.counts["fitted"] < 0.05      # synthetic gaps never remove a season
     assert any(n.startswith("Trend guard:") for n in _load(out / "meta.json")["notes"])
+
+
+def test_meta_lists_canal_profiles(synth):
+    out, _ = synth
+    meta = _load(out / "meta.json")
+    assert meta["canal_profiles"] == ["canal_profile_synthetic_canal.json"]
+    assert all((out / f).exists() for f in meta["canal_profiles"])

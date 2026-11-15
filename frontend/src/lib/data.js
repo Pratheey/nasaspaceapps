@@ -19,11 +19,13 @@ export async function loadData() {
   const real = await tryLoad("./data");
   const d = real || (await tryLoad("./samples"));
   if (!d) throw new Error("No data files found in public/data or public/samples.");
-  // Optional canal profile (analysis lane, H-19): loaded only next to the real data files.
+  // Optional canal profile (contracts v1.2 section 5): the file named in meta.canal_profiles,
+  // loaded only next to the real data files, so samples never mix with real canal data.
   let canal = null;
-  if (real) {
+  const canalFile = real && Array.isArray(real.meta.canal_profiles) ? real.meta.canal_profiles[0] : null;
+  if (canalFile) {
     try {
-      const r = await fetch("./data/canal_profile_california_aqueduct.json");
+      const r = await fetch(`./data/${canalFile}`);
       if (r.ok && (r.headers.get("content-type") || "").includes("json")) canal = await r.json();
     } catch { canal = null; }
   }
