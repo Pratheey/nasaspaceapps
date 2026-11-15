@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 2 (proposed). **Last updated:** 2026-11-14, proposed by the nisar lane after the first real stack, pending Integrator confirmation (see D5)
+**Version:** 3 (proposed). **Last updated:** 2026-11-14 hour 7: event is 48 hours, plan rebased (D6, proposed); first real stack (D5, proposed). Both pending Integrator confirmation
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
@@ -49,10 +49,9 @@ series reveals the sinking → click a pixel → GPS agrees (or the app says it 
   is read over a wider window (lon −120.80 to −119.40, lat 35.95 to 37.12) so that P302,
   P303 and P725 are covered; those three are outside the app bbox.
   NISAR window 2025-11-24 to 2026-10-14.
-- **In scope (core, 24 h):** net-change map with the 4 labels; click to inspect; GPS reveal
+- **In scope (core):** net-change map with the 4 labels; click to inspect; GPS reveal
   with residuals; CAFP/CAHA demo (P300 as the calm comparison); amplitude-vs-trend plot;
-  limits panel. Everything in
-  `docs/PROPOSAL.md` §8 except the canal profile.
+  limits panel. Everything in `docs/PROPOSAL.md` §8.
 - **Proposed additions (confirm at check-in 1; no new data needed, all built from the
   contract files):**
   1. **Pick Two Dates.** User picks any two observation dates; the app shows the naive
@@ -61,8 +60,9 @@ series reveals the sinking → click a pixel → GPS agrees (or the app says it 
      station and GPS residual. Frontend only, from `meta.json` and `stations.json`.
   3. **Honest styling.** Hatched/faded cells for "Insufficient evidence"; nothing is drawn
      as blank-meaning-zero.
-- **48 h only:** descending track, canal profile, NISAR vs Sentinel-1 coverage, historical
-  panel (see `docs/PLAN.md`).
+- **Now scheduled (48 h event, D6):** polarization panel, NISAR vs Sentinel-1 coverage,
+  descending track and vertical/east, canal and Corcoran levee profiles (screening only),
+  historical panel. All after the checks in `docs/PLAN.md` "Rules that stop us cutting corners".
 - **Out of scope:** elastic/inelastic classification, storage-loss estimates, recharge
   recommendations, other basins, tailings dams, anything in `docs/PROPOSAL.md` §11.
 
@@ -75,9 +75,9 @@ Full hour-by-hour plan: `docs/PLAN.md`.
 
 | Lane | Person | Current goal |
 |---|---|---|
-| nisar | Pratheek | Done: 25-pair stack, station table, scripts (H-4, H-7, H-11). Next: upload the stack, DEM heights for the troposphere, coherence tuning, help Steven run Track 042 |
-| analysis | Ismail | Build 1 km cells as medians of valid pixels, fit per cell, calibrate the seasonal threshold on stable ground, export CAFP/CAHA/P300 for the demo |
-| radar | Steven | Find GCOV, descending and Sentinel-1 dates; pick ~30 crop fields; submit HyP3 jobs |
-| gps | Daniel | Clean and fit all 13 stations (`data/processed/stations_ngl.csv`), residual table for the 12 held out, confirm the go/no-go at about 2 cm |
-| frontend | Avi | Switch the demo and tour to CAFP, CAHA and P300; show 12 held-out stations; then deploy and context layers |
-| integrator | Ryan | Confirm D5, make the go/no-go call with Daniel, update the pitch and samples to the new stations |
+| nisar | Pratheek | Stack on the Drive + go/no-go with Daniel by hour 10; unwrapping check; DEM troposphere; Track 042 with Steven at 28; data freeze at 34 |
+| analysis | Ismail | Pipeline done (PR #4). First real numbers from the station values now; draft map at 16; final labels v1 at 28; canal/levee profiles and vertical by 34 |
+| radar | Steven | Report status at hour 8. HyP3 jobs submitted now; polarization by 16; coverage by 28; descending + vertical by 33 |
+| gps | Daniel | LOS files + go/no-go by 10; all 13 stations, residuals and uncertainty by 14; canal/levee lines by 16; GPS up by 26; history by 30 |
+| frontend | Avi | Keyless basemap; visible warning when `public/data/` is incomplete; CAFP/CAHA/P300 demo; public deploy by 16; real data from 22; new panels 28–36 |
+| integrator | Ryan | Hour-8 check-in: merge #4, #5, #6 and the plan, close #3, confirm D5/D6. Contracts v1.2 + samples by 14; claims reviews at 28 and 40; submit at 44 |
