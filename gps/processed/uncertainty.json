@@ -4,5 +4,5 @@
   "n_stations": 3,
   "n_pairs_used": 75,
   "method": "RMS of held-out residuals in LOS, flagged pairs excluded",
-  "note": "PRELIMINARY: 3 held-out stations so far (not all 13). Prototype check, not a valley-wide accuracy claim"
+  "note": "Stations: P302, P303, P307. Net change is measured from 2025-11-24 to 2026-10-14. Prototype check, not a valley-wide accuracy claim"
 }
