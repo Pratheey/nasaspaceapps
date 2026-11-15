@@ -89,6 +89,9 @@ def main() -> int:
                     help="use the ionosphere-only displacement (no troposphere / tide screens)")
     ap.add_argument("--stations-only", action="store_true",
                     help="rewrite only the station table (after the station list changed); leave the stack file alone")
+    ap.add_argument("--suffix", default="",
+                    help="appended to the stack file name, e.g. _v2 -> stack_tTTT_fFFF_v2.nc, so a "
+                         "new version does not overwrite the one teammates already have")
     ap.add_argument("--notes", default="", help="free text stored in the stack's `notes` attribute")
     args = ap.parse_args()
 
@@ -142,7 +145,7 @@ def main() -> int:
     # --- stack file ---
     write_stack = not args.stations_only
     if write_stack:
-        out = common.INTERIM / f"stack_{tag}.nc"
+        out = common.INTERIM / f"stack_{tag}{args.suffix}.nc"
         tmp = out.with_name(out.stem + ".partial")
         nc = netCDF4.Dataset(tmp, "w", format="NETCDF4")
         nc.createDimension("pair", len(files))
@@ -218,6 +221,10 @@ def main() -> int:
     notes.append(f"tie source: {tie_source}")
     notes.append("corrections: " + ("ionosphere only" if args.iono_only else
                  "ionosphere, troposphere (wet + hydrostatic) and solid Earth tide screens from the GUNW"))
+    terrain = sorted({int(m.get("terrain_heights_used", 0)) for m in metas})
+    notes.append("troposphere/tide/LOS cubes read at: " + (
+        "terrain height (Copernicus GLO-90)" if terrain == [1] else
+        "a constant height" if terrain == [0] else "MIXED terrain and constant heights across pairs"))
     notes.append("no pair has been corrected for unwrapping errors")
     if write_stack:
         nc.setncatts({

@@ -13,7 +13,9 @@ data/
 └── tests/        tests of the processing arithmetic on a synthetic file
 ```
 
-Status on 2026-11-14: **all 25 pairs of Track 034 / Frame 020 are processed and stacked. The tie to P304 uses raw NGL GPS and is provisional. No unwrapping corrections. The stack is not on the Drive yet. Read section 4 ("What we found") before using the numbers.**
+Status on 2026-11-14: **both tracks are processed with terrain heights (Track 034 ascending, 25 pairs; Track 042 descending, 27 pairs). Track 034 version 2 is `interim/stack_t034_f020_v2.nc`. Version 1 (constant 50 m height, the file uploaded to the Drive on 14 Nov) is unchanged as `interim/stack_t034_f020.nc`. The v2 stack and the Track 042 stack are not on the Drive yet. The tie to P304 uses raw NGL GPS and is provisional. No unwrapping corrections. Read section 4 ("What we found") before using the numbers.**
+
+Shared Drive folder: https://drive.google.com/drive/u/0/folders/152RzXsar-DzAYQNfZgIvnsXe4jqM06Fz (stacks go in its `data/interim` folder).
 
 ---
 
@@ -54,9 +56,12 @@ The `radarGrid` layers are cubes: 20 heights (−500 m to 9000 m) on a 500 m gri
 - **`mask` bit 24** ("ionosphere screen was interpolated here") is set on most pixels,
   including all four stations. It is not treated as a problem.
 - The **static layers** product linked from each granule (DEM, layover/shadow) could not be
-  opened with the same login, so no DEM is used. The geometry and troposphere cubes are
-  sampled at a constant 50 m ellipsoidal height. On the valley floor this costs at most
-  ~2 mm; in the Coast Range foothills at the west edge of the window it is worse.
+  opened with the same login. Terrain height therefore comes from the Copernicus GLO-90 DEM
+  (public), moved to the ellipsoid with a constant geoid undulation of -32 m. The
+  troposphere, solid Earth tide and line-of-sight cubes are read at that height at each
+  pixel. DEM minus GPS station height at 14 stations: median -3.4 m, range -17.5 to +1.2 m.
+  DEM heights in the Track 034 window run from -8 to 1558 m (median 55 m). Version 1 of the
+  Track 034 stack used a constant 50 m instead (see N9).
 - **Anomaly flag ("qFSP-H1 sample slip").** On some dates the product flags a diagonal
   stripe about 25 km wide through the middle of the window (23% of it) as an input-data
   anomaly: `mask` bits 8–23, and `referenceHasInputDataException` /
@@ -82,7 +87,10 @@ For each pair, over the window only:
    lon −120.705) are outside the app bbox. On the native grid the window is 1674 × 1620
    pixels.
 2. **Corrections.** `phase − ionosphere screen − wet troposphere − hydrostatic troposphere
-   − solid Earth tide`. An ionosphere-only version is kept alongside.
+   − solid Earth tide`. An ionosphere-only version is kept alongside. The troposphere and
+   tide screens (and the line-of-sight vectors) are read at each pixel's terrain height from
+   the Copernicus GLO-90 DEM, not at a constant height. `make_dem.py` builds the DEM file
+   automatically; `--flat-height` goes back to a constant 50 m.
 3. **Mask.** A pixel is valid when all of these hold: coherence ≥ 0.3; a valid sample in
    both images; not water; connected component not 0; and in the same connected component
    as the reference station. Anomaly-flagged pixels are kept and flagged (see below).
@@ -105,8 +113,9 @@ in step 5. This was derived from how the interferogram is formed, and then confi
 | Correction | Applied | Evidence |
 |---|---|---|
 | Ionosphere screen | Yes, every pair | Required by `docs/PROPOSAL.md` §6 |
-| Troposphere (wet + hydrostatic, model-based) | Yes | Tested without GPS: over the 25 pairs, the spread of displacement across the window drops from 2.2 cm RMS (ionosphere only) to 1.6 cm; 17 of 25 pairs improve; applying it with the opposite sign gives 3.9 cm |
-| Solid Earth tides | Yes | Deterministic; differential effect across the window is ≤ ~3 mm |
+| Troposphere (wet + hydrostatic, model-based), read at terrain height | Yes | Tested without GPS: over the 25 pairs, the spread of displacement across the window drops from 2.2 cm RMS (ionosphere only) to 1.6 cm at a constant 50 m height (version 1); 17 of 25 pairs improve; applying it with the opposite sign gives 3.9 cm |
+| Terrain height for the troposphere, tide and LOS cubes (Copernicus GLO-90) | Yes, version 2 and Track 042 | Tested without GPS on Track 034. Spread of displacement across the window, RMS over the 25 pairs: 1.55 cm with a constant 50 m, 1.40 cm with terrain heights, 1.89 cm with the height term reversed. On hill pixels above 150 m (31% of valid pixels): 1.51 cm, 1.25 cm, 2.04 cm. Regressing the measured signal on the height-dependent part of the wet troposphere screen gives a median coefficient of 0.99 (1 = the screen is right) |
+| Solid Earth tides, read at terrain height | Yes | Deterministic; differential effect across the window is ≤ ~3 mm |
 | Unwrapping errors | **No pair corrected** | Waiting for Daniel's flags (H-9) |
 
 `docs/PROPOSAL.md` §6 names only the ionosphere. Troposphere and tides are an addition by
@@ -117,12 +126,16 @@ the data lane; `build_stack.py --iono-only` produces the stack without them, and
 
 ## 3. Outputs
 
-### `interim/stack_t034_f020.nc` (shared Drive, not in git)
+### `interim/stack_t034_f020.nc` (version 1, constant 50 m height; shared Drive, not in git)
+### `interim/stack_t034_f020_v2.nc` (version 2, terrain heights; not on the Drive yet)
 Exactly `contracts/stack.md` §1, plus these additive extras: `cmr_concept_id`,
 `tropo_applied`, `set_applied`, `anomalies_masked`, `ref_tie_m`, `valid_fraction` (all
 per pair), the `anomaly` layer (pair, y, x; 1 = flagged), and global
 attributes `track`, `frame`, `polarization`, `wavelength_m`, `geometry_height_m`.
-`granule_id` is the granule name. 25 pairs, 1674 × 1620 pixels, 424 MB. Valid fraction per pair: 78% to 97%.
+`granule_id` is the granule name. 25 pairs, 1674 × 1620 pixels. Valid fraction per pair: 78% to 97%
+(both versions). Version 1 is 424 MB, version 2 is 426 MB. Anomaly-flagged pixels (about
+510,000 per flagged pair) appear in pairs 1, 2, 3, 7, 8, 11 and 12. The global attribute
+`notes` of version 2 records that the cubes were read at terrain height.
 
 ### `processed/station_values.csv` (in git)
 `contracts/stack.md` §2: one row per pair per station. Values are the **median of the valid
@@ -144,28 +157,29 @@ The data lane's own check of every pair, and of the running sum, against raw NGL
 the three non-reference stations. **Provisional and not the H-9 residual table.** No number
 from it goes in the app or pitch.
 
-Result on 2026-11-14, in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
+Result on 2026-11-14, version 2 (terrain heights), in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
 far the station moves within the window; "From" is the first date with GPS at that station.
 No pair is within 3 cm of a 12 cm step at any station. Summary file: `processed/qa_summary_t034_f020.csv`.
 
 | Station | Pairs | RMS, single pairs | Worst pair | GPS net | NISAR net | GPS range | RMS, running sum | Correlation | From |
 |---|---|---|---|---|---|---|---|---|---|
-| CAFP | 24 | 1.9 | 4.0 | −4.4 | −3.5 | 6.7 | 1.8 | 0.81 | 2025-12-06 |
-| CAFR | 24 | 1.9 | 4.9 | +1.2 | +5.7 | 1.5 | 2.9 | 0.80 | 2025-12-06 |
-| CAHA | 24 | 2.1 | 3.8 | −4.8 | −2.3 | 5.9 | 2.1 | 0.71 | 2025-12-06 |
-| CAKC | 24 | 2.2 | 4.7 | +1.6 | +1.1 | 1.7 | 1.5 | 0.27 | 2025-12-06 |
-| P294 | 25 | 2.2 | 4.4 | +1.5 | +0.8 | 1.7 | 2.2 | 0.67 | 2025-11-24 |
-| P297 | 18 | 2.9 | 5.4 | +0.7 | −1.1 | 1.3 | 2.2 | 0.35 | 2025-11-24 |
-| P298 | 25 | 2.5 | 5.2 | +1.6 | +0.8 | 1.8 | 2.0 | 0.67 | 2025-11-24 |
-| P300 | 25 | 2.1 | 4.1 | +1.9 | +2.5 | 2.3 | 1.5 | 0.76 | 2025-11-24 |
-| P302 | 25 | 1.7 | 4.0 | +1.5 | +1.4 | 2.0 | 1.2 | 0.49 | 2025-11-24 |
-| P303 | 25 | 1.8 | 5.2 | −0.7 | −3.1 | 0.9 | 1.6 | −0.20 | 2025-11-24 |
-| P307 | 25 | 1.8 | 3.4 | −2.8 | −0.7 | 2.8 | 2.1 | −0.03 | 2025-11-24 |
-| P725 | 25 | 1.9 | 4.0 | +1.7 | +1.2 | 2.1 | 2.6 | 0.78 | 2025-11-24 |
+| CAFP | 24 | 1.9 | 4.0 | −4.4 | −3.4 | 6.7 | 1.8 | 0.81 | 2025-12-06 |
+| CAFR | 24 | 1.9 | 4.8 | +1.2 | +5.9 | 1.5 | 2.9 | 0.81 | 2025-12-06 |
+| CAHA | 24 | 2.1 | 3.8 | −4.8 | −2.2 | 5.9 | 2.1 | 0.71 | 2025-12-06 |
+| CAKC | 24 | 2.2 | 4.7 | +1.6 | +1.2 | 1.7 | 1.4 | 0.29 | 2025-12-06 |
+| P294 | 25 | 1.6 | 3.0 | +1.5 | +3.2 | 1.7 | 2.4 | 0.78 | 2025-11-24 |
+| P297 | 18 | 1.9 | 3.6 | +0.7 | +1.7 | 1.3 | 2.4 | 0.46 | 2025-11-24 |
+| P298 | 25 | 2.1 | 4.2 | +1.6 | +2.4 | 1.8 | 2.1 | 0.75 | 2025-11-24 |
+| P300 | 25 | 2.1 | 4.3 | +1.9 | +3.1 | 2.3 | 1.5 | 0.78 | 2025-11-24 |
+| P302 | 25 | 1.7 | 3.8 | +1.5 | +2.0 | 2.0 | 1.2 | 0.53 | 2025-11-24 |
+| P303 | 25 | 1.8 | 5.2 | −0.7 | −3.2 | 0.9 | 1.6 | −0.19 | 2025-11-24 |
+| P307 | 25 | 1.8 | 3.5 | −2.8 | −0.5 | 2.8 | 2.2 | −0.04 | 2025-11-24 |
+| P725 | 25 | 1.7 | 4.5 | +1.7 | +2.2 | 2.1 | 2.4 | 0.81 | 2025-11-24 |
 | TRAN | 24 | 1.1 | 2.8 | −1.6 | −1.9 | 2.6 | 0.9 | 0.77 | 2025-12-06 |
 
 P297 has 18 valid pairs, so its running sum stops early. P294, P297, P298 and P725 sit 320 to 630 m
-above the ellipsoid, where the constant 50 m height used for the troposphere cubes is a poor fit.
+above the ellipsoid. Single-pair RMS at the four hill stations P294, P297, P298 and P725 went from
+2.2, 2.9, 2.5 and 1.9 cm (version 1, constant 50 m) to 1.6, 1.9, 2.1 and 1.7 cm (version 2, terrain heights).
 
 ---
 
@@ -173,7 +187,7 @@ above the ellipsoid, where the constant 50 m height used for the troposphere cub
 
 1. **Single pairs agree with GPS to about 2 cm, not 1 cm.** The go/no-go target in
    `docs/PLAN.md` (H-5) was "within ~1 cm". Across 12 stations the RMS over single pairs is
-   1.1 to 2.9 cm. The scatter looks like leftover atmosphere: it does not grow with time,
+   1.1 to 2.2 cm. The scatter looks like leftover atmosphere: it does not grow with time,
    and the running sum stays within 0.9 to 2.9 cm RMS of GPS over the whole window. The
    call belongs to Daniel and Ryan, on Daniel's cleaned GPS.
 2. **The four original stations barely move; other stations in the window do.** Relative
@@ -182,8 +196,8 @@ above the ellipsoid, where the constant 50 m height used for the troposphere cub
    nine more NGL stations with data through the NISAR period. At the two that move most,
    **CAFP (Five Points) and CAHA (Hanford)**, GPS rises about 1 cm into late winter, sinks
    to −5 or −6 cm by August and ends at −4.4 and −4.8 cm; NISAR follows (correlation 0.81
-   and 0.71, net −3.5 and −2.3 cm). TRAN, P300, P725 and CAFR also correlate at 0.76 to
-   0.80. CAFR (Fresno) is the worst net disagreement: NISAR +5.7 cm, GPS +1.2 cm. The
+   and 0.71, net −3.4 and −2.2 cm). TRAN, P300, P725 and CAFR also correlate at 0.77 to
+   0.81. CAFR (Fresno) is the worst net disagreement: NISAR +5.9 cm, GPS +1.2 cm. The
    positive correlations at the moving stations confirm the sign convention.
 3. **No whole-cycle unwrapping jumps were found** inside any pair: under 0.001% of pixels
    sit within 0.15 cycle of ±1 cycle from their 2 km surroundings.
@@ -220,6 +234,43 @@ to the plan, roles, contracts and pitch, in `proposals/d5_first_real_stack.patch
 | N6 | Tie to P304 from raw NGL GPS, 7-day median at each date | Daniel's cleaned series does not exist yet | automatic once `gps/processed/gps_los.csv` exists; `build_stack.py --no-tie` |
 | N8 | Station table covers all 14 NGL stations in the window, not only the 4 in the contract | The 4 barely move; CAFP and CAHA move 5–7 cm and NISAR follows them | edit `processed/stations_ngl.csv`, then `build_stack.py --stations-only` |
 | N7 | Sign: `los = −λ/(4π) × phase` | Follows from reference × conj(secondary); the opposite sign fits GPS worse | `PHASE_SIGN_TOWARD_SATELLITE` in `nisar_gunw.py` |
+| N9 | Terrain heights from Copernicus GLO-90 for the troposphere, tide and LOS cubes | Tested without GPS on Track 034: spread of displacement across the window 1.55 cm RMS at constant 50 m, 1.40 cm with terrain heights, 1.89 cm with the height term reversed; on hill pixels above 150 m (31% of valid pixels) 1.51, 1.25 and 2.04 cm; median regression coefficient on the height-dependent wet screen 0.99 | `process_pairs.py --flat-height --overwrite`, then rebuild the stack |
+
+---
+
+## 4b. NISAR L2 GUNW, Track 042 descending, Frame 070 (secondary)
+
+Processed by the data lane to save time; Steven owns what is done with it. Same window, reference station (P304), sign and corrections as Track 034. Its line-of-sight vectors differ, so its values must not be compared with Track 034 pixel for pixel without the geometry.
+
+| field | value |
+|---|---|
+| Pairs | 27 pairs over 28 dates, 2025-11-01 to 2026-10-15, a sequential chain. 25 pairs span 12 days; pairs 8 and 22 span 24 days |
+| Granule list | [`processed/granules_t042_f070.csv`](processed/granules_t042_f070.csv) |
+| Stack | `interim/stack_t042_f070.nc` (358 MB, 27 pairs, 1670 × 1616 pixels; shared Drive: not yet) |
+| Station table | `processed/station_values_t042_f070.csv` |
+| Self-check | `processed/qa_stations_vs_gps_t042_f070.csv`, summary `processed/qa_summary_t042_f070.csv` |
+| Valid fraction per pair | 59% to 75% |
+| Valid in all 27 pairs | 33% of pixels |
+| Anomaly-flagged pixels | none in any pair |
+| Heights | Terrain height from Copernicus GLO-90, as in version 2 of Track 034 |
+
+Self-check, in cm (NISAR minus GPS, both relative to P304, line of sight). Same columns as the Track 034 table. CAHA has no valid pixels on this track. P300 has 25 pairs but its running sum stops on 2026-01-24 (7 dates). Pair 24 is flagged as near a whole cycle (about 12 cm) at CAKC and P298. Provisional, same status as the Track 034 check.
+
+| Station | Pairs | RMS, single pairs | Worst pair | GPS net | NISAR net | GPS range | RMS, running sum | Correlation | From |
+|---|---|---|---|---|---|---|---|---|---|
+| CAFP | 25 | 1.6 | 3.4 | −3.3 | −1.2 | 6.1 | 2.7 | 0.42 | 2025-11-01 |
+| CAFR | 25 | 2.7 | 6.6 | +1.1 | +3.7 | 1.7 | 3.2 | 0.60 | 2025-11-01 |
+| CAHA | 0 | n/a | n/a | n/a | n/a | n/a | n/a | n/a | none |
+| CAKC | 25 | 5.3 | 14.8 | +1.4 | +6.1 | 1.9 | 4.3 | 0.54 | 2025-11-01 |
+| P294 | 27 | 3.6 | 7.8 | +1.2 | +3.3 | 1.7 | 3.3 | 0.34 | 2025-11-01 |
+| P297 | 20 | 3.2 | 7.3 | +2.7 | +4.0 | 3.0 | 2.6 | 0.55 | 2025-11-01 |
+| P298 | 27 | 4.4 | 10.5 | +1.3 | +5.0 | 2.2 | 3.6 | 0.47 | 2025-11-01 |
+| P300 | 25 | 2.8 | 7.6 | −0.3 | −1.6 | 0.5 | 1.4 | 0.77 | 2025-11-01 |
+| P302 | 27 | 2.1 | 5.0 | +0.9 | −0.2 | 1.6 | 1.6 | −0.03 | 2025-11-01 |
+| P303 | 27 | 2.7 | 5.6 | −1.0 | −1.3 | 1.1 | 2.2 | −0.01 | 2025-11-01 |
+| P307 | 27 | 2.0 | 4.2 | −4.3 | −3.4 | 4.8 | 3.2 | −0.32 | 2025-11-01 |
+| P725 | 27 | 3.1 | 7.0 | +1.4 | +6.9 | 2.1 | 4.5 | 0.68 | 2025-11-01 |
+| TRAN | 25 | 1.3 | 2.9 | −0.5 | −0.4 | 2.4 | 1.2 | −0.06 | 2025-11-01 |
 
 ---
 
@@ -229,7 +280,7 @@ One-time setup, from the repo root:
 
 ```bash
 python -m venv data/.venv
-data/.venv/Scripts/python -m pip install earthaccess h5py xarray netCDF4 numpy scipy pyproj pytest
+data/.venv/Scripts/python -m pip install earthaccess h5py xarray netCDF4 numpy scipy pyproj rasterio pytest
 data/.venv/Scripts/python -c "import earthaccess; earthaccess.login(strategy='interactive', persist=True)"
 ```
 
@@ -244,9 +295,14 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 
 - After changing the station list, `build_stack.py --track 34 --frame 20 --stations-only`
   rewrites the station table in seconds without touching the stack file.
-- `process_pairs.py` takes about 70 s per pair and skips pairs already on disk, so it can be
-  interrupted and restarted. `--pairs 1`, `--pairs 3-7` and `--overwrite` are available, as
-  are `--coherence`, `--window`, `--no-troposphere`, `--no-tides` and `--mask-anomalies`.
+- `build_stack.py --suffix _v2` writes `interim/stack_t034_f020_v2.nc` instead of
+  overwriting the existing stack file.
+- `process_pairs.py` builds the DEM itself (`interim/dem_tTTT_fFFF.nc`, via `make_dem.py`)
+  the first time it runs for a track. It takes about 70 s per pair and skips pairs already
+  on disk, so it can be interrupted and restarted. `--pairs 1`, `--pairs 3-7` and
+  `--overwrite` are available, as are `--coherence`, `--window`, `--no-troposphere`,
+  `--no-tides`, `--mask-anomalies` and `--flat-height` (constant 50 m instead of terrain
+  height).
 - **Descending track (H-11, Steven):** the same four commands with
   `--track 42 --frame 70 --direction D`. Outputs get `t042_f070` in their names. Run the
   scripts; don't edit them. Ask Pratheek for changes.
@@ -256,6 +312,7 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 |---|---|
 | `scripts/nisar_gunw.py` | Library: granule search, subset reads, corrections, masking, referencing |
 | `scripts/find_granules.py` | CMR search → `processed/granules_tTTT_fFFF.csv` (no login needed) |
+| `scripts/make_dem.py` | Copernicus GLO-90 DEM for a track and frame → `interim/dem_tTTT_fFFF.nc`; prints DEM minus GPS station height |
 | `scripts/process_pairs.py` | One `interim/tTTT_fFFF/pair_NN.nc` per pair |
 | `scripts/build_stack.py` | Stack + station table, with the GPS tie |
 | `scripts/qa_stations_vs_gps.py` | Provisional self-check against raw NGL GPS |
@@ -268,6 +325,16 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
   metadata for the NISAR frames, raw NGL GPS series, DWR samples. It contains **no NISAR
   measurements**. Its Track 034 / Frame 020 granule list matches the live CMR catalogue
   exactly (25 of 25).
+- `raw/dem/`: Copernicus DEM GLO-90 tiles, fetched by `make_dem.py`. Copernicus DEM GLO-90,
+  (c) DLR e.V. 2010-2014 and (c) Airbus Defence and Space GmbH 2014-2018, provided under
+  COPERNICUS by the European Union and ESA.
 - `raw/ngl/`: NGL IGS20 `.tenv3` daily series, fetched by `build_stack.py` and the QA script
   from `https://geodesy.unr.edu/gps_timeseries/IGS20/tenv3/IGS20/<station>.tenv3`.
   Cite Blewitt, Hammond and Kreemer (2018), doi:10.1029/2018EO104623.
+
+---
+
+## 7. Changelog
+
+- **v1, 2026-11-14.** Track 034 / Frame 020 stack with a constant 50 m height for the troposphere, tide and LOS cubes. `interim/stack_t034_f020.nc`, uploaded to the Drive.
+- **v2, 2026-11-14.** Terrain heights from Copernicus GLO-90. `interim/stack_t034_f020_v2.nc` and `interim/stack_t042_f070.nc`. The station tables and self-check summaries in `processed/` now reflect v2.

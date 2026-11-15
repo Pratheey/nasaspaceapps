@@ -184,6 +184,55 @@ def test_sample_station_uses_only_valid_pixels(fake_gunw):
     assert empty["valid"] == 0 and empty["los_disp_ref_m"] is None
 
 
+def test_interp_cube_with_per_pixel_heights(fake_gunw):
+    x, y, x0, y0 = fake_gunw["x"][20:60], fake_gunw["y"][30:70], fake_gunw["x0"], fake_gunw["y0"]
+    xx, yy = np.meshgrid(x, y)
+    heights = 50.0 + 0.4 * (xx - x.min())  # 50 m to about 1300 m: spans three cube levels
+    heights[3, 4] = np.nan
+
+    def wet(h):
+        return 0.5 + 1e-4 * (xx - x0) + 5e-5 * (yy - y0) + 1e-3 * h
+
+    with ng.open_gunw(str(fake_gunw["path"])) as f:
+        got = ng.interp_cube(f, "wetTroposphericPhaseScreen", x, y, heights)
+        flat = ng.interp_cube(f, "wetTroposphericPhaseScreen", x, y, 50.0)
+    ok = np.isfinite(heights)
+    # the fake cube stops at 500 m, so heights above it are held at the top level
+    np.testing.assert_allclose(got[ok], wet(np.clip(heights, -500.0, 500.0))[ok], atol=1e-9)
+    assert np.isnan(got[3, 4])
+    np.testing.assert_allclose(flat, wet(50.0), atol=1e-9)
+
+
+def test_terrain_heights_change_the_correction_only_where_terrain_differs(fake_gunw):
+    base, truth, _, _ = _run(fake_gunw)
+
+    def flat_provider(x, y, epsg):
+        return np.full((y.size, x.size), 50.0)
+
+    def hilly_provider(x, y, epsg):
+        h = np.full((y.size, x.size), 50.0)
+        h[:, : x.size // 3] = 450.0  # western third is a plateau
+        h[0, 0] = np.nan             # unknown height falls back to the constant
+        return h
+
+    same, _, _, _ = _run(fake_gunw, height_provider=flat_provider)
+    np.testing.assert_allclose(same["los_disp_ref_m"], base["los_disp_ref_m"], atol=1e-6, equal_nan=True)
+    assert same["terrain_heights_used"] == 1 and base["terrain_heights_used"] == 0
+
+    hilly, _, _, _ = _run(fake_gunw, height_provider=hilly_provider)
+    diff = hilly["los_disp_ref_m"] - base["los_disp_ref_m"]
+    v = hilly["valid"].astype(bool)
+    west = np.zeros_like(v)
+    west[:, : v.shape[1] // 3] = True
+    # 400 m more height x (1e-3 + 2e-4) rad/m of screen = 0.48 rad more subtracted
+    expected = ng.phase_to_los_m(-0.48, WAVELENGTH_M)
+    np.testing.assert_allclose(diff[v & west], expected, atol=2e-5)
+    np.testing.assert_allclose(diff[v & ~west], 0.0, atol=2e-5)
+
+    with pytest.raises(ValueError, match="does not match the window"):
+        _run(fake_gunw, height_provider=lambda x, y, epsg: np.zeros((3, 3)))
+
+
 def test_one_cycle_is_half_a_wavelength_and_positive_phase_is_away():
     assert ng.phase_to_los_m(2 * np.pi, WAVELENGTH_M) == pytest.approx(-WAVELENGTH_M / 2)
     assert abs(ng.phase_to_los_m(2 * np.pi, WAVELENGTH_M)) == pytest.approx(0.121, abs=5e-4)
