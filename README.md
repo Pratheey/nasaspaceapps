@@ -28,14 +28,14 @@ GPS agrees. Where the evidence is too thin, it says so.
 
 ## Team and roles
 
-| Who | Lane | What they did |
+| Who | Role | Responsible for |
 |---|---|---|
-| **Ryan Jian** | Integrator, design and story | Project lead. Proposal, data contracts and team decisions (D2–D12), story and pitch, website design and most of the website, GitHub Pages deploy, claims and number checks, sign-off of the radar results |
-| **Pratheek Danam** | NISAR data | NISAR GUNW pipeline (HTTPS subset reads, ionosphere, troposphere and tide corrections, masking), stacks v1–v3 and the data freeze, unwrapping and persistence checks, 13-station self-check, descending track, OPERA history, independent check of the app's numbers |
-| **Ismail Churaev** | Measurement and model | Pairwise seasonal + trend fit, calibrated significance test and labels, trend guard, station and canal exports for the app, California Aqueduct profile, `analysis/NUMBERS.md`, merging and reviewing PRs |
-| **Tsz "Steven" Liang** | Radar | GCOV polarization over 30 crop fields, NISAR vs Sentinel-1 coverage (HyP3), vertical and east–west cross-check from two tracks, processing and website bug fixes and CI tests |
-| **Daniel Li** | GPS and context | Station list, cleaned NGL GPS series and offsets, projection into NISAR's line of sight, held-out residuals and the uncertainty used everywhere, canal and DWR context layers |
-| **Avinash Lee** | Frontend | Interactive map app lane |
+| **Ryan Jian** | Team lead, integrator, story and design | Proposal and pitch, team decisions and data contracts, website design and story, final checks and submission |
+| **Pratheek Danam** | NISAR data lead | Getting and processing the NISAR radar data: subset reads, corrections, masking, the data freeze and its checks |
+| **Ismail Churaev** | Measurement and model | Net change, the seasonal and trend fit, significance and labels, and the data files the app reads |
+| **Tsz "Steven" Liang** | Radar | Polarization over crop fields, NISAR vs Sentinel-1 coverage, and the vertical vs east–west cross-check |
+| **Daniel Li** | GPS validation and context | GPS stations, the independent check of the radar, uncertainty, and context layers such as canals |
+| **Avinash Lee** | Frontend | The interactive map app |
 
 ## How we used AI tools
 
