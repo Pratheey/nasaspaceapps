@@ -12,7 +12,7 @@ import { Chapter, MissionTimeline, WatchNasa, SeenWall } from "./Media.jsx";
 import { useInView, useProgress, useSmooth, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
 import { cm, fmtShort, fmtDate } from "../lib/fmt.js";
-import { fringe } from "../lib/colors.js";
+import { fringe, rgb, FRINGE_M } from "../lib/colors.js";
 import { linePath } from "../lib/chart.js";
 
 /* ------------------------------------------------------------------ */
@@ -70,7 +70,7 @@ function TopBar({ D, onExplore }) {
             <a key={t} href={h} onClick={(e) => { e.preventDefault(); document.querySelector(h)?.scrollIntoView({ behavior: "smooth" }); }} className="hover:text-accent-2 transition-colors">{t}</a>
           ))}
         </nav>
-        <button onClick={onExplore} className="ml-auto md:ml-4 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-accent text-space font-semibold text-[14px] px-4 py-2 hover:bg-accent-2 shadow-[0_0_24px_rgba(143,166,107,.35)] transition">
+        <button onClick={onExplore} className="ml-auto md:ml-4 inline-flex items-center gap-2 whitespace-nowrap rounded-full bg-accent text-space font-semibold text-[14px] px-4 py-2 hover:bg-accent-2 shadow-[0_0_24px_rgba(157,176,138,.35)] transition">
           <MapIcon size={15} /> Open the live map
         </button>
       </div>
@@ -80,7 +80,7 @@ function TopBar({ D, onExplore }) {
 
 export function Mark({ size = 30 }) {
   return (
-    <span className="relative grid place-items-center rounded-full border border-accent/60 shadow-[0_0_16px_rgba(143,166,107,.35)]" style={{ width: size, height: size }} aria-hidden="true">
+    <span className="relative grid place-items-center rounded-full border border-accent/60 shadow-[0_0_16px_rgba(157,176,138,.35)]" style={{ width: size, height: size }} aria-hidden="true">
       <span className="absolute inset-[22%] rounded-full border border-accent/40" />
       <span className="w-1.5 h-1.5 rounded-full bg-accent" />
     </span>
@@ -97,10 +97,10 @@ function Hero({ D, onExplore }) {
         <NasaVideo srcs={MEDIA.heroVideo} className="absolute inset-0 w-full h-full object-cover object-[60%_50%]"
           fallback={<NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
             className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
-            fallback={<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_120%,#3A2E1F_0%,#1B1712_60%)]"><SatelliteArt className="absolute right-[-6%] top-[22%] w-[46%] max-w-[640px] opacity-90 max-lg:hidden" /></div>} />} />
+            fallback={<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="absolute right-[1%] top-[18%] w-[44%] max-w-[640px] opacity-95 max-lg:hidden" moving /></div>} />} />
       </div>
       <Starfield className="absolute inset-0 w-full h-full opacity-60 mix-blend-screen" />
-      <div className="absolute inset-0 bg-[linear-gradient(90deg,#1B1712_0%,rgba(27,23,18,.86)_34%,rgba(27,23,18,.25)_70%,rgba(27,23,18,.1)_100%)]" />
+      <div className="absolute inset-0 bg-[linear-gradient(90deg,#161514_0%,rgba(22,21,20,.86)_34%,rgba(22,21,20,.25)_70%,rgba(22,21,20,.1)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-space to-transparent" />
 
       <div className="relative h-full flex flex-col justify-center pt-24 max-sm:pt-36 pb-10 px-6 md:px-14 max-w-[1400px] mx-auto" style={{ opacity: fade }}>
@@ -177,15 +177,15 @@ function PoleScene() {
               const lit = t >= f - 0.001;
               return (
                 <g key={yr} style={{ opacity: lit ? 1 : 0.25, transition: "opacity .5s" }}>
-                  <rect x="222" y={sy} width="84" height="30" rx="2" fill={lit ? "#8FA66B" : "#3A3228"} />
-                  <text x="264" y={sy + 21} textAnchor="middle" fontFamily="Saira Semi Condensed" fontWeight="700" fontSize="19" fill="#1B1712">{yr}</text>
+                  <rect x="222" y={sy} width="84" height="30" rx="2" fill={lit ? "#6FA8FF" : "#2A3346"} />
+                  <text x="264" y={sy + 21} textAnchor="middle" fontFamily="Saira Semi Condensed" fontWeight="700" fontSize="19" fill="#161514">{yr}</text>
                 </g>
               );
             })}
             <rect x="0" y={ground} width="420" height={H - ground} fill="url(#earth)" />
-            <line x1="0" x2="420" y1={ground} y2={ground} stroke="#C9854A" strokeWidth="2.5" />
-            <line x1="40" x2="40" y1={top} y2={ground} stroke="#B9CB99" strokeDasharray="4 4" />
-            <text x="48" y={(top + ground) / 2} fontFamily="Saira Semi Condensed" fontWeight="600" fontSize="22" fill="#B9CB99">{metres} m</text>
+            <line x1="0" x2="420" y1={ground} y2={ground} stroke="#D08B5B" strokeWidth="2.5" />
+            <line x1="40" x2="40" y1={top} y2={ground} stroke="#C3D0B3" strokeDasharray="4 4" />
+            <text x="48" y={(top + ground) / 2} fontFamily="Saira Semi Condensed" fontWeight="600" fontSize="22" fill="#C3D0B3">{metres} m</text>
           </svg>
         </div>
       </div>
@@ -278,7 +278,7 @@ function BreatheScene({ D, demo }) {
   const N = D.dates.length;
   const series = [
     { st: demo.calm, color: "#6FA8C4" },
-    ...demo.sinking.map((st, n) => ({ st, color: n ? "#E8D3A8" : "#C9854A" })),
+    ...demo.sinking.map((st, n) => ({ st, color: n ? "#E8D3A8" : "#D08B5B" })),
   ].filter((s, n, a) => s.st && a.findIndex((x) => x.st === s.st) === n).map(({ st, color }) => ({ st, color, v: D.values[st.cell_index] || [] }));
   const all = series.flatMap((s) => s.v.filter((x) => x != null).map((x) => x * 100));
   const lo = Math.min(0, ...all) - 1, hi = Math.max(0, ...all) + 1;
@@ -326,7 +326,7 @@ function BreatheScene({ D, demo }) {
             return (
               <g key={s.st.station}>
                 <path d={path} fill="none" stroke={s.color} strokeWidth="2.5" strokeLinejoin="round" strokeLinecap="round" style={{ opacity: 1 - split * 0.55 }} />
-                {s.v.slice(0, shown + 1).map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r="3.2" fill="#1B1712" stroke={s.color} strokeWidth="1.5" style={{ opacity: 1 - split * 0.5 }} />)}
+                {s.v.slice(0, shown + 1).map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r="3.2" fill="#161514" stroke={s.color} strokeWidth="1.5" style={{ opacity: 1 - split * 0.5 }} />)}
                 {trend && <path d={trend} fill="none" stroke={s.color} strokeWidth="2.5" strokeDasharray="8 6" pathLength="1" style={{ strokeDasharray: `${split} 1`, opacity: split }} />}
               </g>
             );
@@ -390,14 +390,14 @@ function LieScene({ D, st }) {
           onPointerDown={(e) => { svg.current.setPointerCapture(e.pointerId); const k = pick(e); drag.current = Math.abs(k - a) <= Math.abs(k - b) ? "a" : "b"; (drag.current === "a" ? setA : setB)(drag.current === "a" ? Math.min(k, b - 1) : Math.max(k, a + 1)); }}
           onPointerMove={(e) => { if (!drag.current) return; const k = pick(e); drag.current === "a" ? setA(Math.min(k, b - 1)) : setB(Math.max(k, a + 1)); }}
           onLostPointerCapture={() => (drag.current = null)} role="img" aria-label="Record at one station with two draggable dates">
-          <rect x={X(a)} y={P.t} width={X(b) - X(a)} height={H - P.t - P.b} fill="#8FA66B" opacity="0.07" />
-          <path d={linePath(v.map((x, k) => x == null ? null : [X(k), Y(x * 100)]))} fill="none" stroke="#C9854A" strokeWidth="2" opacity="0.8" />
-          {v.map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r={k === a || k === b ? 6 : 3} fill={k === a || k === b ? "#8FA66B" : "#1B1712"} stroke={k === a || k === b ? "#B9CB99" : "#C9854A"} strokeWidth="1.5" />)}
+          <rect x={X(a)} y={P.t} width={X(b) - X(a)} height={H - P.t - P.b} fill="#9DB08A" opacity="0.07" />
+          <path d={linePath(v.map((x, k) => x == null ? null : [X(k), Y(x * 100)]))} fill="none" stroke="#D08B5B" strokeWidth="2" opacity="0.8" />
+          {v.map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r={k === a || k === b ? 6 : 3} fill={k === a || k === b ? "#9DB08A" : "#161514"} stroke={k === a || k === b ? "#C3D0B3" : "#D08B5B"} strokeWidth="1.5" />)}
           {[["A", a], ["B", b]].map(([n, k]) => (
             <g key={n} className="cursor-grab">
-              <line x1={X(k)} x2={X(k)} y1={P.t - 14} y2={H - P.b} stroke="#8FA66B" strokeWidth="2" />
-              <rect x={X(k) - 13} y={P.t - 38} width="26" height="24" rx="5" fill="#8FA66B" />
-              <text x={X(k)} y={P.t - 21} textAnchor="middle" style={{ fill: "#1B1712", font: "700 15px 'Saira Semi Condensed', sans-serif" }}>{n}</text>
+              <line x1={X(k)} x2={X(k)} y1={P.t - 14} y2={H - P.b} stroke="#9DB08A" strokeWidth="2" />
+              <rect x={X(k) - 13} y={P.t - 38} width="26" height="24" rx="5" fill="#9DB08A" />
+              <text x={X(k)} y={P.t - 21} textAnchor="middle" style={{ fill: "#161514", font: "700 15px 'Saira Semi Condensed', sans-serif" }}>{n}</text>
               <text x={X(k)} y={H - 12} textAnchor="middle">{fmtShort(D.dates[k])}</text>
             </g>
           ))}
@@ -412,12 +412,12 @@ function InstrumentScene({ D }) {
   const [ref, seen] = useInView(0.2);
   return (
     <section id="radar" ref={ref} className="relative py-[16vh] overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(143,166,107,.10),transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_80%_20%,rgba(157,176,138,.10),transparent_55%)]" />
       <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className={`grid lg:grid-cols-2 gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
           <div className="relative aspect-[16/10] rounded-2xl overflow-hidden border border-hair-2 bg-deck">
             <NasaImage srcs={IMAGES.orbit} alt="Artist's concept of NISAR in orbit" className="absolute inset-0 w-full h-full object-cover"
-              fallback={<div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,#3A2E1F,#1B1712_65%)]"><SatelliteArt className="w-[85%]" /></div>} />
+              fallback={<div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,#1d3a5c,#0F1420_65%)]"><SatelliteArt className="w-[85%]" /></div>} />
             <div className="absolute inset-0 bg-gradient-to-t from-space/70 to-transparent" />
             <p className="absolute left-4 bottom-3 text-[11.5px] text-ink/70">NISAR in orbit, artist's concept. NASA/JPL-Caltech.</p>
           </div>
@@ -441,14 +441,16 @@ function InstrumentScene({ D }) {
   );
 }
 
-// The data as a radar scientist sees it: fringes multiply as sinking accumulates.
+// The data as a radar scientist sees it: our net-change map drawn as wrapped colour bands.
+const FRINGE_TOWNS = [["Mendota", 36.754, -120.381], ["Five Points", 36.429, -120.103], ["Lemoore", 36.301, -119.783], ["Hanford", 36.327, -119.646], ["Corcoran", 36.098, -119.56]];
 function FringeStrip({ D }) {
   const ref = useRef(null);
   const [wrap, seen] = useInView(0.3);
+  const [run, setRun] = useState(0);
+  const g = D.meta.grid;
   useEffect(() => {
     if (!seen) return;
     const c = ref.current, x = c.getContext("2d");
-    const g = D.meta.grid;
     c.width = g.ncols; c.height = g.nrows;
     const img = x.createImageData(g.ncols, g.nrows);
     let raf, t0 = performance.now();
@@ -456,7 +458,7 @@ function FringeStrip({ D }) {
       const t = reduceMotion ? 1 : Math.min(1, (now - t0) / 6000);
       for (let i = 0; i < D.n; i++) {
         const v = D.grid.net_change_m[i];
-        const col = v == null ? [22, 28, 42] : fringe(v * t);
+        const col = v == null ? [22, 22, 24] : fringe(v * t);
         img.data[i * 4] = col[0]; img.data[i * 4 + 1] = col[1]; img.data[i * 4 + 2] = col[2]; img.data[i * 4 + 3] = 255;
       }
       x.putImageData(img, 0, 0);
@@ -464,19 +466,45 @@ function FringeStrip({ D }) {
     };
     raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [seen, D]);
+  }, [seen, D, run]);
+  const pos = (lat, lon) => ({ left: `${((lon - g.lon_min) / (g.step_deg * g.ncols)) * 100}%`, top: `${((g.lat_max - lat) / (g.step_deg * g.nrows)) * 100}%` });
+  const kmWide = g.step_deg * g.ncols * 111.32 * Math.cos(((g.lat_max - (g.step_deg * g.nrows) / 2) * Math.PI) / 180);
   return (
-    <div ref={wrap} className="mt-20 grid lg:grid-cols-[1.3fr_1fr] gap-10 items-center">
-      <div className="relative rounded-2xl overflow-hidden border border-hair-2 shadow-[0_30px_80px_rgba(0,0,0,.5)]">
-        <canvas ref={ref} className="w-full h-auto [image-rendering:pixelated] block" aria-label="The study area drawn as radar fringes, building up as the sinking accumulates" />
-        <div className="absolute inset-0 ring-1 ring-inset ring-white/5 pointer-events-none" />
-      </div>
+    <div ref={wrap} className="mt-20 grid lg:grid-cols-[1.3fr_1fr] gap-10 items-start">
+      <figure>
+        <div className="relative rounded-xl overflow-hidden border border-hair-2">
+          <canvas ref={ref} className="w-full h-auto [image-rendering:pixelated] block" aria-label="Map of the study area: ground motion from the first to the last radar pass, drawn as repeating colour bands" />
+          {FRINGE_TOWNS.map(([n, la, lo]) => (
+            <span key={n} className="absolute -translate-x-1/2 -translate-y-1/2 flex items-center gap-1.5 pointer-events-none" style={pos(la, lo)}>
+              <span className="w-2 h-2 rounded-full bg-white border border-black/60" />
+              <span className="text-[12px] font-medium text-white bg-black/60 rounded px-1.5 py-0.5 whitespace-nowrap">{n}</span>
+            </span>
+          ))}
+          <span className="absolute top-3 right-3 text-[12px] font-medium text-white bg-black/60 rounded px-2 py-1">N ↑</span>
+          <span className="absolute bottom-3 left-3 rounded bg-black/60 px-2 pt-1 pb-1.5" style={{ width: `calc(${(20 / kmWide) * 100}% + 16px)` }}>
+            <span className="block text-[11.5px] text-white">20 km</span>
+            <span className="block h-[3px] bg-white mt-0.5" />
+          </span>
+          <button onClick={() => setRun((r) => r + 1)} className="absolute bottom-3 right-3 text-[12px] text-white bg-black/60 hover:bg-black/80 rounded px-2 py-1">Replay</button>
+        </div>
+        <div className="mt-3">
+          <div className="h-2.5 rounded" style={{ background: `linear-gradient(90deg, ${Array.from({ length: 13 }, (_, k) => rgb(fringe(-(k / 12) * FRINGE_M))).join(",")})` }} aria-hidden="true" />
+          <div className="flex justify-between text-[12px] text-mute mt-1"><span>0 cm</span><span>one full cycle = 11.9 cm of motion, then the colours repeat</span><span>11.9 cm</span></div>
+        </div>
+      </figure>
       <div>
-        <h3 className="font-display text-[30px] font-semibold leading-tight">One colour cycle is 11.9 cm of motion</h3>
+        <h3 className="font-display text-[30px] font-semibold leading-tight">Reading a radar interferogram</h3>
         <p className="text-[17px] leading-relaxed text-ink/80 mt-4">
-          This is our study area the way radar scientists look at it. One full cycle of color is half the radar's wavelength of motion.
-          As the year's sinking adds up, the bands crowd together over the places that sink fastest.{D.synthetic ? " Synthetic data until the real results are in." : ""}
+          This is the same map as the live map's net change, about {Math.round(kmWide)} km across with north at the top. Instead of one colour per
+          amount, the motion from {fmtShort(D.dates[0])} to {fmtShort(D.dates[D.dates.length - 1])} is wrapped into repeating colour bands, the way radar
+          scientists draw it.
         </p>
+        <ul className="text-[16px] leading-relaxed text-ink/80 mt-4 space-y-2 list-disc pl-5">
+          <li>Each full trip through the colours is 11.9 cm of motion along the radar's line of sight (half the 23.8 cm wavelength).</li>
+          <li>Count the bands to get the total: tightly packed bands mean the ground moved a lot, wide single colours mean it barely moved.</li>
+          <li>The animation adds up the motion from zero, so you can watch the bands appear where the ground sinks most.</li>
+          <li>Near-black pixels have no reliable measurement.</li>
+        </ul>
         <p className="text-[14px] text-mute mt-4 flex items-center gap-2"><Waves size={15} className="text-accent" /> In the live map: Radar fringes view.</p>
       </div>
     </div>
@@ -528,7 +556,7 @@ function MattersScene() {
     ["The law", "California's groundwater law treats subsidence from pumping as an undesirable result that local agencies must monitor.", "Sustainable Groundwater Management Act"],
   ];
   return (
-    <section id="matters" ref={ref} className="relative py-[16vh] border-y border-hair bg-[linear-gradient(180deg,#1B1712,#1E1913)]">
+    <section id="matters" ref={ref} className="relative py-[16vh] border-y border-hair bg-[linear-gradient(180deg,#161514,#1A1918)]">
       <div className="px-6 md:px-14 max-w-[1400px] mx-auto">
         <Chapter n={13} title="The stakes" />
         <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4 max-w-[1000px]">Effects on canals, levees and wells</h2>
@@ -607,11 +635,11 @@ function PlayerCard({ no, name, handle, img, delay, seen }) {
         style={{ transform: `rotateY(${t.x * 14}deg) rotateX(${-t.y * 14}deg) ${t.on ? "scale(1.03)" : ""}` }}>
         <img src={`./team/${img}.jpg`} alt={name} loading="lazy"
           className="absolute inset-0 w-full h-full object-cover grayscale contrast-[1.1] brightness-90 group-hover:grayscale-0 group-hover:brightness-100 transition-[filter] duration-500" />
-        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(27,23,18,0)_35%,rgba(27,23,18,.92)_88%)]" />
+        <div className="absolute inset-0 bg-[linear-gradient(180deg,rgba(22,21,20,0)_35%,rgba(22,21,20,.92)_88%)]" />
         <div className="absolute inset-0 mix-blend-color bg-accent/40 group-hover:opacity-0 transition-opacity duration-500" />
         <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(0deg,rgba(255,255,255,.06)_0_1px,transparent_1px_3px)]" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"
-          style={{ background: `radial-gradient(circle at ${50 + t.x * 100}% ${50 + t.y * 100}%, rgba(255,255,255,.55), transparent 45%), linear-gradient(${115 + t.x * 60}deg, rgba(201,133,74,.35), rgba(143,166,107,.35), rgba(111,168,196,.35))` }} />
+          style={{ background: `radial-gradient(circle at ${50 + t.x * 100}% ${50 + t.y * 100}%, rgba(255,255,255,.55), transparent 45%), linear-gradient(${115 + t.x * 60}deg, rgba(208,139,91,.35), rgba(157,176,138,.35), rgba(111,168,196,.35))` }} />
         <span className="absolute top-3 left-4 font-mono text-[13px] text-accent-2">{no}</span>
         <div className="absolute left-0 right-0 bottom-0 p-4">
           <p className="font-display text-[21px] font-bold leading-tight">{name}</p>

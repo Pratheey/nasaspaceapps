@@ -55,20 +55,20 @@ export function MissionPatch({ size = 150, className = "" }) {
     <svg viewBox="0 0 200 200" width={size} height={size} className={className} role="img" aria-label="The Breathing Ground mission patch">
       <defs>
         <path id={id} d="M100,100 m-78,0 a78,78 0 1,1 156,0 a78,78 0 1,1 -156,0" />
-        <radialGradient id={id + "g"}><stop offset="0" stopColor="#2C251C" /><stop offset="1" stopColor="#14110D" /></radialGradient>
+        <radialGradient id={id + "g"}><stop offset="0" stopColor="#1b2a46" /><stop offset="1" stopColor="#0b111d" /></radialGradient>
       </defs>
-      <circle cx="100" cy="100" r="96" fill={`url(#${id}g)`} stroke="#8FA66B" strokeOpacity="0.6" strokeWidth="1.5" />
-      <circle cx="100" cy="100" r="62" fill="none" stroke="#8FA66B" strokeOpacity="0.35" />
+      <circle cx="100" cy="100" r="96" fill={`url(#${id}g)`} stroke="#6FA8FF" strokeOpacity="0.6" strokeWidth="1.5" />
+      <circle cx="100" cy="100" r="62" fill="none" stroke="#6FA8FF" strokeOpacity="0.35" />
       <g className={reduceMotion ? "" : "origin-center animate-[spin_40s_linear_infinite]"} style={{ transformBox: "fill-box" }}>
-        <text fontFamily="Michroma, sans-serif" fontSize="9" fill="#B9CB99">
+        <text fontFamily="Michroma, sans-serif" fontSize="9" fill="#A9CBFF">
           <textPath href={`#${id}`} textLength="480" lengthAdjust="spacingAndGlyphs">THE BREATHING GROUND ✶ NISAR L-BAND ✶ SAN JOAQUIN VALLEY ✶ 2026 ✶</textPath>
         </text>
       </g>
-      <path d="M40 130 Q 100 118 160 130" stroke="#C9854A" strokeWidth="2.5" fill="none" />
-      <path d="M40 138 Q 100 150 160 138" stroke="#6FA8C4" strokeWidth="1.5" fill="none" opacity="0.8" />
-      <polygon points="100,62 76,128 124,128" fill="#8FA66B" opacity="0.18" />
+      <path d="M40 130 Q 100 118 160 130" stroke="#F0705A" strokeWidth="2.5" fill="none" />
+      <path d="M40 138 Q 100 150 160 138" stroke="#5FC9E0" strokeWidth="1.5" fill="none" opacity="0.8" />
+      <polygon points="100,62 76,128 124,128" fill="#6FA8FF" opacity="0.18" />
       <ellipse cx="100" cy="66" rx="22" ry="7" fill="#E2B04A" opacity="0.9" transform="rotate(-14 100 66)" />
-      <circle cx="122" cy="58" r="4" fill="#B9CB99" />
+      <circle cx="122" cy="58" r="4" fill="#A9CBFF" />
     </svg>
   );
 }
@@ -103,7 +103,7 @@ export function Chirp({ className = "" }) {
       <svg viewBox="0 0 1200 40" className="w-full h-10" preserveAspectRatio="none">
         <polyline points={pts} fill="none" stroke="url(#chirpg)" strokeWidth="1.4" vectorEffect="non-scaling-stroke"
           pathLength="1" style={{ strokeDasharray: 1, strokeDashoffset: seen ? 0 : 1, transition: "stroke-dashoffset 2.2s cubic-bezier(.2,.7,.2,1)" }} />
-        <defs><linearGradient id="chirpg"><stop offset="0" stopColor="#8FA66B" stopOpacity="0" /><stop offset=".5" stopColor="#8FA66B" /><stop offset="1" stopColor="#C9854A" stopOpacity="0" /></linearGradient></defs>
+        <defs><linearGradient id="chirpg"><stop offset="0" stopColor="#6FA8FF" stopOpacity="0" /><stop offset=".5" stopColor="#6FA8FF" /><stop offset="1" stopColor="#F0705A" stopOpacity="0" /></linearGradient></defs>
       </svg>
     </div>
   );

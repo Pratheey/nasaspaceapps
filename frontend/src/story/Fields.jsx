@@ -95,7 +95,7 @@ function PolChart({ pol }) {
             </g>
           );
         })}
-        {hk != null && <line x1={X(hk)} x2={X(hk)} y1={P.t} y2={H - P.b} stroke="#B9CB99" strokeOpacity=".5" strokeDasharray="3 3" />}
+        {hk != null && <line x1={X(hk)} x2={X(hk)} y1={P.t} y2={H - P.b} stroke="#C3D0B3" strokeOpacity=".5" strokeDasharray="3 3" />}
       </svg>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-[14px] min-h-[28px]">
         {hk != null && <span className="font-mono text-[13px] text-accent-2">{short(pol.dates[hk])}</span>}
@@ -123,7 +123,7 @@ function CovChart({ cov }) {
           const x = P.l + k * bw, a = p.nisar_usable / p.fields, b = p.s1_usable / p.fields;
           return (
             <g key={p.nisar_start} onPointerEnter={() => setHk(k)} onClick={() => setHk(k)}>
-              <rect x={x} y={P.t} width={bw} height={H - P.t - P.b} fill={hk === k ? "rgba(143,166,107,.08)" : "transparent"} />
+              <rect x={x} y={P.t} width={bw} height={H - P.t - P.b} fill={hk === k ? "rgba(157,176,138,.08)" : "transparent"} />
               <rect x={x + bw * 0.12} y={Y(a)} width={bw * 0.36} height={Y(0) - Y(a)} rx="1.5" fill="#6FA8C4" />
               <rect x={x + bw * 0.52} y={Y(b)} width={bw * 0.36} height={Y(0) - Y(b)} rx="1.5" fill="#A08BB8" />
               {k % 3 === 0 && <text x={x + bw / 2} y={H - 16} textAnchor="middle">{short(p.nisar_start)}</text>}

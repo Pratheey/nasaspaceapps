@@ -1,7 +1,7 @@
-// Still ground stays dark soil; sinking turns brown to sand, rising turns river blue.
-const ZERO = [44, 37, 28];
-const SINK = [ZERO, [86, 54, 30], [140, 84, 42], [201, 133, 74], [238, 200, 146]];
-const RISE = [ZERO, [32, 58, 70], [48, 102, 130], [111, 168, 196], [196, 226, 238]];
+// Still ground stays dark; sinking turns clay to sand, rising turns river blue.
+const ZERO = [38, 37, 35];
+const SINK = [ZERO, [92, 58, 42], [158, 94, 60], [214, 142, 98], [244, 210, 176]];
+const RISE = [ZERO, [36, 62, 78], [52, 108, 140], [111, 168, 196], [200, 228, 240]];
 
 function ramp(stops, t) {
   t = Math.max(0, Math.min(1, t));
@@ -16,7 +16,7 @@ export const legendGradient = () =>
   `linear-gradient(to right, ${[...SINK].reverse().map(rgb).concat(RISE.slice(1).map(rgb)).join(",")})`;
 
 export const LABEL_COLORS = {
-  1: [201, 133, 74],  // seasonal + sinking
+  1: [208, 139, 91],  // seasonal + sinking
   2: [111, 168, 196], // seasonal, no resolved trend
   3: [160, 139, 184], // sinking, seasonal uncertain
 };

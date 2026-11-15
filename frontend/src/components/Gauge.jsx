@@ -23,8 +23,8 @@ export default function Gauge({ dates, values, cursor }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-[128px] h-auto block" fontFamily="Public Sans, sans-serif" role="img" aria-label="Height gauge: where the ground stood on each date">
       <defs>
         <linearGradient id="soil" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#C9854A" stopOpacity="0.28" />
-          <stop offset="1" stopColor="#C9854A" stopOpacity="0" />
+          <stop offset="0" stopColor="#D08B5B" stopOpacity="0.28" />
+          <stop offset="1" stopColor="#D08B5B" stopOpacity="0" />
         </linearGradient>
       </defs>
       {kv != null && <rect x="0" y={Y(kv)} width={W} height={H - Y(kv)} fill="url(#soil)" />}
@@ -33,23 +33,23 @@ export default function Gauge({ dates, values, cursor }) {
         const odd = Math.round(v / unit) % 2 !== 0;
         return (
           <g key={v}>
-            <rect x={RX} y={y1} width={RW} height={Math.max(0, y2 - y1)} fill={odd ? "#8FA66B" : "#2C251C"} />
+            <rect x={RX} y={y1} width={RW} height={Math.max(0, y2 - y1)} fill={odd ? "#9DB08A" : "#272522"} />
             {Math.round(v / unit) % (unit === 1 ? 2 : 1) === 0 && (
-              <text x={RX + RW + 6} y={y2 + 3} fontSize="11" fill="#A79C8A">{v > 0 ? "+" : v < 0 ? "−" : ""}{Math.abs(v)}</text>
+              <text x={RX + RW + 6} y={y2 + 3} fontSize="11" fill="#9E9A92">{v > 0 ? "+" : v < 0 ? "−" : ""}{Math.abs(v)}</text>
             )}
           </g>
         );
       })}
-      <rect x={RX} y={TOP} width={RW} height={H - TOP - BOT} fill="none" stroke="rgba(237,230,218,0.4)" />
+      <rect x={RX} y={TOP} width={RW} height={H - TOP - BOT} fill="none" stroke="rgba(236,233,226,0.4)" />
       {vals.map((v, j) => v != null && (
-        <line key={j} x1={RX - 7} x2={RX} y1={Y(v)} y2={Y(v)} stroke={j === k ? "#B9CB99" : "rgba(237,230,218,0.45)"} strokeWidth={j === k ? 2 : 1} />
+        <line key={j} x1={RX - 7} x2={RX} y1={Y(v)} y2={Y(v)} stroke={j === k ? "#C3D0B3" : "rgba(236,233,226,0.45)"} strokeWidth={j === k ? 2 : 1} />
       ))}
-      <line x1={RX - 56} x2={RX + RW} y1={Y(0)} y2={Y(0)} stroke="rgba(237,230,218,0.6)" strokeDasharray="3 2" />
-      <text x={RX - 10} y={Y(0) - 4} textAnchor="end" fontSize="12" fontWeight="600" fill="#EDE6DA" fontFamily="Saira Semi Condensed">{fmtShort(dates[0])}</text>
+      <line x1={RX - 56} x2={RX + RW} y1={Y(0)} y2={Y(0)} stroke="rgba(236,233,226,0.6)" strokeDasharray="3 2" />
+      <text x={RX - 10} y={Y(0) - 4} textAnchor="end" fontSize="12" fontWeight="600" fill="#ECE9E2" fontFamily="Saira Semi Condensed">{fmtShort(dates[0])}</text>
       {kv != null && (
         <>
-          <line x1="0" x2={W} y1={Y(kv)} y2={Y(kv)} stroke="#C9854A" strokeWidth="2" />
-          <text x={RX - 10} y={Y(kv) + 14} textAnchor="end" fontSize="12" fontWeight="600" fill="#B9CB99" fontFamily="Saira Semi Condensed">{fmtShort(dates[k])}</text>
+          <line x1="0" x2={W} y1={Y(kv)} y2={Y(kv)} stroke="#D08B5B" strokeWidth="2" />
+          <text x={RX - 10} y={Y(kv) + 14} textAnchor="end" fontSize="12" fontWeight="600" fill="#C3D0B3" fontFamily="Saira Semi Condensed">{fmtShort(dates[k])}</text>
         </>
       )}
     </svg>

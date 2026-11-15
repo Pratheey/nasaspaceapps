@@ -40,16 +40,16 @@ export default function PairMatrix({ D, i, k1, k2, onPick }) {
     x.setTransform(dpr, 0, 0, dpr, 0, 0);
     x.clearRect(0, 0, Wd, Hd);
     cells.forEach((k) => {
-      x.fillStyle = k.d == null ? "rgba(237,230,218,0.07)" : rgb(diverging(k.d, dom));
+      x.fillStyle = k.d == null ? "rgba(236,233,226,0.07)" : rgb(diverging(k.d, dom));
       x.fillRect(px(k.a), py(k.b), CELL - 1, CELL - 1);
     });
-    x.strokeStyle = "#EDE6DA"; x.lineWidth = 1.4;
+    x.strokeStyle = "#ECE9E2"; x.lineWidth = 1.4;
     cells.forEach((k) => k.lie && x.strokeRect(px(k.a) + 0.7, py(k.b) + 0.7, CELL - 2.4, CELL - 2.4));
     if (k2 > k1) {
-      x.strokeStyle = "#8FA66B"; x.lineWidth = 2.5;
+      x.strokeStyle = "#9DB08A"; x.lineWidth = 2.5;
       x.strokeRect(px(k1) - 1, py(k2) - 1, CELL + 1, CELL + 1);
     }
-    x.fillStyle = "#A79C8A"; x.font = "11px 'Public Sans', sans-serif";
+    x.fillStyle = "#9E9A92"; x.font = "11px 'Public Sans', sans-serif";
     let lastM = -1;
     D.dates.forEach((d, k) => {
       const m = d.getUTCMonth();

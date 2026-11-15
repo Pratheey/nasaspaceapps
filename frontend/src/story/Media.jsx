@@ -46,7 +46,7 @@ export function MissionTimeline() {
             <article key={s.title} className={`shrink-0 w-[min(78vw,460px)] rounded-2xl overflow-hidden border transition-colors duration-500 ${k === active ? "border-accent/70 bg-deck" : "border-hair bg-deck/50"}`}>
               <div className="relative aspect-[16/10] bg-space overflow-hidden">
                 {s.ours ? (
-                  <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,rgba(201,133,74,.35),#1B1712_70%)]">
+                  <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,rgba(208,139,91,.35),#161514_70%)]">
                     <span className="font-display font-bold text-[15px] text-sink">SAN JOAQUIN VALLEY</span>
                   </div>
                 ) : s.video ? (
@@ -67,7 +67,7 @@ export function MissionTimeline() {
           ))}
         </div>
         <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-8 flex items-center gap-3">
-          {STEPS.map((s, k) => <span key={k} className={`h-[3px] flex-1 rounded-full transition-colors ${k <= active ? "bg-accent shadow-[0_0_8px_#8FA66B]" : "bg-hair-2"}`} />)}
+          {STEPS.map((s, k) => <span key={k} className={`h-[3px] flex-1 rounded-full transition-colors ${k <= active ? "bg-accent shadow-[0_0_8px_#9DB08A]" : "bg-hair-2"}`} />)}
         </div>
         <p className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-3 text-[11.5px] text-mute">Photos and animations: NASA/JPL-Caltech, NASA Scientific Visualization Studio.</p>
       </div>
@@ -99,13 +99,13 @@ export function WatchNasa() {
               className="absolute inset-0 w-full h-full object-cover" onError={() => setFailed(true)}
               onTimeUpdate={(e) => setProg(e.target.currentTime / (e.target.duration || 1))} onEnded={() => setPlaying(false)} onClick={toggle} />
           ) : (
-            <a href="https://svs.gsfc.nasa.gov/14377/" target="_blank" rel="noreferrer" className="absolute inset-0 grid place-items-center text-center p-8 bg-[radial-gradient(ellipse_at_50%_120%,#3A2E1F,#1B1712_65%)]">
+            <a href="https://svs.gsfc.nasa.gov/14377/" target="_blank" rel="noreferrer" className="absolute inset-0 grid place-items-center text-center p-8 bg-[radial-gradient(ellipse_at_50%_120%,#2A2826,#161514_65%)]">
               <span><span className="font-display text-[22px]">Watch it on NASA's site</span><br /><span className="text-mute text-[14px]">svs.gsfc.nasa.gov/14377</span></span>
             </a>
           )}
           {!failed && !playing && (
             <button onClick={toggle} aria-label="Play the NASA video" className="absolute inset-0 grid place-items-center bg-space/30 hover:bg-space/10 transition">
-              <span className="grid place-items-center w-20 h-20 rounded-full bg-accent text-space shadow-[0_0_50px_rgba(143,166,107,.7)] group-hover:scale-110 transition-transform"><Play size={30} className="ml-1" /></span>
+              <span className="grid place-items-center w-20 h-20 rounded-full bg-accent text-space shadow-[0_0_50px_rgba(157,176,138,.7)] group-hover:scale-110 transition-transform"><Play size={30} className="ml-1" /></span>
             </button>
           )}
           {!failed && (

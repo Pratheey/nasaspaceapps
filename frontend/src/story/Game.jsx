@@ -39,7 +39,7 @@ export function Numbers({ D }) {
   ];
   return (
     <section ref={ref} className="relative py-[12vh] border-y border-hair overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(201,133,74,.08),transparent_55%)]" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_20%_50%,rgba(208,139,91,.08),transparent_55%)]" />
       <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
         <p className="text-[15px] text-mute">By the numbers{D.synthetic ? ", from the preview data" : ""}</p>
         <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-10 mt-10">

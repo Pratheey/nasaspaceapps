@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
 import ToolsMenu from "./components/ToolsMenu.jsx";
 import Story, { Mark } from "./story/Story.jsx";
@@ -246,7 +246,7 @@ function Explorer({ D, onStory, startTour }) {
             <Satellite size={15} /> GPS check
           </button>
           <button onClick={onStory} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
-            <BookOpen size={15} /> <span className="lg:max-xl:sr-only">Story</span>
+            <Home size={15} /> <span className="lg:max-xl:sr-only">Home</span>
           </button>
           <button onClick={() => setLimits(true)} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
             <Info size={15} /> <span className="lg:max-xl:sr-only">Limits</span>
@@ -333,7 +333,7 @@ function Explorer({ D, onStory, startTour }) {
 
       {cmd && <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />}
       {limits && <Limits D={D} onClose={() => setLimits(false)} />}
-      {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(143,166,107,.45)]">{flash}</div>}
+      {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(157,176,138,.45)]">{flash}</div>}
     </div>
   );
 }

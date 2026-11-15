@@ -48,7 +48,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
       <div className="flex items-center gap-2 px-2">
         <button disabled={S.mode === "pair"} onClick={() => onStep(-1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2 disabled:opacity-40" aria-label="Previous pass"><StepBack size={16} /></button>
         <button onClick={onPlay} aria-pressed={S.playing}
-          className="flex items-center gap-1.5 rounded-md bg-accent text-space font-semibold text-sm px-3 py-1.5 hover:bg-accent-2 shadow-[0_0_18px_rgba(143,166,107,.35)]">
+          className="flex items-center gap-1.5 rounded-md bg-accent text-space font-semibold text-sm px-3 py-1.5 hover:bg-accent-2 shadow-[0_0_18px_rgba(157,176,138,.35)]">
           {S.playing ? <Pause size={15} /> : <Play size={15} />} {S.playing ? "Pause" : "Play"}
         </button>
         <button disabled={S.mode === "pair"} onClick={() => onStep(1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2 disabled:opacity-40" aria-label="Next pass"><StepForward size={16} /></button>
@@ -64,7 +64,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
         className="relative h-[64px] cursor-pointer select-none touch-none">
         {trace && (
           <svg viewBox="0 0 1000 52" preserveAspectRatio="none" aria-hidden="true" className="absolute left-5 right-5 top-1 w-[calc(100%-40px)] h-[46px]">
-            <path d={tracePath} fill="none" stroke="#C9854A" strokeWidth="2" vectorEffect="non-scaling-stroke" opacity="0.7" />
+            <path d={tracePath} fill="none" stroke="#D08B5B" strokeWidth="2" vectorEffect="non-scaling-stroke" opacity="0.7" />
           </svg>
         )}
         <div className="absolute left-5 right-5 top-[27px] h-px bg-hair-2" />
@@ -73,7 +73,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
           const now = S.mode !== "pair" && k === S.cursor && (S.mode === "breathe" || S.playing);
           return (
             <span key={k} title={fmtDate(d)} style={{ left: left(k) }}
-              className={`absolute -translate-x-1/2 rounded-full transition-all ${now ? "top-[19px] w-[5px] h-[17px] bg-accent shadow-[0_0_10px_#8FA66B]" : inPair ? "top-[22px] w-[3px] h-[11px] bg-accent-2" : "top-[23px] w-[2px] h-[9px] bg-ink/45"}`} />
+              className={`absolute -translate-x-1/2 rounded-full transition-all ${now ? "top-[19px] w-[5px] h-[17px] bg-accent shadow-[0_0_10px_#9DB08A]" : inPair ? "top-[22px] w-[3px] h-[11px] bg-accent-2" : "top-[23px] w-[2px] h-[9px] bg-ink/45"}`} />
           );
         })}
         {months.map((k) => (
@@ -85,7 +85,7 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
           <span key={key} role="slider" tabIndex={0} style={{ left: left(S[key]) }}
             aria-label={`Date ${name}`} aria-valuemin={0} aria-valuemax={N - 1} aria-valuenow={S[key]} aria-valuetext={fmtDate(D.dates[S[key]])}
             onKeyDown={(e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); e.stopPropagation(); onPair(key, S[key] + d); } }}
-            className="absolute top-[2px] -translate-x-1/2 bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(143,166,107,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-accent">
+            className="absolute top-[2px] -translate-x-1/2 bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(157,176,138,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-accent">
             {name}
           </span>
         ))}

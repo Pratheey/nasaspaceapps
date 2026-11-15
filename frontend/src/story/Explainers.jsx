@@ -49,26 +49,36 @@ export function InsarExplainer() {
     <div className="rounded-2xl border border-hair-2 bg-deck/70 p-6">
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={`The ground has moved ${d} cm; the radar phase shifts ${Math.round(phase)} degrees`}>
         <defs><linearGradient id="soil2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#4a3424" /><stop offset="1" stopColor="#151018" /></linearGradient></defs>
-        <g transform={`translate(${sat[0]} ${sat[1]}) rotate(-20)`}>
-          <ellipse rx="34" ry="12" fill="#E2B04A" opacity="0.75" />
-          <rect x="16" y="-26" width="18" height="16" fill="#3A3228" stroke="#A79C8A" />
+        {/* NISAR in miniature: the reflector faces the ground, the radar beam leaves its centre */}
+        <g transform={`translate(${sat[0]} ${sat[1]})`}>
+          <line x1="0" y1="0" x2="-30" y2="-26" stroke="#C9D2E4" strokeWidth="2" />
+          <g transform="translate(-30 -26)">
+            <rect x="-12" y="-10" width="24" height="20" rx="2" fill="#2A3346" stroke="#8D97AB" />
+            <rect x="-12" y="-10" width="24" height="5" fill="#E2B04A" opacity="0.85" />
+            <rect x="-62" y="-6" width="50" height="12" fill="#2E4A7A" stroke="#5FC9E0" strokeOpacity="0.5" />
+            {[1, 2, 3, 4].map((i) => <line key={i} x1={-62 + i * 10} x2={-62 + i * 10} y1="-6" y2="6" stroke="#5FC9E0" strokeOpacity="0.4" />)}
+          </g>
+          <g transform={`rotate(${(ang * 180) / Math.PI - 90})`}>
+            <ellipse rx="30" ry="9" fill="#E2B04A" fillOpacity="0.8" stroke="#F5CF7A" />
+            <ellipse rx="15" ry="4.5" fill="none" stroke="#FBE3A8" strokeOpacity="0.5" />
+          </g>
         </g>
-        <line x1="0" x2={W} y1={g0} y2={g0} stroke="rgba(237,230,218,.35)" strokeDasharray="5 5" />
-        <text x={W - 6} y={g0 - 8} textAnchor="end" fontSize="13" fill="#A79C8A">ground on the first pass</text>
+        <line x1="0" x2={W} y1={g0} y2={g0} stroke="rgba(230,234,242,.35)" strokeDasharray="5 5" />
+        <text x={W - 6} y={g0 - 8} textAnchor="end" fontSize="13" fill="#8D97AB">ground on the first pass</text>
         <rect x="0" y={gy} width={W} height={H - gy} fill="url(#soil2)" />
-        <line x1="0" x2={W} y1={gy} y2={gy} stroke="#C9854A" strokeWidth="2.5" />
-        <polyline points={pts.join(" ")} fill="none" stroke="#8FA66B" strokeWidth="2.2" style={{ filter: "drop-shadow(0 0 6px #8FA66B)" }} />
-        <circle cx={tgt[0]} cy={tgt[1]} r="6" fill="#B9CB99" />
-        {d > 0 && <><line x1={tgt[0] + 40} x2={tgt[0] + 40} y1={g0} y2={gy} stroke="#C9854A" /><text x={tgt[0] + 48} y={(g0 + gy) / 2 + 5} fontSize="14" fill="#C9854A">{d.toFixed(1)} cm</text></>}
+        <line x1="0" x2={W} y1={gy} y2={gy} stroke="#F0705A" strokeWidth="2.5" />
+        <polyline points={pts.join(" ")} fill="none" stroke="#6FA8FF" strokeWidth="2.2" style={{ filter: "drop-shadow(0 0 6px #6FA8FF)" }} />
+        <circle cx={tgt[0]} cy={tgt[1]} r="6" fill="#A9CBFF" />
+        {d > 0 && <><line x1={tgt[0] + 40} x2={tgt[0] + 40} y1={g0} y2={gy} stroke="#F0705A" /><text x={tgt[0] + 48} y={(g0 + gy) / 2 + 5} fontSize="14" fill="#F0705A">{d.toFixed(1)} cm</text></>}
         <g transform={`translate(${W - 92} 40)`}>
-          <circle r="34" fill="none" stroke="rgba(237,230,218,.25)" strokeWidth="8" />
+          <circle r="34" fill="none" stroke="rgba(170,190,230,.25)" strokeWidth="8" />
           <circle r="34" fill="none" stroke={rgb(fringe(-d / 100))} strokeWidth="8" strokeDasharray={`${((phase % 360) / 360) * 213.6} 213.6`} transform="rotate(-90)" />
-          <text y="5" textAnchor="middle" fontSize="13" fill="#EDE6DA">{Math.round(phase % 360)}°</text>
+          <text y="5" textAnchor="middle" fontSize="13" fill="#E6EAF2">{Math.round(phase % 360)}°</text>
         </g>
       </svg>
       <label className="block mt-4">
         <span className="text-[14px] text-mute">Move the ground away from the satellite</span>
-        <input type="range" min="0" max="24" step="0.1" value={d} onChange={(e) => setD(+e.target.value)} className="w-full mt-2 accent-[#8FA66B]" />
+        <input type="range" min="0" max="24" step="0.1" value={d} onChange={(e) => setD(+e.target.value)} className="w-full mt-2 accent-[#9DB08A]" />
       </label>
       <div className="grid grid-cols-3 gap-px bg-hair rounded-lg overflow-hidden mt-4 text-center">
         {[["Ground moved", `${d.toFixed(1)} cm`], ["Extra round trip", `${(2 * d).toFixed(1)} cm`], ["Fringes", (d / (FRINGE_M * 100)).toFixed(2)]].map(([k, v]) => (
@@ -112,10 +122,10 @@ export function AquiferExplainer() {
       <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Concept diagram: an aquifer with clay layers that squeeze as water pressure falls">
         <defs>
           <pattern id="sand" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#3b3226" /><circle cx="2" cy="2" r="1" fill="#5a4c38" /><circle cx="6" cy="6" r="1" fill="#5a4c38" /></pattern>
-          <linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#6FA8C4" stopOpacity="0.45" /><stop offset="1" stopColor="#3E7894" stopOpacity="0.2" /></linearGradient>
+          <linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#5FC9E0" stopOpacity="0.45" /><stop offset="1" stopColor="#2E8BA8" stopOpacity="0.2" /></linearGradient>
         </defs>
-        <line x1="0" x2={W} y1="70" y2="70" stroke="rgba(237,230,218,.35)" strokeDasharray="5 5" />
-        <text x="8" y="62" fontSize="12.5" fill="#A79C8A">original surface</text>
+        <line x1="0" x2={W} y1="70" y2="70" stroke="rgba(230,234,242,.35)" strokeDasharray="5 5" />
+        <text x="8" y="62" fontSize="12.5" fill="#8D97AB">original surface</text>
         <rect x="0" y={surf} width={W} height={H - surf} fill="url(#sand)" />
         <rect x="0" y={surf + 30 + (1 - pressure) * 50} width={W} height={H} fill="url(#water)" />
         {clays.map(([y, h], k) => {
@@ -127,14 +137,14 @@ export function AquiferExplainer() {
         <rect x="0" y={surf - 6} width={W} height="6" fill="#4b6b3a" />
         {[120, 300, 480].map((cx) => <g key={cx}><rect x={cx} y={surf - 26} width="3" height="20" fill="#5a7a46" /><circle cx={cx + 1.5} cy={surf - 30} r="8" fill="#5a7a46" /></g>)}
         <g transform="translate(560 0)">
-          <rect x="0" y={surf - 40} width="14" height="40" fill="#A79C8A" />
-          <line x1="7" x2="7" y1={surf} y2={H - 10} stroke="#A79C8A" strokeWidth="3" />
-          <text x="7" y={surf - 48} textAnchor="middle" fontSize="12" fill="#A79C8A">well</text>
+          <rect x="0" y={surf - 40} width="14" height="40" fill="#8D97AB" />
+          <line x1="7" x2="7" y1={surf} y2={H - 10} stroke="#8D97AB" strokeWidth="3" />
+          <text x="7" y={surf - 48} textAnchor="middle" fontSize="12" fill="#8D97AB">well</text>
         </g>
-        <line x1="40" x2="40" y1="70" y2={surf} stroke="#C9854A" strokeWidth="2" />
-        <text x="48" y={(70 + surf) / 2 + 5} fontSize="13" fill="#C9854A">{squeeze > 1 ? "surface dropped" : ""}</text>
-        <text x={W - 10} y="24" textAnchor="end" fontSize="14" fill="#EDE6DA">{pressure > 0.6 ? "Wet season: water recharged" : pressure < 0.4 ? "Dry season: pumping" : ""}</text>
-        <text x={W - 10} y={H - 10} textAnchor="end" fontSize="12" fill="#A79C8A">Concept diagram, not measured data. Purple: clay layers.</text>
+        <line x1="40" x2="40" y1="70" y2={surf} stroke="#F0705A" strokeWidth="2" />
+        <text x="48" y={(70 + surf) / 2 + 5} fontSize="13" fill="#F0705A">{squeeze > 1 ? "surface dropped" : ""}</text>
+        <text x={W - 10} y="24" textAnchor="end" fontSize="14" fill="#E6EAF2">{pressure > 0.6 ? "Wet season: water recharged" : pressure < 0.4 ? "Dry season: pumping" : ""}</text>
+        <text x={W - 10} y={H - 10} textAnchor="end" fontSize="12" fill="#8D97AB">Concept diagram, not measured data. Purple: clay layers.</text>
       </svg>
       <div className="flex flex-wrap items-center gap-3 mt-4">
         <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-1.5 rounded-full bg-accent text-space font-semibold text-sm px-4 py-2 hover:bg-accent-2">
@@ -144,7 +154,7 @@ export function AquiferExplainer() {
       </div>
       <label className="block mt-4">
         <span className="text-[14px] text-mute">Groundwater pressure: pumping (left) to recharged (right)</span>
-        <input type="range" min="0" max="1" step="0.01" value={pressure} onChange={(e) => { setPlaying(false); setPressure(+e.target.value); }} className="w-full mt-2 accent-[#8FA66B]" />
+        <input type="range" min="0" max="1" step="0.01" value={pressure} onChange={(e) => { setPlaying(false); setPressure(+e.target.value); }} className="w-full mt-2 accent-[#9DB08A]" />
       </label>
       <p className="text-[14px] text-ink/80 mt-3 leading-relaxed">
         When pumps lower the water pressure, the grains and clay carry more of the weight above them and squeeze together. Some of that springs

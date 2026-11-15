@@ -50,8 +50,8 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
             onClick={(e) => { const p = at(frac(e)); const i = cellAt(D, ...p.p); if (i >= 0) onPick(i); }}>
             <defs>
               <linearGradient id="profFill" x1="0" x2="0" y1="0" y2="1">
-                <stop offset="0" stopColor="#C9854A" stopOpacity="0.05" />
-                <stop offset="1" stopColor="#C9854A" stopOpacity="0.4" />
+                <stop offset="0" stopColor="#D08B5B" stopOpacity="0.05" />
+                <stop offset="1" stopColor="#D08B5B" stopOpacity="0.4" />
               </linearGradient>
             </defs>
             {grid.map((v) => (
@@ -66,11 +66,11 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
               return (
                 <g key={n}>
                   <polygon points={`${X(g[0].km)},${Y(0)} ${top.join(" ")} ${X(g[g.length - 1].km)},${Y(0)}`} fill="url(#profFill)" />
-                  <polyline points={top.join(" ")} fill="none" stroke="#C9854A" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
+                  <polyline points={top.join(" ")} fill="none" stroke="#D08B5B" strokeWidth="2.2" vectorEffect="non-scaling-stroke" />
                 </g>
               );
             })}
-            {read && <line x1={X(read.km)} x2={X(read.km)} y1={PP.t} y2={PH - PP.b} stroke="#8FA66B" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
+            {read && <line x1={X(read.km)} x2={X(read.km)} y1={PP.t} y2={PH - PP.b} stroke="#9DB08A" strokeWidth="2" vectorEffect="non-scaling-stroke" />}
           </svg>
         </>
       );
@@ -93,7 +93,7 @@ export function TourCard({ step, k, n, onPrev, onNext, onClose }) {
   if (!step) return null;
   return (
     <div role="dialog" aria-label="Guided walkthrough"
-      className="absolute top-16 left-4 z-20 w-[380px] max-w-[calc(100%-2rem)] rounded-xl border border-accent/40 bg-space/95 backdrop-blur p-5 shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(143,166,107,.08)]">
+      className="absolute top-16 left-4 z-20 w-[380px] max-w-[calc(100%-2rem)] rounded-xl border border-accent/40 bg-space/95 backdrop-blur p-5 shadow-[0_20px_60px_rgba(0,0,0,.55),0_0_0_1px_rgba(157,176,138,.08)]">
       <div className="flex items-center gap-2 text-[12.5px] text-accent-2">
         <span className="font-display font-semibold">Step {k + 1} of {n}</span>
         <span className="flex gap-1 ml-1" aria-hidden="true">{Array.from({ length: n }, (_, j) => <span key={j} className={`h-1 w-5 rounded-full ${j <= k ? "bg-accent" : "bg-hair-2"}`} />)}</span>
@@ -123,7 +123,7 @@ export function Intro({ D, onStart, onTour }) {
           and two well-chosen dates can hide it. {D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, checked against GPS.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mt-8">
-          <button onClick={onTour} className="rounded-lg bg-accent text-space font-semibold px-5 py-2.5 hover:bg-accent-2 shadow-[0_0_30px_rgba(143,166,107,.4)]">Walk me through it</button>
+          <button onClick={onTour} className="rounded-lg bg-accent text-space font-semibold px-5 py-2.5 hover:bg-accent-2 shadow-[0_0_30px_rgba(157,176,138,.4)]">Walk me through it</button>
           <button onClick={onStart} className="rounded-lg border border-hair-2 text-ink px-5 py-2.5 hover:border-accent/60 hover:text-accent-2">Explore the map</button>
         </div>
       </div>
