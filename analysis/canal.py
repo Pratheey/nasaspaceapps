@@ -42,22 +42,21 @@ def read_lines(path) -> list[tuple[str, np.ndarray]]:
 
 
 def densify(lonlat: np.ndarray, spacing_m: float = 500.0):
-    """Points every `spacing_m` along the line. Returns lon, lat, distance_km."""
+    """Points every `spacing_m` along the line (plus the end point). Returns lon, lat, distance_km.
+    Distances are geodesic; positions are interpolated linearly between the line's vertices."""
     from pyproj import Geod
 
     geod = Geod(ellps="WGS84")
-    lons, lats, dists = [lonlat[0, 0]], [lonlat[0, 1]], [0.0]
-    total = 0.0
-    for (lo1, la1), (lo2, la2) in zip(lonlat[:-1], lonlat[1:]):
-        seg = geod.inv(lo1, la1, lo2, la2)[2]
-        n = max(int(np.ceil(seg / spacing_m)), 1)
-        for k in range(1, n + 1):
-            f = k / n
-            lons.append(lo1 + f * (lo2 - lo1))
-            lats.append(la1 + f * (la2 - la1))
-            dists.append((total + f * seg) / 1000.0)
-        total += seg
-    return np.array(lons), np.array(lats), np.array(dists)
+    lonlat = np.asarray(lonlat, dtype=float)
+    seg = np.array([geod.inv(lonlat[i, 0], lonlat[i, 1], lonlat[i + 1, 0], lonlat[i + 1, 1])[2]
+                    for i in range(len(lonlat) - 1)])
+    cum = np.concatenate([[0.0], np.cumsum(seg)])
+    targets = np.arange(0.0, cum[-1], spacing_m)
+    if cum[-1] - targets[-1] > 1e-6:
+        targets = np.append(targets, cum[-1])
+    lon = np.interp(targets, cum, lonlat[:, 0])
+    lat = np.interp(targets, cum, lonlat[:, 1])
+    return lon, lat, targets / 1000.0
 
 
 def gradient(values, distance_km, baseline_km: float = 2.0):

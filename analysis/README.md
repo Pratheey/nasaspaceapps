@@ -123,11 +123,31 @@ Two settings matter: **σ** (1.2 → 3.0 cm moves ~1,200 cells from label 1 to l
 north-east box counts as stable** (it alone sets the 18.2 mm bar; without it ~1,100 more cells are
 seasonal). Both need a team decision; σ comes from Daniel.
 
+## Stack v3 = data-lane freeze (2026-11-14, hour ~12)
+
+v3 is v2 re-tied to P304 with Daniel's cleaned GPS (`gps/processed/gps_los.csv`) instead of raw NGL
+(data/README.md). Same pairs and valid pixels; pair values differ by 0.06 cm RMS. **The app data
+(`frontend/public/data/`) and `NUMBERS.md` now come from v3.**
+
+Effect: one uniform shift, as expected from a change of tie. Every station's trend moves +0.27 cm/yr
+and every net change +0.33 cm. The reference P304's own cell now matches its GPS (trend −2.21 vs GPS
+−2.25 cm/yr; v2 gave −2.48). Labels 0/1/2/3: 7,473 / 2,656 / 1,170 / 701 (v2: 7,366 / 2,760 / 1,074 / 800).
+Seasonal threshold 18.5 mm.
+
+**The NISAR-vs-GPS trend gap is not the tie.** At the held-out stations NISAR trends stay +1.3 to
++5.6 cm/yr above GPS (median about +2), slightly more than on v2. Still open for the data and gps
+lanes; trends stay off the headline.
+
+## H-14 numbers
+
+`python -m analysis.numbers` writes `analysis/NUMBERS.md`: every number the app or pitch shows that
+comes from this lane, recomputed from `frontend/public/data/` the way the app computes it, with its
+source. Rerun after any change to the app data.
+
 ## Not done yet
 
 - **Significance threshold calibrated on stable ground** (Pratheek's real-data test: the standard F-test over-fires on bedrock). Needs a decision on control areas; see `REQUESTS.md`.
 - Real-data run (waits for the stack, GPS files and uncertainty).
 - Vertical: waits for Steven's stack. Canal profile: waits for Daniel's canal lines. Both need a contract change before the app shows them.
-- Synthetic dates follow the brief (26 dates, 12-day repeat, two gaps) until Pratheek confirms the real list.
 
 What each other lane needs to send is in `REQUESTS.md`.
