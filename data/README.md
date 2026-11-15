@@ -223,6 +223,46 @@ above the ellipsoid. Single-pair RMS at the four hill stations P294, P297, P298 
 
 ---
 
+### `processed/opera_disp_s1_f11116.csv`, `processed/opera_disp_s1_f36542.csv` (in git; context only, H-20)
+
+**Not NISAR.** OPERA L3 DISP-S1 v1.0 (Sentinel-1, C-band, wavelength 5.55 cm), collection
+`C3294057315-ASF`, read by HTTPS range requests on 2026-11-15 with
+`scripts/extract_opera_disp.py`. Historical context for the gps/context lane. Never mix these
+values with the NISAR stack.
+
+| | F11116 | F36542 |
+|---|---|---|
+| Orbit | descending, track 42 (~14:08 UTC) | ascending, track 137 (~01:59 UTC) |
+| Granules read / failed | 389 / 0 | 404 / 0 |
+| Reference dates | 26 (2016-07-05 to 2026-01-26) | 27 (2016-07-24 to 2025-12-16) |
+| Last secondary date | 2026-04-26 | 2026-03-28 |
+| Stations with data | 8: CAFP, P294, P297, P298, P300, P302, P304, TRAN | all 14 |
+| Stations in the grid, no data | CAKC, P303, P307 | none |
+| Canal points | 29 (every 4 km, 0 to 112 km); some empty at the south end | 29 (every 4 km, 0 to 112 km) |
+| Rows | 15,560 | 17,372 |
+
+- **Layer:** `displacement`, the unfiltered one. The file describes it as "Displacement along
+  the radar Line-of-Sight (LOS) direction. Positive values indicate apparent motion towards the
+  platform." Units: metres. `short_wavelength_displacement` (filtered) is not read.
+- **Columns:** `frame_id`, `version`, `ref_date`, `sec_date`, `point_type` (station or canal),
+  `point_id` (station name or `canal_km_<km>`), `lat`, `lon`, `canal_distance_km`,
+  `displacement_m`, `recommended_mask` (1 = OPERA recommends using the pixel),
+  `temporal_coherence`, `connected_component`, `granule_id`, `download_date_utc`.
+- **Each value is the nearest 30 m pixel, exactly as stored.** No re-referencing, no sign change,
+  no chaining across reference dates, no ionosphere or tide correction (the file carries those as
+  separate layers; they were not read).
+- **Quirk 1: the reference date changes.** Each row is motion from `ref_date` to `sec_date`.
+  To build one series, chain the segments where the reference date steps forward.
+- **Quirk 2: the spatial reference point changes between files** (for example F11116: lat 36.191,
+  lon −120.480 in 2016 and lat 36.646, lon −120.780 in 2026; recorded in each file under
+  `corrections/reference_point`). Values are only comparable as differences between two points
+  of the same granule. Subtract P304's row of the same granule to match the NISAR reference.
+- **Quirk 3: the two frames look from opposite sides.** Do not average them.
+- Canal points are the app's profile points (`frontend/public/data/canal_profile_california_aqueduct.json`),
+  every 8th one, to keep each file under 5 MB.
+- The search over the stack window returns 10 frames. F09155 covers no station and no canal
+  point. All granules are listed in `processed/opera_disp_s1_granules.csv`.
+
 ## 4. What we found (read before using the stack)
 
 1. **Single pairs agree with GPS to about 2 cm, not 1 cm.** The go/no-go target in
@@ -268,6 +308,36 @@ Quick-look figure (not committed): `interim/figures/net_change_selfcheck.png`.
   the held-out stations (9 of 12 net residuals are positive). That is inside the 2 cm
   uncertainty. A shift shared by most stations points at the reference pixel at P304 rather
   than at each station; this has not been tested.
+
+### Answers to the analysis lane's two questions (2026-11-15, hour 25; stack v3)
+
+**Why NISAR net change sits above GPS (mean +1.0 cm at 12 stations).**
+- It is not a bad reference pixel. NISAR around P304 (rings from 0.3 to 7 km) sinks 0.5 to
+  3.6 cm *more* than the 5×5 reference block, not less. P304 is 0.6 σ away from the mean of the
+  other stations (station-to-station scatter 1.8 cm), which is an ordinary draw.
+- Part of it is a shared date-by-date wobble of about 1 cm. The mean residual of all stations
+  goes up and down together from date to date (−1.9 to +2.4 cm), and the two control boxes
+  follow it (correlation 0.75 and 0.80). A wobble shared by the whole scene comes from the
+  one reference point: atmosphere and noise at P304 on each date. It is inside σ.
+- Part of it is a tilt to the east: the net residual grows by 0.34 mm per km eastward
+  (correlation 0.58, 12 stations, p about 0.05), about 2.7 cm across 80 km. West: P303 −2.4 cm.
+  East: CAFR +4.7, CAHA +2.7, P307 +2.2 cm. No relation to height or to north.
+- Not corrected. Fitting a plane to the held-out stations would use them for calibration, and
+  it only lowers the scatter from 1.8 to 1.6 cm.
+- What it means: toward the east edge NISAR shows about 2 to 3 cm less sinking than GPS over
+  the record, so sinking there is under-stated, not over-stated. Do not quote a NISAR-only trend.
+
+**Is the north-east control box stable ground?** Yes, the ground is; the apparent motion is
+measurement error, so the box is doing its job.
+- It is Sierra foothill terrain (181 to 660 m), 98% of pixels valid in all 25 pairs, no farmland.
+- Its apparent motion (+2.2 cm net, fitted +4.3 cm/yr, 15 mm "seasonal" with 16 mm misfit) is
+  shared with the valley floor box just west of it (lon −119.75 to −119.65): the two series
+  correlate 0.90 and differ by only 1.0 cm rms. Ground motion in bedrock hills would not copy
+  the valley floor date by date; a broad atmospheric signal does.
+- The size fits the eastward tilt above (0.34 mm/km × about 80 km).
+- Recommendation: **keep the box.** It measures the error at the far side of the map. Dropping
+  it would add about 1,300 "seasonal" cells where part of the signal is this shared error.
+  The cost: cells near P304 are held to a stricter bar than they need.
 
 ### Decisions taken by the data lane (2026-11-14), open to override
 
