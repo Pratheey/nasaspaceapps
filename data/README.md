@@ -93,7 +93,8 @@ For each pair, over the window only:
    automatically; `--flat-height` goes back to a constant 50 m.
 3. **Mask.** A pixel is valid when all of these hold: coherence ≥ 0.3; a valid sample in
    both images; not water; connected component not 0; and in the same connected component
-   as the reference station. Anomaly-flagged pixels are kept and flagged (see below).
+   as the reference station. Corrected phase and LOS geometry must also be finite.
+   Anomaly-flagged pixels are kept and flagged (see below).
 4. **Reference.** Subtract the median corrected phase of the valid pixels in a 5 × 5 pixel
    block (400 m) centred on P304. A pair with fewer than 5 usable pixels there fails loudly
    rather than being referenced somewhere else.
@@ -101,6 +102,9 @@ For each pair, over the window only:
 6. **Tie.** Add P304's own GPS line-of-sight motion over the pair's dates to every pixel
    (done in `build_stack.py`, stored per pair as `ref_tie_m` so it can be undone). Versions
    1 and 2 use the raw NGL series; version 3 uses `gps/processed/gps_los.csv` (see section 3).
+   That CSV contains the Track 034 / Frame 020 projection and is only used for that track.
+   Rebuilding other tracks uses `gps/processed/gps_cleaned_enu.csv`, projected into their
+   own LOS geometry, with raw NGL as the fallback if the cleaned positions are absent.
 
 Masked pixels are `NaN`. Nothing is interpolated or filled.
 
