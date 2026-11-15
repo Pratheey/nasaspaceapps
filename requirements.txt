@@ -10,3 +10,6 @@ h5py
 scipy
 pyproj
 earthaccess
+netCDF4
+rasterio
+shapely
