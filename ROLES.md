@@ -30,8 +30,8 @@ evidence behind every result.*
 2. **Proof it's right.** Compare the satellite with GPS stations it never saw.
 3. **Answer the whole brief.** Show what NISAR's polarization reveals, and whether it sees more than older satellites.
 4. **Honest about uncertainty.** Show what we know and what we don't. Never overclaim.
-5. **A demo judges remember.** Two GPS stations that both "breathe" the same amount, but
-   one is stable and the other sinks about 6 cm a year.
+5. **A demo judges remember.** Two GPS stations, Five Points and Hanford, where the ground
+   rises about 1 cm over winter and then sinks 5–6 cm by August, and the satellite sees it.
 6. **Submit early.** Target hour 22, not hour 24.
 
 ## Key moments (everyone)
@@ -40,7 +40,7 @@ evidence behind every result.*
 |---|---|
 | **0** | Kickoff. Everyone clones the repo and sets their lane. |
 | **2** | Check-in 1. File formats agreed. Everyone can work without waiting on anyone. |
-| **5** | 🚦 **Go/no-go.** Does the satellite agree with GPS within about 1 cm? If yes, we're on. If not, we switch to the backup plan. |
+| **5** | 🚦 **Go/no-go.** Does the satellite agree with GPS? First result: within about 2 cm, with no jumps. Proposed call: go (Daniel confirms). |
 | **6** | Check-in 2. Show what works. |
 | **12** | Check-in 3. Real data should be flowing all the way to the map. |
 | **18** | Check-in 4. 🧊 **Feature freeze.** No new features, only fixes. |
@@ -71,6 +71,10 @@ version to Ismail.
 - Steven: your scripts, ready to run on the second track (hour 12). He runs them, you don't have to.
 
 **You need:** GPS station locations from Daniel (hour 1).
+
+**Where you are (14 Nov):** all 25 date pairs are processed and the scripts work on any
+track. Left to do: upload the big file to the shared Drive, get terrain heights to improve
+the weather correction in the hills, and help Steven run the second track.
 
 **Watch out for:**
 - Don't download the whole 54 GB. Read only our small area.
@@ -107,8 +111,13 @@ sank, how much it "breathed", how sure we are, and the label for each spot.
 - Pratheek: the satellite data (hour 10; partial earlier).
 - Daniel: the uncertainty numbers (hour 11).
 
-**Watch out for:** the yearly "breathing" is tiny (millimetres). Only show it where the math
-says it's real. Hiding it where it isn't real is the honest answer.
+**Watch out for:**
+- The yearly "breathing" is small and the satellite wobbles about 2 cm per date. Only show
+  it where the math says it's real. Hiding it where it isn't real is the honest answer.
+- Don't use single pixels. Use the middle value (median) of all the pixels in each 1 km map
+  square. Single pixels have gaps and pick up wet-field effects that look like sinking.
+- The usual significance test finds "breathing" even on solid rock. Set the bar using
+  ground that shouldn't move.
 
 **Your folders:** `analysis/` and `frontend/public/data/`
 
@@ -167,8 +176,8 @@ telling the truth.
 "an independent instrument agrees."
 
 **Your goals:**
-- **By hour 1:** GPS data downloaded for 4 stations (P302, P303, P304, P307), locations sent to Pratheek and Steven.
-- **By hour 2:** the known equipment jump in P307 removed.
+- **By hour 1:** GPS data downloaded for 14 stations (the list is in `data/processed/stations_ngl.csv`).
+- **By hour 2:** equipment jumps checked and removed at every station.
 - **By hour 5:** compare the satellite's first pair with GPS. **You make the go/no-go call with Pratheek.**
 - **By hour 10:** map extras gathered (canals, towns, groundwater, older subsidence data).
 - **By hour 11:** the "does it agree?" table done, plus any bad satellite dates flagged.
@@ -181,8 +190,8 @@ telling the truth.
 
 **You need:** Pratheek's first pair (hour 4).
 
-**Watch out for:** one station is the "reference" and doesn't count as a check. The other 3
-are the real test. Four stations is a prototype check, not proof for the whole valley.
+**Watch out for:** one station (P304) is the "reference" and doesn't count as a check. The
+other 12 are the real test. That is still a prototype check, not proof for the whole valley.
 
 **Your folders:** `gps/` and `context/`
 
@@ -199,7 +208,7 @@ are the real test. Four stations is a prototype check, not proof for the whole v
 - **By hour 6:** the map shows colored labels, using fake data Ryan gives you.
 - **By hour 10:** click any spot to see a chart of its movement.
 - **By hour 14:** running on **real** data from Ismail.
-- **By hour 16:** the demo animation for stations P302 vs P307.
+- **By hour 16:** the demo animation for stations CAFP (Five Points) and CAHA (Hanford), with P300 as the calm one.
 - **By hour 18:** everything in, then feature freeze.
 - **By hour 20:** live on a public link that works on laptop and phone.
 
@@ -207,7 +216,7 @@ are the real test. Four stations is a prototype check, not proof for the whole v
 - the map with labels and a legend
 - click to see a chart for any spot
 - a "GPS reveal" button that shows whether GPS agrees
-- the P302 vs P307 animation
+- the Five Points and Hanford animation (CAFP, CAHA), with P300 as the calm comparison
 - a "breathing vs sinking" scatter plot
 - a "Limits" panel (Ryan writes the text)
 

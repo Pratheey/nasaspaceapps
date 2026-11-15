@@ -11,7 +11,7 @@ No number goes on screen or in the video unless it is here.
 | 4 | Number of NISAR dates used | App legend | `meta.json` → `dates` | Ismail | [ ] |
 | 5 | Held-out residual (net), per station | GPS reveal | `gps/processed/residuals.csv` | Daniel | [ ] |
 | 6 | σ used for 2σ test | Limits / legend | `gps/processed/uncertainty.json` → `sigma_net_m` | Daniel | [ ] |
-| 7 | P302 / P307 net change and trend | Demo, video | `stations.json` | Ismail | [ ] |
+| 7 | CAFP / CAHA (and P300) net change, winter rise and trend | Demo, video | `stations.json` | Ismail | [ ] |
 | 8 | Granule IDs and versions | Evidence receipts | `data/README.md` | Pratheek | [ ] |
 | 9 | Polarization result (HH/HV by crop type) | Brief answers, project page | `radar/` (H-6) | Steven | [ ] |
 | 10 | % of fields usable, NISAR vs Sentinel-1, and threshold used | Project page | `radar/` (H-10) | Steven | [ ] |

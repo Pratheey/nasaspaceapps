@@ -1,10 +1,11 @@
 # contracts/: agreed interfaces between lanes (owned by the Integrator)
 
-**Version 1** (D3 in `docs/DECISIONS.md`). Conventions for every file below:
+**Version 1.1** (D3, plus the additive changes proposed in D5, in `docs/DECISIONS.md`). Conventions for every file below:
 
 - Positive LOS = toward the satellite (≈ uplift). Negative = away (≈ sinking).
 - Lengths in metres, keys end in `_m` (rates `_m_per_yr`). Display in cm is the frontend's job.
-- Reference station **P304**. Held out: P302, P303, P307.
+- Reference station **P304**. Held out (D5): P294, P297, P298, P300, P302, P303, P307, P725, CAFP, CAFR, CAHA, CAKC, TRAN.
+  Demo stations: CAFP and CAHA, with P300 as the calm comparison.
 - Dates ISO 8601 (UTC). Missing = `null` (JSON) / empty (CSV) / `NaN` (NetCDF). Never `-999`.
 - `snake_case` everywhere.
 

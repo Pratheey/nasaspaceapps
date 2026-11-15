@@ -1,12 +1,19 @@
 # Contract: app data files (analysis → frontend)
 
-Produced by Ismail into `frontend/public/data/`. Read by Avi's app. Version 1.
+Produced by Ismail into `frontend/public/data/`. Read by Avi's app. Version 1.1 (D5: station list and how cells are made; no shape change).
 Samples in exactly this shape: `contracts/samples/`. Four files, all JSON.
 
 ## Grid
 Row-major, **north to south, then west to east**. Cell `(row, col)` has centre
 `lat = lat_max − (row + 0.5)·step`, `lon = lon_min + (col + 0.5)·step`. Index
 `i = row·ncols + col`. All per-cell arrays have length `nrows·ncols`, `null` = no value.
+
+**How a cell gets its value (D5).** Each pixel's pairs are summed into a position series
+(relative to the first date). For each date, a cell is the median of the valid pixel
+positions inside it, and the cell's pairs are the differences between consecutive dates.
+Not a median of pair values per pair: that picks different pixels for neighbouring pairs,
+so each date's noise stops cancelling and the cell's series drifts. A cell with too few
+valid pixels at a date is missing for that date and for every later cumulative value.
 
 ## 1. `meta.json`
 ```json
@@ -20,7 +27,8 @@ Row-major, **north to south, then west to east**. Cell `(row, col)` has centre
   "sign_convention": "positive toward satellite (≈ uplift); negative ≈ sinking",
   "units": "m",
   "reference_station": "P304",
-  "held_out_stations": ["P302", "P303", "P307"],
+  "held_out_stations": ["P294", "P297", "P298", "P300", "P307", "CAFP", "CAFR", "CAHA", "CAKC", "TRAN"],
+  "demo_stations": {"sinking": ["CAFP", "CAHA"], "calm": "P300"},
   "grid": {"lat_max": 36.95, "lon_min": -120.60, "step_deg": 0.01, "nrows": 100, "ncols": 120},
   "dates": ["2025-11-24", "..."],
   "pairs": [{"pair": 1, "ref_date": "2025-11-24", "sec_date": "2025-12-06",
@@ -76,7 +84,7 @@ date (first value is always 0 or null).
 {
   "is_synthetic": false,
   "stations": [{
-    "station": "P307", "lat": 0.0, "lon": 0.0, "role": "held_out", "cell_index": 0,
+    "station": "CAHA", "lat": 0.0, "lon": 0.0, "role": "held_out", "cell_index": 0,
     "gps": {"dates": ["2025-11-24", "..."], "los_m": [...], "sigma_m": [...]},
     "nisar": {"dates": ["..."], "los_m": [...]},
     "gps_fit":   {"trend_m_per_yr": 0.0, "trend_sigma_m_per_yr": 0.0, "amp_m": 0.0, "amp_sigma_m": 0.0, "peak_month": 1},
@@ -88,6 +96,8 @@ date (first value is always 0 or null).
 ```
 GPS `los_m` is absolute LOS (tied to P304, like NISAR), daily, decimated to the NISAR dates
 or weekly to keep the file small. The reference station's residuals are `null` (it is not a check).
+`stations.json` lists only stations inside the app bbox; P302, P303 and P725 are held out
+too but lie outside it, so they appear only in `gps/processed/residuals.csv`.
 
 ## Size
 Keep every file under 5 MB. At 0.01° the grid is 12,000 cells; round values to 4 decimals

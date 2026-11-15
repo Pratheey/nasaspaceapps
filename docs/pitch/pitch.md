@@ -16,7 +16,9 @@ only: no mockups, no synthetic sample data on screen.
 | 26–30 s | Title card | "We don't tell you the ground is fine. We show you how sure we are." |
 
 **Fill after real data (hour 18):** pick the two "fine-looking" dates from the real
-date-pair results. If the real data doesn't show a misleading pair at a significant level,
+date-pair results. Candidate from the first stack (D5): Hanford (CAHA), 2025-12-06 to
+2026-02-04, where GPS and NISAR both show a rise of about 1 cm while the full record ends
+near −5 cm in GPS. If the real data doesn't show a misleading pair at a significant level,
 change line 2 to what the data does show. Never stage it.
 
 ## Story beats for the project page
@@ -48,7 +50,7 @@ All figures in beat 1 and 4 are published figures, not our measurements. Say so 
 ## Claims review (Ryan signs off at hour 18, before recording)
 - [ ] No "only NISAR can do this" (ALOS-2, SAOCOM also fly L-band).
 - [ ] No "permanent", "irreversible" or "storage loss" on anything fitted.
-- [ ] No "validated" unless the held-out residual table exists; then quote it with n = 3 stations.
+- [ ] No "validated" unless the held-out residual table exists; then quote it with n = 12 stations and the measured agreement (about 2 cm, not "centimetre-level").
 - [ ] No amplitude or timing shown where the seasonal term isn't significant.
 - [ ] 14 km³, 30 cm/yr, levee and canal figures labelled as published, with source.
 - [ ] Reference station (P304) and "provisional NISAR" named on the map legend.
