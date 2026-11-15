@@ -1,8 +1,9 @@
 # gps/: owned by Daniel (gps lane)
 
-GPS stations P302, P303, P304, P307 from the Nevada Geodetic Laboratory (NGL, IGS20 frame,
-daily solutions), used as an independent check on NISAR. Plan: `docs/PLAN.md`. Output shapes: `contracts/gps.md`.
-Four stations are a prototype check, not a valley-wide accuracy claim.
+GPS stations from the Nevada Geodetic Laboratory (NGL, IGS20 frame, daily solutions), used as an
+independent check on NISAR. Plan: `docs/PLAN.md`. Output shapes: `contracts/gps.md`.
+**Status (2026-11-14): cleaned and checked so far: P302, P303, P304 (reference), P307. The other 10 stations (D5) are listed in
+`processed/stations.csv` but their series are not cleaned yet.** Held-out stations are a prototype check, not a valley-wide accuracy claim.
 
 ## H-1: station coordinates (latest epoch, WGS84; height is ellipsoidal, not elevation)
 
@@ -27,7 +28,9 @@ Heights fall as the ground sinks (P307: 49.5 m in 2005, 48.6 m now). The east/no
 | `processed/gps_enu_at_track034_dates.csv` | Change in mm at the 26 Track 034 dates, 5-day means, relative to 2025-11-24, plus vertical minus P302. East/north/up, **not yet in LOS** |
 | `raw/*_IGS20.tenv3`, `raw/ngl_steps_selected.txt` | Original NGL files, unmodified (position = `e0 + east`, etc., metres) |
 
-Not yet written (need Pratheek's LOS geometry, H-4): `gps_los.csv`, the `los` rows of `gps_fits.csv`, `residuals.csv`, `uncertainty.json`.
+| `processed/gps_los.csv` | Daily GPS in NISAR line of sight (positive toward satellite), absolute and relative to P304. 4 stations so far |
+| `processed/residuals.csv`, `uncertainty.json` | **Preliminary** H-9: NISAR minus GPS per pair and net, 3 held-out stations so far |
+| `scripts/build_gps_los.py` | Rebuilds the four files above from `raw/*.tenv3` and `data/processed/station_values_t034_f020.csv`. Add a station's `.tenv3` to `raw/` and rerun |
 
 ## Cleaning
 
@@ -66,6 +69,22 @@ East and north fits are in `processed/gps_fits_enu_extra.csv` (contract file `gp
 **P307 east motion looks wrong after the swap.** East velocity in the window is -1.7 mm/yr at P307 against -17.5 (P302), -20.5 (P303) and -17.9 (P304) mm/yr at the other three, and P307 itself ran about -25 mm/yr before the swap.
 That gap (about 16 mm/yr) projects to roughly 8 mm/yr of line-of-sight error at P307, about 7 mm over the window, against a P307 net signal near 60 mm. Referencing to P304 cancels common regional motion but not this anomaly.
 Options for LOS projection: use the three-station mean east velocity for P307, or add the anomaly to its LOS uncertainty. To be decided with Pratheek.
+
+## H-5 and preliminary H-9 on cleaned GPS (4 stations)
+
+LOS vectors come from `station_values_t034_f020.csv`. Both NISAR and GPS are relative to P304; GPS values are 7-day medians at each date, as in the data lane's tie.
+
+| Held-out station | RMS, single pairs (cm) | Worst pair (cm) | Net residual, NISAR minus GPS (cm) |
+|---|---|---|---|
+| P302 | 1.6 | 3.9 | -0.0 |
+| P303 | 1.8 | 5.3 | -2.3 |
+| P307 | 1.8 | 3.3 | +2.0 |
+
+- 75 pairs, none within 3 cm of a 12 cm unwrapping step. Pooled RMS 1.7 cm, close to the data lane's raw-GPS figure (1.1 to 2.9 cm at 13 stations). Cleaning changes any single residual by at most 3.5 mm.
+- **The P307 north step does not affect these residuals.** It happened on 2025-11-12, before the first NISAR date, so it cancels in every pair. What the correction protects is the baseline and the fit; the 2025-11-13 to 12-31 transient is left out of the fits only.
+- At P303 and P307, net NISAR and GPS differ by about 2 cm, in opposite directions. Both stations move less than 3 cm over the window, so this is about the size of the scatter.
+- The P307 east anomaly (below) is about 7 mm of line-of-sight error and cannot explain a 2 cm net residual.
+- **This is 3 held-out stations, not 13.** `uncertainty.json` is marked preliminary. It must be rerun with all held-out stations (Pratheek's raw check suggests the pair RMS stays near 2 cm).
 
 **First pair is a gross-error check, not an accuracy test.** Over its 12 days (2025-11-24 to 2025-12-06) the expected motion is only 0.3 to 2.2 mm, and GPS noise on that difference is about 1.5 to 2.5 mm.
 A ~1 cm agreement (H-5) can catch a wrong sign, wrong units, a missed ~12 cm unwrapping step or an ionosphere ramp. It cannot confirm millimetre accuracy.
