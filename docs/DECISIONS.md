@@ -270,6 +270,10 @@ at the hour-8 check-in.** Builds on D5.
   re-referenced to P304 per granule and chained across reference dates
   (`context/history/opera_history.py` → `frontend/public/context/opera_history.json`). Context only,
   labelled as a different satellite and viewing direction, never compared value for value with NISAR.
+- **Drinking-water wells (story, "The stakes"):** published figures on dry and failing household wells
+  (2,027 in the 2012–2016 drought; about 1,400 in 2022; 4,000–12,000 by 2040 in the valley), credited, with a
+  plain statement that our map does not locate wells or measure water quality. No disease claims: the
+  valley has no malaria transmission, and we have no water-quality data.
 - **Map loads without the tile server:** the map starts from a local style and adds the street basemap
   only if it answers, so blocked networks (the artifact host, some venues) still get the map.
 

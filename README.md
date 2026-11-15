@@ -1,27 +1,68 @@
-# NASA Space Apps 2026: Dancing with the SARS
+# The Breathing Ground
 
-**The Breathing Ground**: where seasonal rebound hides continued sinking in California's San Joaquin
-Valley, measured with NISAR L-band radar and checked against held-out GPS.
+**NASA Space Apps 2026 · Dancing with the SARs · Team Manifest Destiny**
+
 **Live app:** https://pratheey.github.io/nasaspaceapps/
 
-## Use of AI (Super Intelligence) tools
+California's San Joaquin Valley rises a little every wet season and settles every dry season. Underneath
+that rhythm, parts of it keep sinking, because groundwater pumping compacts the clay layers of the aquifer.
+Compare the wrong two dates and sinking ground looks flat, or even rising.
 
-The team used an AI assistant (Claude, by Anthropic, through Claude Code and claude.ai) for:
-- **Code:** much of the website (`frontend/`) and parts of the processing scripts (`data/`, `analysis/`,
-  `gps/`, `radar/`) were written or debugged with it. Team members reviewed, ran and tested the code.
-- **Research and analysis support:** finding data sources, checking numbers against the source tables,
-  and drafting documentation.
-- **Illustrations:** the satellite drawing, the aquifer and radar diagrams and the pole drawing on the
-  website were coded with AI help. Each carries a visible "AI-assisted illustration" label.
+We used the first year of NASA–ISRO **NISAR** L-band radar (26 passes, 24 Nov 2025 to 14 Oct 2026, track 34
+ascending, frame 20) over Corcoran–Mendota to separate the two, and checked the radar against **13 held-out
+GPS stations** it was never calibrated with (agreement about 1.8 cm per 12-day pair). The app lets anyone
+click a spot and see every measurement, the fitted seasonal and trend parts, how sure we are, and whether
+GPS agrees. Where the evidence is too thin, it says so.
 
-Not AI-generated: the measurements. Every number in the app comes from NISAR, GPS and the other listed
-datasets through the scripts in this repository. NASA videos and images are NASA's own (credited on the
-site). No AI-generated content uses NASA logos or mission insignia.
+## What's in the app
 
-- 👋 **Start here, humans: your role and goals:** [ROLES.md](ROLES.md)
-- **What we're building:** [docs/PROJECT.md](docs/PROJECT.md)
-- **How we work together (git, pivots, check-ins):** [docs/WORKFLOW.md](docs/WORKFLOW.md)
-- **Rules every AI agent follows:** [AGENTS.md](AGENTS.md)
+- **Story:** the problem, the physics of radar interferometry, the satellite, and what sinking does to
+  canals, levees and drinking-water wells.
+- **Live map:** net change, any two dates, pass-by-pass playback, radar fringes, the four evidence labels,
+  "hidden sinking" (where two dates mislead), and motion patterns (k-means grouping of each spot's record).
+- **Inspector:** every measurement at a spot, fitted curve with uncertainty, GPS comparison with residuals,
+  the source of every number, and ten years of Sentinel-1 history at each GPS station (context only).
+- **Polarization and coverage:** NISAR HH/HV over 30 crop fields, and usable coverage vs Sentinel-1.
+- **Tools:** cross-sections, the California Aqueduct profile, swipe, 3D, walkthrough.
+- **Limits panel:** what the fit does and does not mean.
+
+## Team and roles
+
+| Who | Lane | What they did |
+|---|---|---|
+| **Ryan Jian** | Integrator, design and story | Project lead. Proposal, data contracts and team decisions (D2–D12), story and pitch, website design and most of the website, GitHub Pages deploy, claims and number checks, sign-off of the radar results |
+| **Pratheek Danam** | NISAR data | NISAR GUNW pipeline (HTTPS subset reads, ionosphere, troposphere and tide corrections, masking), stacks v1–v3 and the data freeze, unwrapping and persistence checks, 13-station self-check, descending track, OPERA history, independent check of the app's numbers |
+| **Ismail Churaev** | Measurement and model | Pairwise seasonal + trend fit, calibrated significance test and labels, trend guard, station and canal exports for the app, California Aqueduct profile, `analysis/NUMBERS.md`, merging and reviewing PRs |
+| **Tsz "Steven" Liang** | Radar | GCOV polarization over 30 crop fields, NISAR vs Sentinel-1 coverage (HyP3), vertical and east–west cross-check from two tracks, processing and website bug fixes and CI tests |
+| **Daniel Li** | GPS and context | Station list, cleaned NGL GPS series and offsets, projection into NISAR's line of sight, held-out residuals and the uncertainty used everywhere, canal and DWR context layers |
+| **Avinash Lee** | Frontend | Interactive map app lane |
+
+## How we used AI tools
+
+The science decisions, data processing choices, checks and story were the team's. We used an AI
+assistant (Claude, by Anthropic) the way we'd use a fast pair programmer:
+- **Code:** help writing and debugging parts of the website and processing scripts. Team members reviewed,
+  ran and tested the code, and every number was checked against the source tables.
+- **Research:** finding data sources and documentation, and drafting docs.
+- **Illustrations:** a few drawings on the site (satellite, diagrams) were coded with AI help and carry a
+  small "AI-assisted" label.
+
+Every measurement comes from NISAR, GPS and the listed datasets through the scripts in this repository. NASA
+videos and images are NASA's own and credited on the site. No AI-generated content uses NASA logos or mission
+insignia.
+
+## Data
+
+NISAR L2 GUNW and GCOV (provisional, NASA/ISRO via ASF DAAC) · Nevada Geodetic Laboratory GPS · OPERA DISP-S1
+(Sentinel-1, context) · Sentinel-1 via ASF HyP3 · USDA Cropland Data Layer and Crop Sequence Boundaries ·
+California DWR (California Aqueduct) · US Census county lines · OpenStreetMap (basemap). Details and units:
+[data/README.md](data/README.md), [gps/](gps/), [radar/](radar/), [contracts/](contracts/).
+
+## For the team
+
+- **Roles and goals:** [ROLES.md](ROLES.md)
+- **What we're building:** [docs/PROJECT.md](docs/PROJECT.md) · decisions: [docs/DECISIONS.md](docs/DECISIONS.md)
+- **How we work together:** [docs/WORKFLOW.md](docs/WORKFLOW.md) · rules for AI agents: [AGENTS.md](AGENTS.md)
 
 ## Setup (everyone, 2 minutes)
 

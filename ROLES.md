@@ -2,6 +2,10 @@
 
 *For the humans on the team. Read your section. Takes 5 minutes.*
 
+> **Final roles (end of the event):** what each person actually did is in the
+> [README's "Team and roles" table](README.md#team-and-roles). The sections below are the plan we
+> started from.
+
 > **The event is 48 hours (D6).** The timeline below is the new one. The "by hour X" goals in
 > each person's section are from the 24-hour version; your current hour-by-hour list is in
 > [docs/PLAN.md](docs/PLAN.md).
