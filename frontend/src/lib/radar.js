@@ -1,6 +1,6 @@
 // Steven's radar-lane results (polarization and NISAR vs Sentinel-1 coverage over 30 fields).
 // Files: public/radar/, written by radar/app_export.py. Shape: contracts/radar_app.md.
-export const CROP_COLORS = { Alfalfa: "#7FD18B", Almonds: "#F2C46D", Cotton: "#E6EAF2" };
+export const CROP_COLORS = { Alfalfa: "#7FD18B", Almonds: "#F2C46D", Cotton: "#EDE6DA" };
 
 let cache = null;
 export function loadRadar() {

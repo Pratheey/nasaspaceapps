@@ -55,9 +55,9 @@ function Spark({ values, dates, color }) {
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3" role="img" aria-label="HV relative to HH at this field over the year">
       <polyline points={ok.map(([k, v]) => `${X(k)},${Y(v)}`).join(" ")} fill="none" stroke={color} strokeWidth="2" />
       {ok.map(([k, v]) => <circle key={k} cx={X(k)} cy={Y(v)} r="2" fill={color} />)}
-      <text x="4" y={H - 3} fontSize="10" fill="#8D97AB" style={{ fontFamily: "IBM Plex Mono" }}>{fmtShort(new Date(dates[0] + "T00:00:00Z"))}</text>
-      <text x={W - 4} y={H - 3} fontSize="10" fill="#8D97AB" textAnchor="end" style={{ fontFamily: "IBM Plex Mono" }}>{fmtShort(new Date(dates[dates.length - 1] + "T00:00:00Z"))}</text>
-      <text x="4" y="10" fontSize="10" fill="#8D97AB" style={{ fontFamily: "IBM Plex Mono" }}>HV/HH, dB</text>
+      <text x="4" y={H - 3} fontSize="10" fill="#A79C8A" style={{ fontFamily: "IBM Plex Mono" }}>{fmtShort(new Date(dates[0] + "T00:00:00Z"))}</text>
+      <text x={W - 4} y={H - 3} fontSize="10" fill="#A79C8A" textAnchor="end" style={{ fontFamily: "IBM Plex Mono" }}>{fmtShort(new Date(dates[dates.length - 1] + "T00:00:00Z"))}</text>
+      <text x="4" y="10" fontSize="10" fill="#A79C8A" style={{ fontFamily: "IBM Plex Mono" }}>HV/HH, dB</text>
     </svg>
   );
 }

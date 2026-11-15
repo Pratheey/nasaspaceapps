@@ -1,7 +1,7 @@
-// Still ground stays dark; motion glows. Sinking warm, rising cool.
-const ZERO = [30, 38, 56];
-const SINK = [ZERO, [84, 40, 66], [168, 58, 84], [240, 112, 90], [255, 196, 128]];
-const RISE = [ZERO, [28, 70, 94], [40, 132, 168], [95, 201, 224], [210, 244, 252]];
+// Still ground stays dark soil; sinking turns brown to sand, rising turns river blue.
+const ZERO = [44, 37, 28];
+const SINK = [ZERO, [86, 54, 30], [140, 84, 42], [201, 133, 74], [238, 200, 146]];
+const RISE = [ZERO, [32, 58, 70], [48, 102, 130], [111, 168, 196], [196, 226, 238]];
 
 function ramp(stops, t) {
   t = Math.max(0, Math.min(1, t));
@@ -16,9 +16,9 @@ export const legendGradient = () =>
   `linear-gradient(to right, ${[...SINK].reverse().map(rgb).concat(RISE.slice(1).map(rgb)).join(",")})`;
 
 export const LABEL_COLORS = {
-  1: [240, 112, 90],  // seasonal + sinking
-  2: [95, 201, 224],  // seasonal, no resolved trend
-  3: [169, 139, 240], // sinking, seasonal uncertain
+  1: [201, 133, 74],  // seasonal + sinking
+  2: [111, 168, 196], // seasonal, no resolved trend
+  3: [160, 139, 184], // sinking, seasonal uncertain
 };
 
 // Radar fringes: one full color cycle per half wavelength of NISAR's L-band radar.

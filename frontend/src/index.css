@@ -3,18 +3,18 @@
 /* The Breathing Ground: night graphite, motion that glows, an azure "signal" accent for
    everything you can touch. Sinking glows warm, rising glows cool, still ground stays dark. */
 @theme {
-  --color-space: #0F1420;
-  --color-deck: #151C2B;
-  --color-deck-2: #1C2538;
-  --color-hair: rgba(170, 190, 230, 0.14);
-  --color-hair-2: rgba(170, 190, 230, 0.28);
-  --color-ink: #E6EAF2;
-  --color-mute: #8D97AB;
-  --color-accent: #6FA8FF;
-  --color-accent-2: #A9CBFF;
-  --color-sink: #F0705A;
-  --color-rise: #5FC9E0;
-  --color-violet: #A98BF0;
+  --color-space: #1B1712;
+  --color-deck: #221D16;
+  --color-deck-2: #2C251C;
+  --color-hair: rgba(237, 230, 218, 0.14);
+  --color-hair-2: rgba(237, 230, 218, 0.28);
+  --color-ink: #EDE6DA;
+  --color-mute: #A79C8A;
+  --color-accent: #8FA66B;
+  --color-accent-2: #B9CB99;
+  --color-sink: #C9854A;
+  --color-rise: #6FA8C4;
+  --color-violet: #A08BB8;
   --font-display: "Saira Semi Condensed", "Arial Narrow", sans-serif;
   --font-sans: "Public Sans", system-ui, sans-serif;
   --font-mono: "IBM Plex Mono", ui-monospace, monospace;
@@ -30,10 +30,10 @@ body {
   -webkit-font-smoothing: antialiased;
 }
 :focus-visible { outline: 2px solid var(--color-accent); outline-offset: 2px; }
-::selection { background: rgba(111, 168, 255, 0.35); }
+::selection { background: rgba(143, 166, 107, 0.35); }
 
 /* thin scrollbars on the instrument panels */
-.scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(170,190,230,0.25) transparent; }
+.scroll-thin { scrollbar-width: thin; scrollbar-color: rgba(237,230,218,0.25) transparent; }
 
 /* SVG chart styling lives here because it is shared by several charts */
 .chart text { font: 400 11px var(--font-sans); fill: var(--color-mute); }
@@ -50,7 +50,7 @@ body {
 .chart .band { fill: var(--color-accent); opacity: 0.08; }
 .chart .cursor { stroke: var(--color-accent); stroke-width: 2; }
 .chart .miss { stroke: var(--color-mute); stroke-width: 1.5; }
-.chart .glow { filter: drop-shadow(0 0 4px rgba(240,112,90,0.55)); }
+.chart .glow { filter: drop-shadow(0 0 4px rgba(201,133,74,0.55)); }
 
 /* the one orchestrated moment: title card resolves into the live map */
 @keyframes ticker { from { transform: translateX(0); } to { transform: translateX(-50%); } }
@@ -60,7 +60,7 @@ body {
 @keyframes rise-in { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: none; } }
 .intro-scan::after {
   content: ""; position: absolute; inset: 0; pointer-events: none;
-  background: linear-gradient(to bottom, transparent 0%, rgba(111,168,255,0.10) 48%, rgba(111,168,255,0.22) 50%, transparent 52%);
+  background: linear-gradient(to bottom, transparent 0%, rgba(143,166,107,0.10) 48%, rgba(143,166,107,0.22) 50%, transparent 52%);
   animation: scan 3.2s cubic-bezier(.5,0,.5,1) 1;
 }
 .intro-in > * { animation: rise-in 0.9s cubic-bezier(.2,.7,.2,1) both; }
@@ -71,9 +71,9 @@ body {
 .maplibregl-ctrl-group { background: var(--color-deck) !important; border: 1px solid var(--color-hair-2); border-radius: 6px !important; box-shadow: none !important; }
 .maplibregl-ctrl-group button + button { border-top: 1px solid var(--color-hair-2) !important; }
 .maplibregl-ctrl-group button .maplibregl-ctrl-icon { filter: invert(0.9); }
-.maplibregl-ctrl-attrib { background: rgba(15,20,32,0.75) !important; color: var(--color-mute) !important; }
+.maplibregl-ctrl-attrib { background: rgba(27,23,18,0.75) !important; color: var(--color-mute) !important; }
 .maplibregl-ctrl-attrib a { color: var(--color-mute) !important; }
-.maplibregl-ctrl-scale { background: rgba(15,20,32,0.7); color: var(--color-mute); border-color: var(--color-mute); font: 11px var(--font-sans); }
+.maplibregl-ctrl-scale { background: rgba(27,23,18,0.7); color: var(--color-mute); border-color: var(--color-mute); font: 11px var(--font-sans); }
 
 @media (prefers-reduced-motion: reduce) {
   *, *::after { animation: none !important; transition: none !important; }

@@ -45,7 +45,7 @@ export default function FieldsScene() {
             </p>
             <div className="mt-7 flex flex-wrap gap-x-10 gap-y-5">
               <div><p className="font-mono text-[44px] leading-none text-rise">{pct(t.nisar.usable, t.nisar.checks)}</p><p className="text-[14px] text-mute mt-2">NISAR, {t.nisar.usable} of {t.nisar.checks} field checks</p></div>
-              <div><p className="font-mono text-[44px] leading-none text-[#A98BF0]">{pct(t.s1.usable, t.s1.checks)}</p><p className="text-[14px] text-mute mt-2">Sentinel-1, {t.s1.usable} of {t.s1.checks}</p></div>
+              <div><p className="font-mono text-[44px] leading-none text-[#A08BB8]">{pct(t.s1.usable, t.s1.checks)}</p><p className="text-[14px] text-mute mt-2">Sentinel-1, {t.s1.usable} of {t.s1.checks}</p></div>
             </div>
             <p className="text-[14px] text-mute mt-6 leading-relaxed">{cov.caveat} A few pairs span 24 days where a pass was missing.</p>
           </div>
@@ -95,7 +95,7 @@ function PolChart({ pol }) {
             </g>
           );
         })}
-        {hk != null && <line x1={X(hk)} x2={X(hk)} y1={P.t} y2={H - P.b} stroke="#A9CBFF" strokeOpacity=".5" strokeDasharray="3 3" />}
+        {hk != null && <line x1={X(hk)} x2={X(hk)} y1={P.t} y2={H - P.b} stroke="#B9CB99" strokeOpacity=".5" strokeDasharray="3 3" />}
       </svg>
       <div className="flex flex-wrap items-center gap-x-6 gap-y-2 mt-2 text-[14px] min-h-[28px]">
         {hk != null && <span className="font-mono text-[13px] text-accent-2">{short(pol.dates[hk])}</span>}
@@ -123,9 +123,9 @@ function CovChart({ cov }) {
           const x = P.l + k * bw, a = p.nisar_usable / p.fields, b = p.s1_usable / p.fields;
           return (
             <g key={p.nisar_start} onPointerEnter={() => setHk(k)} onClick={() => setHk(k)}>
-              <rect x={x} y={P.t} width={bw} height={H - P.t - P.b} fill={hk === k ? "rgba(111,168,255,.08)" : "transparent"} />
-              <rect x={x + bw * 0.12} y={Y(a)} width={bw * 0.36} height={Y(0) - Y(a)} rx="1.5" fill="#5FC9E0" />
-              <rect x={x + bw * 0.52} y={Y(b)} width={bw * 0.36} height={Y(0) - Y(b)} rx="1.5" fill="#A98BF0" />
+              <rect x={x} y={P.t} width={bw} height={H - P.t - P.b} fill={hk === k ? "rgba(143,166,107,.08)" : "transparent"} />
+              <rect x={x + bw * 0.12} y={Y(a)} width={bw * 0.36} height={Y(0) - Y(a)} rx="1.5" fill="#6FA8C4" />
+              <rect x={x + bw * 0.52} y={Y(b)} width={bw * 0.36} height={Y(0) - Y(b)} rx="1.5" fill="#A08BB8" />
               {k % 3 === 0 && <text x={x + bw / 2} y={H - 16} textAnchor="middle">{short(p.nisar_start)}</text>}
             </g>
           );
@@ -135,10 +135,10 @@ function CovChart({ cov }) {
         {h ? (
           <p><span className="font-mono text-[13px] text-accent-2">{short(h.nisar_start)} → {short(h.nisar_end)}</span>
             <span className="text-rise ml-3">NISAR {h.nisar_usable} of {h.fields}</span>
-            <span className="text-[#A98BF0] ml-3">Sentinel-1 {h.s1_usable} of {h.fields}</span>
+            <span className="text-[#A08BB8] ml-3">Sentinel-1 {h.s1_usable} of {h.fields}</span>
             <span className="block text-mute text-[12.5px] mt-0.5">Sentinel-1 pair {short(h.s1_start)} → {short(h.s1_end)}</span></p>
         ) : (
-          <p className="flex gap-6"><span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-rise" />NISAR</span><span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#A98BF0]" />Sentinel-1</span><span className="text-mute">Point at a pair for its dates.</span></p>
+          <p className="flex gap-6"><span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-rise" />NISAR</span><span className="inline-flex items-center gap-2"><span className="w-3 h-3 rounded-sm bg-[#A08BB8]" />Sentinel-1</span><span className="text-mute">Point at a pair for its dates.</span></p>
         )}
       </div>
     </div>

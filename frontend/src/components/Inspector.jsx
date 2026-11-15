@@ -97,7 +97,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         <dl className="divide-y divide-hair">
           <div className="pb-3">
             <dt className="text-[13px] text-mute">Change, first to last date</dt>
-            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#F0705A" : "#E6EAF2" }}>{cm(net)}</dd>
+            <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#C9854A" : "#EDE6DA" }}>{cm(net)}</dd>
             <dd className="text-[12.5px] text-mute mt-1">{pm(G.net_change_sigma_m[i])}</dd>
           </div>
           <div className="py-3">
@@ -120,7 +120,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </div>
       )}
 
-      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 max-sm:-mx-4 max-sm:px-4 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
+      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 max-sm:-mx-4 max-sm:px-4 pt-3 pb-0 mt-5 bg-[#201B15]/95 backdrop-blur border-b border-hair flex gap-1">
         {TABS.map(([id, name, Icon]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
             className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
@@ -134,7 +134,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       {tab === "record" && <>
       <Section title="Every measurement here" aside={
         <label className="inline-flex items-center gap-2 text-[13px] text-ink/85 cursor-pointer">
-          <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#6FA8FF] w-4 h-4" />
+          <input type="checkbox" checked={S.split} onChange={(e) => set({ split: e.target.checked })} className="accent-[#8FA66B] w-4 h-4" />
           Split trend and seasonal
         </label>}>
         <Chart dates={D.dates} values={v} tYears={D.tYears} fit={(t) => fitAt(D, i, t)} split={S.split} gps={gps} compare={compare}
@@ -256,7 +256,7 @@ function Leaders({ D, actions }) {
             <button onClick={() => actions.select(i, { fly: true })} className="w-full flex items-center gap-3 py-2 text-left hover:bg-deck-2/60 rounded px-1 -mx-1 group">
               <span className="font-display text-[15px] text-mute w-4">{n + 1}</span>
               <span className="flex-1 text-[13.5px] group-hover:text-accent-2">{name(i)}</span>
-              <Spark v={D.values[i] || []} color={tab === "sink" ? "#F0705A" : "#5FC9E0"} />
+              <Spark v={D.values[i] || []} color={tab === "sink" ? "#C9854A" : "#6FA8C4"} />
               <span className={`font-display text-[16px] font-semibold w-[72px] text-right ${tab === "sink" ? "text-sink" : "text-rise"}`}>{tab === "sink" ? cm(val) : mm(val)}</span>
             </button>
           </li>
@@ -291,9 +291,9 @@ function Overview({ D, actions }) {
     const ymax = Math.max(...p.map((q) => q.ay)) * 1.1;
     const X = (v) => P.l + ((v - xmin) / (xmax - xmin)) * (W - P.l - P.r);
     const Y = (v) => H - P.b - (v / ymax) * (H - P.t - P.b);
-    x.strokeStyle = "rgba(170,190,230,0.25)"; x.lineWidth = 1.5;
+    x.strokeStyle = "rgba(237,230,218,0.25)"; x.lineWidth = 1.5;
     x.beginPath(); x.moveTo(X(0), P.t); x.lineTo(X(0), H - P.b); x.moveTo(P.l, H - P.b); x.lineTo(W - P.r, H - P.b); x.stroke();
-    x.fillStyle = "#8D97AB"; x.font = "22px 'Public Sans', sans-serif";
+    x.fillStyle = "#A79C8A"; x.font = "22px 'Public Sans', sans-serif";
     x.textAlign = "center"; x.fillText("Fitted trend, cm a year (sinking to the left)", (P.l + W - P.r) / 2, H - 14);
     x.save(); x.translate(24, (P.t + H - P.b) / 2); x.rotate(-Math.PI / 2); x.fillText("Seasonal size, mm", 0, 0); x.restore();
     x.fillText(xmin.toFixed(0), X(xmin) + 8, H - P.b + 26); x.fillText("0", X(0), H - P.b + 26);

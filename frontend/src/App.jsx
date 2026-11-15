@@ -333,7 +333,7 @@ function Explorer({ D, onStory, startTour }) {
 
       {cmd && <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />}
       {limits && <Limits D={D} onClose={() => setLimits(false)} />}
-      {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(111,168,255,.45)]">{flash}</div>}
+      {flash && <div role="status" className="fixed left-1/2 bottom-8 -translate-x-1/2 z-50 rounded-lg bg-accent text-space font-semibold px-4 py-2.5 shadow-[0_0_30px_rgba(143,166,107,.45)]">{flash}</div>}
     </div>
   );
 }

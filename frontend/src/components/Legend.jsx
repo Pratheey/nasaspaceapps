@@ -4,7 +4,7 @@ import { viewTitle } from "../lib/view.js";
 import { RELIEF_H } from "./MapView.jsx";
 
 const Hatch = () => (
-  <span className="inline-block w-4 h-3 rounded-sm border border-hair-2 bg-[repeating-linear-gradient(-45deg,transparent_0_3px,rgba(170,190,230,.5)_3px_4px)]" />
+  <span className="inline-block w-4 h-3 rounded-sm border border-hair-2 bg-[repeating-linear-gradient(-45deg,transparent_0_3px,rgba(237,230,218,.5)_3px_4px)]" />
 );
 
 export default function Legend({ D, S, domain }) {

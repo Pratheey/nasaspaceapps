@@ -18,13 +18,13 @@ const BASEMAP = {
   glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
   sources: { basemap: { type: "vector", url: "https://tiles.openfreemap.org/planet" } },
   layers: [
-    { id: "bg", type: "background", paint: { "background-color": "#0F1420" } },
-    { id: "water", type: "fill", source: "basemap", "source-layer": "water", paint: { "fill-color": "#162740" } },
-    { id: "waterway", type: "line", source: "basemap", "source-layer": "waterway", paint: { "line-color": "#213852", "line-width": 1.2 } },
+    { id: "bg", type: "background", paint: { "background-color": "#1B1712" } },
+    { id: "water", type: "fill", source: "basemap", "source-layer": "water", paint: { "fill-color": "#1E3340" } },
+    { id: "waterway", type: "line", source: "basemap", "source-layer": "waterway", paint: { "line-color": "#2C4E5E", "line-width": 1.2 } },
     {
       id: "roads", type: "line", source: "basemap", "source-layer": "transportation",
       filter: ["in", ["get", "class"], ["literal", ["motorway", "trunk", "primary", "secondary", "tertiary", "minor"]]],
-      paint: { "line-color": "#39465b", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.7, 14, 2.2] },
+      paint: { "line-color": "#4A4236", "line-width": ["interpolate", ["linear"], ["zoom"], 8, 0.7, 14, 2.2] },
     },
     {
       id: "places", type: "symbol", source: "basemap", "source-layer": "place",
@@ -34,7 +34,7 @@ const BASEMAP = {
         "text-font": ["Noto Sans Regular"],
         "text-size": ["interpolate", ["linear"], ["zoom"], 8, 11, 13, 15],
       },
-      paint: { "text-color": "#c0cbdb", "text-halo-color": "#101724", "text-halo-width": 1.5 },
+      paint: { "text-color": "#CFC4B0", "text-halo-color": "#1B1712", "text-halo-width": 1.5 },
     },
   ],
 };
@@ -90,7 +90,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     const r0 = Math.max(0, Math.floor((g.lat_max - nw.lat) / g.step_deg)), r1 = Math.min(g.nrows - 1, Math.floor((g.lat_max - se.lat) / g.step_deg));
     x.save();
     x.beginPath(); x.arc(pt.x, pt.y, r, 0, 6.283); x.clip();
-    x.fillStyle = "rgba(10,14,24,0.92)"; x.fillRect(pt.x - r, pt.y - r, 2 * r, 2 * r);
+    x.fillStyle = "rgba(20,17,13,0.92)"; x.fillRect(pt.x - r, pt.y - r, 2 * r, 2 * r);
     for (let row = r0; row <= r1; row++) for (let col = c0; col <= c1; col++) {
       const i = row * g.ncols + col;
       const v = S2.mode === "labels" || S2.mode === "fringe" ? D.grid.net_change_m[i] : cellValue(D, S2, i);
@@ -102,9 +102,9 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       x.fillRect(p1.x, p1.y, p2.x - p1.x + 0.6, p2.y - p1.y + 0.6);
     }
     x.restore();
-    x.strokeStyle = "#A9CBFF"; x.lineWidth = 2; x.shadowColor = "#6FA8FF"; x.shadowBlur = 18;
+    x.strokeStyle = "#B9CB99"; x.lineWidth = 2; x.shadowColor = "#8FA66B"; x.shadowBlur = 18;
     x.beginPath(); x.arc(pt.x, pt.y, r, 0, 6.283); x.stroke(); x.shadowBlur = 0;
-    x.font = "500 11px 'IBM Plex Mono', monospace"; x.fillStyle = "#A9CBFF"; x.textAlign = "center";
+    x.font = "500 11px 'IBM Plex Mono', monospace"; x.fillStyle = "#B9CB99"; x.textAlign = "center";
     x.fillText("radar fringes, 11.9 cm per color cycle", pt.x, pt.y + r + 16);
   };
 
@@ -116,7 +116,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       if (!ll) { probe.current?.remove(); probe.current = null; return; }
       if (!probe.current) {
         const d = document.createElement("div");
-        d.className = "w-3 h-3 rounded-full bg-accent ring-2 ring-space shadow-[0_0_12px_#6FA8FF]";
+        d.className = "w-3 h-3 rounded-full bg-accent ring-2 ring-space shadow-[0_0_12px_#8FA66B]";
         probe.current = new maplibregl.Marker({ element: d }).setLngLat(ll).addTo(map.current);
       } else probe.current.setLngLat(ll);
     },
@@ -153,29 +153,29 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       m.addSource("grid", { type: "image", coordinates: coords });
       m.addLayer({ id: "grid", type: "raster", source: "grid", paint: { "raster-opacity": 0.9, "raster-resampling": "nearest", "raster-fade-duration": 0 } }, "places");
       m.addSource("frame", { type: "geojson", data: { type: "Feature", geometry: { type: "Polygon", coordinates: [[...coords, coords[0]]] } } });
-      m.addLayer({ id: "frame", type: "line", source: "frame", paint: { "line-color": "#6FA8FF", "line-width": 1, "line-opacity": 0.55, "line-dasharray": [4, 3] } });
+      m.addLayer({ id: "frame", type: "line", source: "frame", paint: { "line-color": "#8FA66B", "line-width": 1, "line-opacity": 0.55, "line-dasharray": [4, 3] } });
       m.addSource("relief", { type: "geojson", data: emptyFC() });
       m.addLayer({ id: "relief", type: "fill-extrusion", source: "relief", layout: { visibility: "none" },
         paint: { "fill-extrusion-color": ["get", "c"], "fill-extrusion-height": ["get", "h"], "fill-extrusion-base": 0, "fill-extrusion-opacity": 0.96, "fill-extrusion-vertical-gradient": true } });
       for (const id of ["sel", "pin"]) m.addSource(id, { type: "geojson", data: emptyFC() });
-      m.addLayer({ id: "sel-glow", type: "line", source: "sel", paint: { "line-color": "#6FA8FF", "line-width": 7, "line-opacity": 0.35, "line-blur": 4 } });
-      m.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#A9CBFF", "line-width": 2 } });
-      m.addLayer({ id: "pin", type: "line", source: "pin", paint: { "line-color": "#A98BF0", "line-width": 2, "line-dasharray": [2, 1.5] } });
+      m.addLayer({ id: "sel-glow", type: "line", source: "sel", paint: { "line-color": "#8FA66B", "line-width": 7, "line-opacity": 0.35, "line-blur": 4 } });
+      m.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#B9CB99", "line-width": 2 } });
+      m.addLayer({ id: "pin", type: "line", source: "pin", paint: { "line-color": "#A08BB8", "line-width": 2, "line-dasharray": [2, 1.5] } });
       m.addSource("fields", { type: "geojson", data: emptyFC(), promoteId: "field_id" });
-      const crop = ["match", ["get", "crop"], ...Object.entries(CROP_COLORS).flat(), "#8D97AB"];
+      const crop = ["match", ["get", "crop"], ...Object.entries(CROP_COLORS).flat(), "#A79C8A"];
       m.addLayer({ id: "fields-fill", type: "fill", source: "fields", layout: { visibility: "none" }, paint: { "fill-color": crop, "fill-opacity": ["case", ["boolean", ["feature-state", "on"], false], 0.75, 0.42] } });
       m.addLayer({ id: "fields-line", type: "line", source: "fields", layout: { visibility: "none" }, paint: { "line-color": crop, "line-width": 1.6 } });
       loadRadar().then((R) => { if (R && map.current === m) m.getSource("fields")?.setData(R.fields); });
       m.addSource("prof", { type: "geojson", data: emptyFC() });
-      m.addLayer({ id: "prof-glow", type: "line", source: "prof", paint: { "line-color": "#6FA8FF", "line-width": 8, "line-opacity": 0.25, "line-blur": 5 } });
-      m.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#A9CBFF", "line-width": 2.2 } });
+      m.addLayer({ id: "prof-glow", type: "line", source: "prof", paint: { "line-color": "#8FA66B", "line-width": 8, "line-opacity": 0.25, "line-blur": 5 } });
+      m.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#B9CB99", "line-width": 2.2 } });
 
       stationEls.current = D.stations.map((st) => {
         const btn = document.createElement("button");
         btn.className = "group flex items-center gap-1 -translate-x-1.5";
         btn.setAttribute("aria-label", `GPS station ${st.station}${st.role === "reference" ? ", reference" : ""}`);
         const point = document.createElement("span");
-        point.className = `block w-3 h-3 ${st.role === "reference" ? "rotate-45" : "rounded-full"} border-2 border-accent-2 bg-space group-hover:bg-accent shadow-[0_0_10px_rgba(111,168,255,.6)]`;
+        point.className = `block w-3 h-3 ${st.role === "reference" ? "rotate-45" : "rounded-full"} border-2 border-accent-2 bg-space group-hover:bg-accent shadow-[0_0_10px_rgba(143,166,107,.6)]`;
         const label = document.createElement("span");
         label.className = "font-display text-[12px] font-semibold tracking-wide text-ink bg-space/85 px-1.5 py-0.5 rounded border border-hair-2";
         label.textContent = st.station;
@@ -243,7 +243,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
         }
       }
       x.putImageData(img, 0, 0);
-      x.strokeStyle = "rgba(170,190,230,0.35)"; x.lineWidth = 1;
+      x.strokeStyle = "rgba(237,230,218,0.35)"; x.lineWidth = 1;
       x.beginPath();
       hatch.forEach((i) => { const cx = (i % g.ncols) * PX, cy = Math.floor(i / g.ncols) * PX; x.moveTo(cx, cy + PX); x.lineTo(cx + PX, cy); });
       x.stroke();
@@ -324,7 +324,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
         let mk = profMarkers.current.find((x) => x._key === key);
         if (!mk) {
           const d = document.createElement("div");
-          d.className = "w-6 h-6 rounded-full bg-accent text-space font-display font-bold text-[13px] grid place-items-center ring-2 ring-space cursor-grab shadow-[0_0_14px_#6FA8FF]";
+          d.className = "w-6 h-6 rounded-full bg-accent text-space font-display font-bold text-[13px] grid place-items-center ring-2 ring-space cursor-grab shadow-[0_0_14px_#8FA66B]";
           d.textContent = String(n + 1);
           mk = new maplibregl.Marker({ element: d, draggable: true }).setLngLat(P[key]).addTo(m);
           mk._key = key;
@@ -353,13 +353,13 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       <canvas ref={lens} className="absolute inset-0 w-full h-full pointer-events-none z-[4]" aria-hidden="true" />
       {sx != null && (
         <div className="absolute top-0 bottom-0 z-[5] w-0" style={{ left: sx }}>
-          <div className="absolute inset-y-0 -left-px w-[2px] bg-accent shadow-[0_0_14px_#6FA8FF]" />
+          <div className="absolute inset-y-0 -left-px w-[2px] bg-accent shadow-[0_0_14px_#8FA66B]" />
           <button onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} onPointerMove={dragSwipe}
             onKeyDown={(e) => {
               const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
               if (step) { e.preventDefault(); e.stopPropagation(); moveSwipe(S.swipe + step * D.meta.grid.step_deg); }
             }} aria-label="Drag or use arrow keys to compare date A and date B"
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize touch-none shadow-[0_0_20px_rgba(111,168,255,.6)] font-display font-bold text-[13px]">A|B</button>
+            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize touch-none shadow-[0_0_20px_rgba(143,166,107,.6)] font-display font-bold text-[13px]">A|B</button>
           <span className="absolute top-[64px] right-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">A: {fmtShort(D.dates[S.k1])}</span>
           <span className="absolute top-[64px] left-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">B: {fmtShort(D.dates[S.k2])}</span>
         </div>

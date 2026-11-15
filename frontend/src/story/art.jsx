@@ -45,7 +45,7 @@ export function Starfield({ className = "", density = 260 }) {
       x.clearRect(0, 0, W, H);
       stars.forEach((s) => {
         const a = 0.35 + 0.65 * (0.5 + 0.5 * Math.sin(t * s.s + s.p));
-        x.fillStyle = s.gold ? `rgba(169,203,255,${a})` : `rgba(220,230,255,${a * 0.8})`;
+        x.fillStyle = s.gold ? `rgba(185,203,153,${a})` : `rgba(237,230,218,${a * 0.8})`;
         x.beginPath(); x.arc(s.x, s.y, s.r, 0, 6.283); x.fill();
       });
       if (!reduceMotion) raf = requestAnimationFrame(draw);
@@ -69,10 +69,10 @@ export function SatelliteArt({ className = "" }) {
           <stop offset="1" stopColor="#8A6420" stopOpacity="0.35" />
         </radialGradient>
         <linearGradient id="panel" x1="0" x2="1">
-          <stop offset="0" stopColor="#1C2A4A" /><stop offset="1" stopColor="#2E4A7A" />
+          <stop offset="0" stopColor="#2C251C" /><stop offset="1" stopColor="#4A4236" />
         </linearGradient>
         <linearGradient id="beam" x1="0" x2="0" y1="0" y2="1">
-          <stop offset="0" stopColor="#6FA8FF" stopOpacity="0.35" /><stop offset="1" stopColor="#6FA8FF" stopOpacity="0" />
+          <stop offset="0" stopColor="#8FA66B" stopOpacity="0.35" /><stop offset="1" stopColor="#8FA66B" stopOpacity="0" />
         </linearGradient>
       </defs>
       <polygon points="250,250 120,420 470,420" fill="url(#beam)" />
@@ -84,10 +84,10 @@ export function SatelliteArt({ className = "" }) {
       <line x1="300" y1="190" x2="455" y2="120" stroke="#C9D2E4" strokeWidth="3" />
       <line x1="300" y1="190" x2="455" y2="120" stroke="#fff" strokeOpacity="0.3" strokeWidth="1" />
       <g transform="translate(455 98)">
-        <rect x="-26" y="-14" width="52" height="46" rx="3" fill="#2A3346" stroke="#8D97AB" />
+        <rect x="-26" y="-14" width="52" height="46" rx="3" fill="#3A3228" stroke="#A79C8A" />
         <rect x="-26" y="-14" width="52" height="10" fill="#E2B04A" opacity="0.8" />
-        <rect x="26" y="0" width="120" height="26" fill="url(#panel)" stroke="#5FC9E0" strokeOpacity="0.5" />
-        {[1, 2, 3, 4, 5].map((i) => <line key={i} x1={26 + i * 20} x2={26 + i * 20} y1="0" y2="26" stroke="#5FC9E0" strokeOpacity="0.35" />)}
+        <rect x="26" y="0" width="120" height="26" fill="url(#panel)" stroke="#6FA8C4" strokeOpacity="0.5" />
+        {[1, 2, 3, 4, 5].map((i) => <line key={i} x1={26 + i * 20} x2={26 + i * 20} y1="0" y2="26" stroke="#6FA8C4" strokeOpacity="0.35" />)}
       </g>
     </svg>
   );
