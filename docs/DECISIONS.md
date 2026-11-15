@@ -277,3 +277,16 @@ at the hour-8 check-in.** Builds on D5.
 - **Map loads without the tile server:** the map starts from a local style and adds the street basemap
   only if it answers, so blocked networks (the artifact host, some venues) still get the map.
 
+## D13: 2026-11-15: Steven's branch reconciled after PR #25
+**Status: maintenance reconciliation, requested by Steven.**
+- PR #25 was squash-merged as `f6c14b8`; its complete file tree is identical to the old
+  `steven/project-bugfixes` head `1aa84b6`. Those fixes are already in main. The old branch's
+  apparent divergence comes from the squash merge and later work on main, not missing fixes.
+- Preserve that head as `steven/project-bugfixes-before-sync-20261115`, then base the working
+  branch on current main without replaying the already-integrated commits. The earlier
+  PROJECT status asking for the original fixes to be merged is obsolete.
+- Clarify the radar handoff: primary slant/LOS displacement, derived vertical/east motion,
+  and HH/HV backscatter are different products. The current vertical exporter supports GPS Up;
+  the original no-GPS export was a historical smoke check. D7/D9 limits and frozen results stay
+  unchanged; this reconciliation does not add a vertical website switch or regenerate data.
+

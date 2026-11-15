@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 8. **Last updated:** 2026-11-15 13:50 by the Integrator: final lane status, hidden-sinking and motion-pattern views, OPERA history, drinking-water wells context (D12). Earlier: D11 control box.
+**Version:** 9. **Last updated:** 2026-11-15: Steven's branch reconciliation confirms the fixes were already merged in PR #25 (D13). Earlier: final lane status, hidden-sinking and motion-pattern views, OPERA history, drinking-water wells context (D12); D11 control box.
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
@@ -78,7 +78,7 @@ Full hour-by-hour plan: `docs/PLAN.md`.
 |---|---|---|
 | nisar | Pratheek | Done: stack v3 frozen, unwrapping persistence check, self-check, OPERA history (H-20), independent check of app numbers. Open: document the control box in `data/README.md` |
 | analysis | Ismail | Done: app data on stack v3, trend guard, labels, canal profile, `NUMBERS.md`, second check. Open: reword the meta note on the north-east box (D11) |
-| radar | Steven | Done: polarization, coverage vs Sentinel-1, vertical/east cross-check, sign-off (D9). Open: rebase `steven/project-bugfixes` on main before merging (it conflicts) |
+| radar | Steven | Done: polarization, coverage vs Sentinel-1, vertical/east cross-check, sign-off (D9), and project bug fixes merged in [PR #25](https://github.com/Pratheey/nasaspaceapps/pull/25). `steven/project-bugfixes` reconciled with main (D13). Optional: vertical app view remains a cross-check, separate from the primary LOS map. |
 | gps | Daniel | Done: 13 held-out stations, residuals, uncertainty (σ 1.84 cm per pair), canals. Open: second canal (Delta-Mendota) if a source works |
 | frontend | Avi | Open: check the public site on laptop and phone after the last merge |
 | integrator | Ryan | Done: contracts v1.2, D2–D12, deploy, AI-use disclosure, README and roles. Open: demo video, number check rows 1–4 and 15–22, submit before 23:59 |
