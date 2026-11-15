@@ -5,7 +5,7 @@ import { NasaImage, Starfield, SatelliteArt, IMAGES } from "./art.jsx";
 import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
 import { Numbers } from "./Game.jsx";
-import { MEDIA, NasaVideo, MaybeImage, MissionPatch, Telemetry, Chirp, RadarPing } from "./Space.jsx";
+import { MEDIA, NasaVideo, MaybeImage, Telemetry, Chirp, RadarPing } from "./Space.jsx";
 import FieldsScene from "./Fields.jsx";
 import { demoStations, lieStation, AGREEMENT } from "../lib/demo.js";
 import { Chapter, MissionTimeline, WatchNasa, SeenWall } from "./Media.jsx";
@@ -131,7 +131,7 @@ function Hero({ D, onExplore }) {
             </div>
           ))}
         </dl>
-        <p className="mt-3 text-[11.5px] text-mute">Background: NISAR animation, NASA Scientific Visualization Studio. Artist's concept: NASA/JPL-Caltech.</p>
+        <p className="mt-3 text-[11.5px] text-mute">Background: NISAR animation, NASA Scientific Visualization Studio (our AI-assisted drawing if it can't load).</p>
       </div>
     </section>
   );
@@ -186,6 +186,7 @@ function PoleScene() {
             <line x1="0" x2="420" y1={ground} y2={ground} stroke="#D08B5B" strokeWidth="2.5" />
             <line x1="40" x2="40" y1={top} y2={ground} stroke="#C3D0B3" strokeDasharray="4 4" />
             <text x="48" y={(top + ground) / 2} fontFamily="Saira Semi Condensed" fontWeight="600" fontSize="22" fill="#C3D0B3">{metres} m</text>
+          <text x={412} y={H - 6} textAnchor="end" fontSize="11" fill="#ffffff" fillOpacity="0.6" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted illustration</text>
           </svg>
         </div>
       </div>
@@ -419,7 +420,7 @@ function InstrumentScene({ D }) {
             <NasaImage srcs={IMAGES.orbit} alt="Artist's concept of NISAR in orbit" className="absolute inset-0 w-full h-full object-cover"
               fallback={<div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,#1d3a5c,#0F1420_65%)]"><SatelliteArt className="w-[85%]" /></div>} />
             <div className="absolute inset-0 bg-gradient-to-t from-space/70 to-transparent" />
-            <p className="absolute left-4 bottom-3 text-[11.5px] text-ink/70">NISAR in orbit, artist's concept. NASA/JPL-Caltech.</p>
+            <p className="absolute left-4 bottom-3 text-[11.5px] text-ink/70">NISAR in orbit: NASA/JPL-Caltech artist's concept (our AI-assisted drawing if the NASA image can't load).</p>
           </div>
           <div>
             <Chapter n={7} title="The instrument" />
@@ -684,7 +685,7 @@ function Credits({ D }) {
         </div>
         <div>
           <p className="text-ink font-semibold mb-2">Images</p>
-          <p className="leading-relaxed">NISAR artist's concepts: NASA/JPL-Caltech (public domain). Illustrations and charts: our own. Basemap data from OpenStreetMap contributors.</p>
+          <p className="leading-relaxed">NISAR videos and artist's concepts: NASA SVS and NASA/JPL-Caltech (public domain). Charts are drawn from our data. Drawings marked "AI-assisted illustration" and much of this site's code were made by the team with an AI assistant (Claude, by Anthropic); see the repository README. County lines: US Census Bureau. Basemap data: OpenStreetMap contributors.</p>
         </div>
       </div>
     </footer>

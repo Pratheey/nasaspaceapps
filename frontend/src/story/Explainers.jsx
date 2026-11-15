@@ -75,6 +75,7 @@ export function InsarExplainer() {
           <circle r="34" fill="none" stroke={rgb(fringe(-d / 100))} strokeWidth="8" strokeDasharray={`${((phase % 360) / 360) * 213.6} 213.6`} transform="rotate(-90)" />
           <text y="5" textAnchor="middle" fontSize="13" fill="#E6EAF2">{Math.round(phase % 360)}°</text>
         </g>
+        <text x={W - 8} y={14} textAnchor="end" fontSize="11" fill="#ffffff" fillOpacity="0.6" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted illustration</text>
       </svg>
       <label className="block mt-4">
         <span className="text-[14px] text-mute">Move the ground away from the satellite</span>
@@ -145,6 +146,7 @@ export function AquiferExplainer() {
         <text x="48" y={(70 + surf) / 2 + 5} fontSize="13" fill="#F0705A">{squeeze > 1 ? "surface dropped" : ""}</text>
         <text x={W - 10} y="24" textAnchor="end" fontSize="14" fill="#E6EAF2">{pressure > 0.6 ? "Wet season: water recharged" : pressure < 0.4 ? "Dry season: pumping" : ""}</text>
         <text x={W - 10} y={H - 10} textAnchor="end" fontSize="12" fill="#8D97AB">Concept diagram, not measured data. Purple: clay layers.</text>
+        <text x={W - 8} y={14} textAnchor="end" fontSize="11" fill="#ffffff" fillOpacity="0.6" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted illustration</text>
       </svg>
       <div className="flex flex-wrap items-center gap-3 mt-4">
         <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-1.5 rounded-full bg-accent text-space font-semibold text-sm px-4 py-2 hover:bg-accent-2">

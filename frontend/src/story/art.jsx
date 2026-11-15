@@ -89,6 +89,7 @@ export function SatelliteArt({ className = "", moving = false }) {
         <rect x="26" y="0" width="120" height="26" fill="url(#panel)" stroke="#5FC9E0" strokeOpacity="0.5" />
         {[1, 2, 3, 4, 5].map((i) => <line key={i} x1={26 + i * 20} x2={26 + i * 20} y1="0" y2="26" stroke="#5FC9E0" strokeOpacity="0.35" />)}
       </g>
+      <text x={592} y={412} textAnchor="end" fontSize="11" fill="#ffffff" fillOpacity="0.6" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted illustration</text>
     </svg>
   );
 }

@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
 import ToolsMenu from "./components/ToolsMenu.jsx";
 import Story, { Mark } from "./story/Story.jsx";
@@ -15,7 +15,7 @@ import { listen, stopListening, downloadCSV, writeHash, readHash } from "./lib/e
 import { tourSteps } from "./lib/tour.jsx";
 import CommandBar from "./components/CommandBar.jsx";
 
-const MODE_ICONS = { net: Layers, pair: CalendarRange, breathe: Activity, fringe: Waves, labels: Tags };
+const MODE_ICONS = { net: Layers, pair: CalendarRange, breathe: Activity, fringe: Waves, labels: Tags, hidden: EyeOff, patterns: Shapes };
 const PLACES = [
   { name: "Corcoran", ll: [-119.56, 36.098], z: 10.5 },
   { name: "Mendota", ll: [-120.381, 36.754], z: 10.5 },
@@ -190,7 +190,7 @@ function Explorer({ D, onStory, startTour }) {
       if (cmd || limits || e.defaultPrevented || e.target.closest?.("input, select, textarea, [contenteditable], [role='slider']") || e.metaKey || e.ctrlKey) return;
       const k = e.key.toLowerCase();
       if (k === " " && !e.target.closest?.("button, a")) { e.preventDefault(); togglePlay(); }
-      else if ("12345".includes(k) && k) setMode(MODES[+k - 1].id);
+      else if ("1234567".includes(k) && k) setMode(MODES[+k - 1].id);
       else if (k === "g") set({ gps: !s.gps });
       else if (k === "d") set({ relief: !s.relief, lens: false });
       else if (k === "l") set({ lens: !s.lens, relief: false });
@@ -235,7 +235,7 @@ function Explorer({ D, onStory, startTour }) {
             return (
               <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
                 className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[14px] transition-colors ${on ? "text-ink bg-deck-2 font-medium" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
-                <Icon size={15} className="shrink-0" /> <span>{m.name}</span>
+                <Icon size={15} className="shrink-0" /> <span className={on ? "" : "max-2xl:sr-only"}>{m.name}</span>
               </button>
             );
           })}

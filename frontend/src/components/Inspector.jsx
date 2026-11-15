@@ -199,6 +199,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             )}
         </Section>
       )}
+      {st && <HistoryCard station={st.station} />}
 
       <details open className="mt-6 rounded-lg border border-hair-2 bg-deck/60 open:bg-deck group">
         <summary className="cursor-pointer px-4 py-3 font-display text-[15.5px] font-semibold marker:text-accent">How we got these numbers</summary>
@@ -337,5 +338,38 @@ function Overview({ D, actions }) {
         <p className="text-[13px] text-mute mt-1">Only spots where the seasonal cycle is significant. Click a dot to open it.</p>
       </Section>
     </div>
+  );
+}
+
+
+// Before NISAR: Sentinel-1 history at this GPS station from OPERA DISP-S1 (context only, never mixed with NISAR).
+let historyCache = null;
+function HistoryCard({ station }) {
+  const [H, setH] = useState(null);
+  useEffect(() => {
+    historyCache ||= fetch("./context/opera_history.json").then((r) => (r.ok ? r.json() : null)).catch(() => null);
+    historyCache.then(setH);
+  }, []);
+  const h = H?.stations?.[station];
+  if (!h) return null;
+  const W = 380, Ht = 120, t = h.dates.map((d) => new Date(d + "T00:00:00Z").getTime());
+  const v = h.los_m.map((x) => x * 100), lo = Math.min(...v, 0), hi = Math.max(...v, 0);
+  const X = (k) => 34 + ((t[k] - t[0]) / (t[t.length - 1] - t[0])) * (W - 44), Y = (y) => 10 + ((hi - y) / (hi - lo || 1)) * (Ht - 30);
+  const years = []; for (let y = new Date(t[0]).getUTCFullYear() + 1; y <= new Date(t[t.length - 1]).getUTCFullYear(); y += 2) years.push(y);
+  const nisar0 = Date.UTC(2025, 10, 24);
+  return (
+    <Section title="Before NISAR">
+      <svg viewBox={`0 0 ${W} ${Ht}`} className="w-full h-auto chart" role="img" aria-label={`Sentinel-1 history at ${station}, ${h.dates[0]} to ${h.dates[h.dates.length - 1]}`}>
+        <line x1="34" x2={W - 10} y1={Y(0)} y2={Y(0)} className="grid" />
+        {nisar0 < t[t.length - 1] && <rect x={X(0) + ((nisar0 - t[0]) / (t[t.length - 1] - t[0])) * (W - 44)} y="8" width={W - 10 - (X(0) + ((nisar0 - t[0]) / (t[t.length - 1] - t[0])) * (W - 44))} height={Ht - 26} fill="rgba(157,176,138,.12)" />}
+        <polyline points={v.map((y, k) => `${X(k)},${Y(y)}`).join(" ")} fill="none" stroke="#9E9A92" strokeWidth="1.4" />
+        <text x="30" y={Y(hi) + 4} textAnchor="end">{hi.toFixed(0)}</text><text x="30" y={Y(lo) + 4} textAnchor="end">{lo.toFixed(0)}</text>
+        {years.map((y) => { const x = 34 + ((Date.UTC(y, 0, 1) - t[0]) / (t[t.length - 1] - t[0])) * (W - 44); return <text key={y} x={x} y={Ht - 6} textAnchor="middle">{y}</text>; })}
+      </svg>
+      <p className="text-[12.5px] text-mute leading-snug mt-1">
+        cm, Sentinel-1 (C-band, OPERA DISP-S1) line of sight relative to {H.reference_station}, which moves too. Shaded: the NISAR window.
+        Context only: a different satellite and viewing angle, so it is never compared value for value with NISAR.
+      </p>
+    </Section>
   );
 }

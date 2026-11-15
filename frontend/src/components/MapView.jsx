@@ -1,4 +1,5 @@
 import { CROP_COLORS, loadRadar } from "../lib/radar.js";
+import { motionPatterns, PATTERN_COLORS } from "../lib/patterns.js";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { fmtShort } from "../lib/fmt.js";
 import * as maplibregl from "maplibre-gl";
@@ -39,6 +40,17 @@ const BASEMAP = {
     },
   ],
 };
+// Start from a style that needs nothing from the network, so the map always loads (the artifact host
+// and some school networks block tile servers). The street basemap is added afterwards if it answers.
+const OFFLINE = {
+  version: 8,
+  sources: {},
+  layers: [BASEMAP.layers[0], { id: "places", type: "background", paint: { "background-opacity": 0 } }],
+};
+function addStreetBasemap(m) {
+  m.addSource("basemap", BASEMAP.sources.basemap);
+  for (const l of BASEMAP.layers.slice(1)) if (l.id !== "places") m.addLayer(l, "ctx-counties");
+}
 const cartoKey = import.meta.env.VITE_CARTO_BASEMAP_API_KEY?.trim();
 function cartoStyle(key) {
   const tiles = (style) => [`https://basemaps.cartocdn.com/${style}/{z}/{x}/{y}.png?key=${encodeURIComponent(key)}`];
@@ -132,7 +144,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       m = new maplibregl.Map({
         container: el.current,
         attributionControl: { compact: false },
-        style: cartoKey ? cartoStyle(cartoKey) : BASEMAP,
+        style: cartoKey ? cartoStyle(cartoKey) : OFFLINE,
         bounds: [[b.west, b.south], [b.east, b.north]],
         fitBoundsOptions: { padding: 40 },
         maxBounds: [[b.west - 1.6, b.south - 1.3], [b.east + 1.6, b.north + 1.3]],
@@ -156,6 +168,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       // Local context that needs no tile server: county lines, the California Aqueduct, towns.
       m.addSource("ctx-counties", { type: "geojson", data: "./context/counties.json" });
       m.addLayer({ id: "ctx-counties", type: "line", source: "ctx-counties", paint: { "line-color": "#ECE9E2", "line-opacity": 0.22, "line-width": 1 } }, "grid");
+      if (!cartoKey) { try { addStreetBasemap(m); } catch { /* streets stay off */ } }
       m.addSource("ctx-aqueduct", { type: "geojson", data: "./context/aqueduct.json" });
       m.addLayer({ id: "ctx-aqueduct", type: "line", source: "ctx-aqueduct", paint: { "line-color": "#6FA8C4", "line-opacity": 0.7, "line-width": 1.6 } });
       for (const [name, lon, lat] of TOWNS) {
@@ -247,7 +260,9 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       for (let i = 0; i < D.n; i++) {
         let col = null;
         if (S.mode === "labels") col = LABEL_COLORS[D.grid.label[i]] || null;
+        else if (S.mode === "patterns") { const g = motionPatterns(D).group[i]; col = g == null ? null : PATTERN_COLORS[g]; }
         else { const v = cellValue(D, S, i); if (v != null) col = S.mode === "fringe" ? fringe(v) : diverging(v, domain); }
+        if (!col && (S.mode === "hidden" || S.mode === "patterns") && D.grid.net_change_m[i] != null) col = [52, 50, 47]; // measured, but not in this view
         if (!col) { if (D.grid.n_valid_dates[i] > 0 || D.grid.label[i] === 0) hatch.push(i); continue; }
         const r0 = Math.floor(i / g.ncols) * PX, c0 = (i % g.ncols) * PX;
         for (let dy = 0; dy < PX; dy++) {
