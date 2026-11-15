@@ -67,3 +67,40 @@ requires at least half of a field's pixel centers to be valid. It converts each 
 dB and calculates HV/HH in dB as HV dB minus HH dB. The results include field values,
 crop-group medians per date, and a chart. Crop structure, moisture and field management
 can all affect radar backscatter.
+
+## Hour 33 · Descending track and two-track motion
+
+Use the processed Track 034 Frame 020 v2 ascending stack and Track 042 Frame 070
+descending stack from the team Drive. From the repository root with the shared Python
+requirements installed:
+
+```sh
+python radar/vertical.py --asc /path/to/stack_t034_f020_v2.nc \
+  --desc /path/to/stack_t042_f070.nc --out /path/to/hour_33
+```
+
+The NetCDF follows the H-16 analysis request and holds pair increments in metres on
+the ascending 80 m projected grid. Positive vertical means up and positive east–west
+means east. Both tracks have their P304 GPS tie removed so the inversion measures
+motion relative to P304. North motion is assumed zero. Descending pixels are sampled
+by nearest neighbour and ascending acquisitions use the nearest distinct descending
+acquisition within six days. The 25 matched acquisitions are one day apart. February 4
+has no match and is omitted. For longer intervals the script adds observed consecutive
+increments on each track and masks pixels missing any of those increments.
+
+Run with `--station-only` and no stack paths to reproduce the preliminary H-13
+check from Pratheek's published station samples and Daniel's cleaned GPS series.
+This mode does not generate a raster. `--descending-check-only` writes the GPS
+LOS residuals for each of the 27 descending pairs. P304 is excluded from residual
+statistics. CAHA has no descending coverage. GPS positions are seven-day medians
+with at least three cleaned daily solutions. P307's flagged transient is excluded
+from GPS east/up and its unresolved east step excludes P307 from the east comparison.
+
+The nearest raster pixels differ from held-out GPS by **2.35 cm RMS vertically**
+(12 stations) and **2.92 cm RMS east–west** (11 stations). The two-track solution
+is a provisional cross-check.
+
+- [H-13/H-16 handoff](results/hour_33/hour_33_handoff.md)
+- [Vertical and east–west map preview](results/hour_33/vertical_east_motion.png)
+- [GPS check by station](results/hour_33/vertical_gps_stations.csv)
+- [Vertical uncertainty for analysis](results/hour_33/vertical_uncertainty.json)

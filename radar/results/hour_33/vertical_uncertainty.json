@@ -1,0 +1,13 @@
+{
+  "sigma_pair_m": 0.023469606645587216,
+  "sigma_net_m": 0.024914849161694716,
+  "n_pair_stations": 12,
+  "n_net_stations": 4,
+  "n_pairs_used": 213,
+  "net_dates": [
+    "2025-11-24",
+    "2026-10-14"
+  ],
+  "method": "Root-mean-square of nearest-raster-pixel vertical minus cleaned GPS Up, both relative to P304.",
+  "note": "Provisional station cross-check. Pair observations at a site and across sites need not be independent. Net RMS uses only held-out stations with both GPS endpoints and every radar increment over the full window. It is not a regional accuracy estimate."
+}
