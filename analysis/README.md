@@ -118,26 +118,33 @@ model, same dates, stack v2: CAFP +0.6 vs GPS −2.2, CAHA +0.3 vs −4.0, P307 
 Seasonal amplitudes agree well at the demo stations (CAFP 26.3 vs 26.7 mm, CAHA 14.5 vs 16.6 mm,
 both peaking in February). The guard does not address the trend gap; it needs the data and gps lanes.
 
-## Checks: cells vs station values, and label sensitivity (stack v2, σ = 1.75 cm preliminary)
+## Checks: cells vs station values, and label sensitivity (stack v3, σ = 1.98 cm final)
 
-`python -m analysis.checks --stack data/interim/stack_t034_f020_v2.nc --sigma-json gps/processed/uncertainty.json`
-reruns both. Rerun when Daniel's final `uncertainty.json` lands.
+`python -m analysis.checks --stack data/interim/stack_t034_f020_v3.nc --sigma-json gps/processed/uncertainty.json`
+reruns both.
 
 **Cells vs Pratheek's station values** (1 km cell median vs his 3 × 3-pixel median at the station):
 correlation +0.95 to +1.00 at all 11 stations in the bbox; RMS difference 0.1–0.7 cm except TRAN
-(1.5 cm). Net change, cell / point: CAFP −6.4 / −5.4, CAHA −5.3 / −5.6 cm. The cell median does not
-distort the station series. P300's cell has only 7 valid dates.
+(1.5 cm). The cell median does not distort the station series. P300's cell has only 7 valid dates.
 
 **Label sensitivity** (cells per label 0 / 1 / 2 / 3):
 
-| Seasonal threshold | σ = 1.2 cm | σ = 1.75 cm | σ = 2.2 cm | σ = 3.0 cm |
+| Seasonal threshold | σ = 1.2 cm | σ = 1.98 cm (used) | σ = 2.2 cm | σ = 3.0 cm |
 |---|---|---|---|---|
-| Calibrated on both boxes (18.2 mm; 4,105 seasonal cells) | 7041 / 3285 / 533 / 1141 | 7283 / 2945 / 887 / 885 | 7449 / 2580 / 1256 / 715 | 7799 / 2084 / 1752 / 365 |
-| South-west box only = F-test only (5,234 seasonal cells) | 6185 / 3515 / 1389 / 911 | 6340 / 3108 / 1830 / 722 | 6469 / 2708 / 2236 / 587 | 6768 / 2161 / 2783 / 288 |
+| Both control boxes, 18.5 mm (used; 4,095 seasonal cells) | 7172 / 3226 / 580 / 1022 | 7473 / 2656 / 1170 / 701 | 7565 / 2521 / 1305 / 609 | 7892 / 2002 / 1824 / 282 |
+| South-west box only = F-test only (5,405 seasonal cells) | 6172 / 3436 / 1580 / 812 | 6318 / 2788 / 2325 / 569 | 6394 / 2639 / 2476 / 491 | 6669 / 2068 / 3047 / 216 |
 
-Two settings matter: **σ** (1.2 → 3.0 cm moves ~1,200 cells from label 1 to label 2) and **whether the
-north-east box counts as stable** (it alone sets the 18.2 mm bar; without it ~1,100 more cells are
-seasonal). Both need a team decision; σ comes from Daniel.
+## Decisions taken at the analysis freeze (hour ~14)
+
+- **Calm demo station: P298** (`analysis/export.py` → `DEMO_STATIONS`). P300's cell has 7 valid radar
+  dates and no net change. P298 has all 26, GPS −0.7 cm over the window, and NISAR within 0.9 cm of GPS.
+  P294 is also complete but disagrees by 2.4 cm. Ryan can swap it in one line.
+- **Seasonal threshold: both control boxes kept (conservative).** On v3 the north-east box behaves like
+  ground that moves, not bedrock: 78% of its cells pass the F-test, median amplitude 16 mm, trend +4.3 cm/yr,
+  net +2.1 cm. The south-west box behaves like bedrock: 0% pass, 3.6 mm. Keeping both sets an 18.5 mm bar;
+  dropping the north-east box removes the extra bar (≈1,300 more seasonal cells, including CAHA). The
+  conservative choice can only hide seasonal motion, never invent it. To change it, remove the north-east
+  `Box` from `seasonal.STABLE_CONTROL_BOXES` and rerun. Pratheek and Ryan decide.
 
 ## Stack v3 = data-lane freeze (2026-11-14, hour ~12)
 
@@ -161,3 +168,15 @@ comes from this lane, recomputed from `frontend/public/data/` the way the app co
 source. Rerun after any change to the app data.
 
 The optional vertical and canal outputs follow v1.2 of `contracts/app_data.md`.
+
+## Not done yet
+
+- **North-east control box:** kept as stable ground for now (conservative; see "Decisions taken at the
+  analysis freeze"). Pratheek and Ryan decide; a change is one line plus a rerun.
+- **Vertical cross-check in the app** (contracts v1.2 section 6): optional; needs Steven's two-track stack
+  from the Drive and GPS up.
+- **Second canal (Delta-Mendota):** needs a working source (the Federal layer link returned 404).
+- **NISAR vs GPS trend gap** (about +2 cm/yr at held-out stations, not the tie): open for the data and gps lanes.
+
+What each other lane needs to send is in `REQUESTS.md`. Numbers shown in the app: `NUMBERS.md`.
+Other lanes' numbers checked by this lane: `SECOND_CHECK.md`.
