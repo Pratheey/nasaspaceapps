@@ -2,10 +2,6 @@
 
 *For the humans on the team. Read your section. Takes 5 minutes.*
 
-> **Final roles (end of the event):** what each person actually did is in the
-> [README's "Team and roles" table](README.md#team-and-roles). The sections below are the plan we
-> started from.
-
 > **The event is 48 hours (D6).** The timeline below is the new one. The "by hour X" goals in
 > each person's section are from the 24-hour version; your current hour-by-hour list is in
 > [docs/PLAN.md](docs/PLAN.md).
@@ -242,7 +238,7 @@ other 12 are the real test. That is still a prototype check, not proof for the w
 
 ---
 
-## 🧭 Ryan: Team Lead & Storyteller
+## 🧭 Ryan: Integrator & Storyteller
 
 **In one sentence:** you keep everyone unblocked and own what the judges read and hear.
 

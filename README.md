@@ -26,16 +26,9 @@ GPS agrees. Where the evidence is too thin, it says so.
 - **Tools:** cross-sections, the California Aqueduct profile, swipe, 3D, walkthrough.
 - **Limits panel:** what the fit does and does not mean.
 
-## Team and roles
+## Team
 
-| Who | Role | Responsible for |
-|---|---|---|
-| **Ryan Jian** | Team lead, integrator, story and design | Proposal and pitch, team decisions and data contracts, website design and story, final checks and submission |
-| **Pratheek Danam** | NISAR data lead | Getting and processing the NISAR radar data: subset reads, corrections, masking, the data freeze and its checks |
-| **Ismail Churaev** | Measurement and model | Net change, the seasonal and trend fit, significance and labels, and the data files the app reads |
-| **Tsz "Steven" Liang** | Radar | Polarization over crop fields, NISAR vs Sentinel-1 coverage, and the vertical vs east–west cross-check |
-| **Daniel Li** | GPS validation and context | GPS stations, the independent check of the radar, uncertainty, and context layers such as canals |
-| **Avinash Lee** | Frontend | The interactive map app |
+Ryan Jian · Pratheek Danam · Ismail Churaev · Tsz "Steven" Liang · Daniel Li · Avinash Lee
 
 ## How we used AI tools
 
@@ -60,7 +53,6 @@ California DWR (California Aqueduct) · US Census county lines · OpenStreetMap 
 
 ## For the team
 
-- **Roles and goals:** [ROLES.md](ROLES.md)
 - **What we're building:** [docs/PROJECT.md](docs/PROJECT.md) · decisions: [docs/DECISIONS.md](docs/DECISIONS.md)
 - **How we work together:** [docs/WORKFLOW.md](docs/WORKFLOW.md) · rules for AI agents: [AGENTS.md](AGENTS.md)
 
