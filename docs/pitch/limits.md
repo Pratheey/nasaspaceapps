@@ -22,7 +22,7 @@
 **How we checked it**
 - GPS stations that were never used to calibrate the radar are compared with NISAR in the
   GPS reveal, including the one that disagrees most.
-- NISAR and GPS agree to about 1.7 cm per 12-day pair (root mean square, held-out stations
+- NISAR and GPS agree to about 1.8 cm per 12-day pair (root mean square, held-out stations
   checked so far; the station count is shown next to it and comes from
   `gps/processed/uncertainty.json`). A separate check at 13 stations gives 1.2 to 2.2 cm.
   Motion smaller than that is not resolved at a single spot.

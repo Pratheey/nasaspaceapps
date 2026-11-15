@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 4. **Last updated:** 2026-11-14 hour ~9 by the Integrator: go/no-go GO, stack v2 replaces v1, descending track is a cross-check (D7). D5 and D6 merged.
+**Version:** 5. **Last updated:** 2026-11-14 hour ~36 by the Integrator: final GPS agreement 1.8 cm at 13 stations; radar H-6, H-10, H-13 signed off (D9).
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
@@ -37,7 +37,7 @@ measurement, the fitted seasonal and trend parts, their uncertainty, and whether
 
 **What the first real stack showed (D5):** at Five Points and Hanford, GPS rises about
 1 cm into late winter, then sinks 5–6 cm by August, and NISAR follows. NISAR and GPS agree
-to 1.7 cm RMS per 12-day pair (3 held-out stations so far; 1.2–2.2 cm in the data-lane
+to 1.8 cm RMS per 12-day pair (13 held-out stations, D9; 1.2–2.2 cm in the data-lane
 self-check at 13 stations, D7), so the app shows where the signal clears that and says so
 where it doesn't.
 

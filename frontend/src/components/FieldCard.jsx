@@ -40,7 +40,7 @@ export default function FieldCard({ field, onClose }) {
             <div><dt className="text-mute">NISAR usable</dt><dd className="font-mono">{f.nisar_usable} of {f.pairs} pairs</dd></div>
             <div><dt className="text-mute">Sentinel-1 usable</dt><dd className="font-mono">{f.s1_usable} of {f.pairs} pairs</dd></div>
           </dl>
-          <p className="text-[12px] text-mute mt-3 leading-snug">Usable means median coherence of at least {R.cov.threshold_median_coherence.toFixed(2)}. Crop structure, moisture and field management all change the echo.</p>
+          <p className="text-[12px] text-mute mt-3 leading-snug">Usable means at least half the field's pixels valid and a median coherence of at least {R.cov.threshold_median_coherence.toFixed(2)}. Crop structure, moisture and field management all change the echo.</p>
         </>
       )}
     </div>

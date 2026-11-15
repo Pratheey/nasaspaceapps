@@ -497,7 +497,7 @@ function GpsScene({ D }) {
             and where the evidence is too thin, the map says so instead of guessing.
           </p>
           <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.rms_cm} cm</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">NISAR vs GPS per 12-day pair, root mean square, {AGREEMENT.n_stations} held-out stations so far</p></div>
+            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.rms_cm} cm</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">NISAR vs GPS per 12-day pair, root mean square, {AGREEMENT.n_stations} held-out stations</p></div>
             <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.selfcheck.replace(" to ", "–")}</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">Separate check at {AGREEMENT.selfcheck_n} stations. Motion smaller than this isn't resolved at a single spot.</p></div>
           </div>
         </div>
