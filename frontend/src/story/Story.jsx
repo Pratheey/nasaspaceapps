@@ -5,7 +5,7 @@ import { NasaImage, Starfield, SatelliteArt, IMAGES } from "./art.jsx";
 import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
 import { Numbers } from "./Game.jsx";
-import { MEDIA, NasaVideo, MaybeImage, Telemetry, Chirp, RadarPing } from "./Space.jsx";
+import { MEDIA, NasaVideo, MaybeImage, Telemetry } from "./Space.jsx";
 import FieldsScene from "./Fields.jsx";
 import { demoStations, lieStation, AGREEMENT } from "../lib/demo.js";
 import { Chapter, MissionTimeline, WatchNasa, SeenWall } from "./Media.jsx";
@@ -29,13 +29,11 @@ export default function Story({ D, onExplore }) {
 
   return (
     <div className="bg-space text-ink overflow-x-clip">
-      <RadarPing />
       <TopBar D={D} onExplore={onExplore} />
       <Hero D={D} onExplore={onExplore} />
       <Telemetry items={[["mission", "NASA–ISRO NISAR"], ["launched", "2025-07-30"], ["orbit", "~747 km, sun-synchronous"], ["inclination", "98.4°"], ["reflector", "12 m gold mesh"], ["L-band", "λ 24 cm"], ["revisit", "12 days"], ["fringe", "11.9 cm"], ["study area", "36.45° N 120.0° W"], ["passes", `${D.dates.length}`], ["reference", `GPS ${D.meta.reference_station}`]]} />
       <PoleScene />
       <AquiferScene />
-      <Chirp className="my-6" />
       {demo.calm && demo.sinking.length > 0 && <BreatheScene D={D} demo={demo} />}
       {demo.lie && <LieScene D={D} st={demo.lie} />}
       <Numbers D={D} />
@@ -45,7 +43,6 @@ export default function Story({ D, onExplore }) {
       <SeenWall />
       <MeasureScene />
       <WatchNasa />
-      <Chirp className="my-6" />
       <GpsScene D={D} />
       <FieldsScene />
       <MattersScene />
@@ -186,7 +183,7 @@ function PoleScene() {
             <line x1="0" x2="420" y1={ground} y2={ground} stroke="#D08B5B" strokeWidth="2.5" />
             <line x1="40" x2="40" y1={top} y2={ground} stroke="#C3D0B3" strokeDasharray="4 4" />
             <text x="48" y={(top + ground) / 2} fontFamily="Saira Semi Condensed" fontWeight="600" fontSize="22" fill="#C3D0B3">{metres} m</text>
-          <text x={412} y={H - 6} textAnchor="end" fontSize="11" fill="#ffffff" fillOpacity="0.6" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted illustration</text>
+          <text x={412} y={H - 6} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
           </svg>
         </div>
       </div>
@@ -570,6 +567,31 @@ function MattersScene() {
             </div>
           ))}
         </div>
+        <div className="mt-16 grid lg:grid-cols-[1fr_1.2fr] gap-10 items-start">
+          <div>
+            <h3 className="font-display font-bold text-[clamp(26px,2.6vw,38px)] leading-tight">Drinking water: the wells people live on</h3>
+            <p className="text-[17px] leading-relaxed text-ink/80 mt-4">
+              Most rural homes in the valley drink from their own well, and those wells are shallower than farm wells, so they fail first
+              when the water table falls. The same pumping that sinks the ground also lowers the water table, and compacting clay can
+              buckle and collapse well casings. Where the map shows persistent sinking near towns like Huron, Riverdale or Corcoran,
+              household wells are worth a closer look.
+            </p>
+            <p className="text-[13px] text-mute mt-4 leading-relaxed">
+              Our map does not locate individual wells or measure water quality. It shows where the ground is sinking, which is one warning sign worth checking against well records.
+            </p>
+          </div>
+          <div className="grid sm:grid-cols-3 gap-px bg-hair rounded-2xl overflow-hidden border border-hair">
+            {[["2,027", "private drinking-water wells reported dry in the Central Valley during the 2012–2016 drought.", "Environmental Research Letters, UC Davis"],
+              ["~1,400", "household wells reported dry across California in 2022, the most since reporting began in 2013. Fresno and Tulare counties were among the worst.", "California DWR dry-well reports, via Los Angeles Times, 2022"],
+              ["4,000–12,000", "San Joaquin Valley wells could partly or fully dry out by 2040 under current plans, affecting about 46,000 to 127,000 people.", "Estimate reported by Los Angeles Times, 2022"]].map(([big, text, src]) => (
+              <div key={big} className="bg-space p-6">
+                <p className="font-display text-[clamp(28px,2.6vw,40px)] font-bold leading-none text-rise">{big}</p>
+                <p className="text-[15px] leading-relaxed text-ink/85 mt-4">{text}</p>
+                <p className="text-[12px] text-mute mt-3">{src}. Published figures, not ours.</p>
+              </div>
+            ))}
+          </div>
+        </div>
         <p className="text-[18px] leading-relaxed text-ink/80 mt-12 max-w-[760px]">
           Once NISAR's validated data arrives in 2027, the same method can watch every pumped farm basin it covers, every 12 days:
           the San Joaquin Valley, Punjab, Mexico City, Tehran.
@@ -685,7 +707,7 @@ function Credits({ D }) {
         </div>
         <div>
           <p className="text-ink font-semibold mb-2">Images</p>
-          <p className="leading-relaxed">NISAR videos and artist's concepts: NASA SVS and NASA/JPL-Caltech (public domain). Charts are drawn from our data. Drawings marked "AI-assisted illustration" and much of this site's code were made by the team with an AI assistant (Claude, by Anthropic); see the repository README. County lines: US Census Bureau. Basemap data: OpenStreetMap contributors.</p>
+          <p className="leading-relaxed">NISAR videos and artist's concepts: NASA SVS and NASA/JPL-Caltech (public domain). Charts are drawn from our data. Drawings marked "AI-assisted" were coded with help from an AI assistant, as was part of this site's code; see the repository README. County lines: US Census Bureau. Basemap data: OpenStreetMap contributors.</p>
         </div>
       </div>
     </footer>

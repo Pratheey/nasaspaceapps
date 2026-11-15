@@ -238,7 +238,7 @@ other 12 are the real test. That is still a prototype check, not proof for the w
 
 ---
 
-## 🧭 Ryan: Team Lead & Storyteller
+## 🧭 Ryan: Integrator & Storyteller
 
 **In one sentence:** you keep everyone unblocked and own what the judges read and hear.
 

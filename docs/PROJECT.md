@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 7. **Last updated:** 2026-11-15 10:35 by the Integrator: north-east control box kept, east-edge sinking understated (D11). Earlier: contracts v1.2 and deploy (D10).
+**Version:** 8. **Last updated:** 2026-11-15 13:50 by the Integrator: final lane status, hidden-sinking and motion-pattern views, OPERA history, drinking-water wells context (D12). Earlier: D11 control box.
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
@@ -74,11 +74,11 @@ series reveals the sinking → click a pixel → GPS agrees (or the app says it 
 ## Current lane goals (update at every check-in)
 Full hour-by-hour plan: `docs/PLAN.md`.
 
-| Lane | Person | Current goal |
+| Lane | Person | Status at hour ~29 (2026-11-15 13:50) |
 |---|---|---|
-| nisar | Pratheek | Done: stack v2 (terrain heights) and Track 042 stack on the Drive, unwrapping persistence check, GO. Next: coverage (mask tuning, bridging pairs), help Steven with Track 042, data freeze on v2 at 34 |
-| analysis | Ismail | Done: pipeline and first real run on v1 and v2 (#4, #9; draft, not in the app). Next: trend guard, stable-box check, rerun on v2 with Daniel's σ; draft map in the app at 16; final labels v1 at 28 |
-| radar | Steven | Nothing pushed yet: report status now. HyP3 jobs; polarization by 16; coverage by 28; vertical vs east-west cross-check from the processed Track 042 stack by 33 |
-| gps | Daniel | Done: LOS files, fits, residuals, uncertainty for P302–P307 (#6). Next: all held-out stations by 14, CAFP and CAHA first; canal/levee lines by 16; GPS up by 26; history by 30 |
-| frontend | Avi | Nothing pushed yet. Keyless basemap; visible warning when `public/data/` is incomplete; CAFP/CAHA demo; public deploy by 16; real data from 22; limits text per D7 |
-| integrator | Ryan | Done: #4–#9 merged, D7. Next: contracts v1.2 + samples by 14 (calm demo station: P300's cell has only 6 valid dates); claims reviews at 28 and 40; submit at 44 |
+| nisar | Pratheek | Done: stack v3 frozen, unwrapping persistence check, self-check, OPERA history (H-20), independent check of app numbers. Open: document the control box in `data/README.md` |
+| analysis | Ismail | Done: app data on stack v3, trend guard, labels, canal profile, `NUMBERS.md`, second check. Open: reword the meta note on the north-east box (D11) |
+| radar | Steven | Done: polarization, coverage vs Sentinel-1, vertical/east cross-check, sign-off (D9). Open: rebase `steven/project-bugfixes` on main before merging (it conflicts) |
+| gps | Daniel | Done: 13 held-out stations, residuals, uncertainty (σ 1.84 cm per pair), canals. Open: second canal (Delta-Mendota) if a source works |
+| frontend | Avi | Open: check the public site on laptop and phone after the last merge |
+| integrator | Ryan | Done: contracts v1.2, D2–D12, deploy, AI-use disclosure, README and roles. Open: demo video, number check rows 1–4 and 15–22, submit before 23:59 |
