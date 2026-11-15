@@ -112,7 +112,7 @@ test("radar field files load from static hosts and retry after failure", async (
   folders.radar = {
     "polarization.json": { fields: 1 },
     "coverage.json": { totals: {} },
-    "fields.geojson": new Response('{"type":"FeatureCollection","features":[]}', {
+    "fields.json": new Response('{"type":"FeatureCollection","features":[]}', {
       headers: { "content-type": "application/octet-stream" },
     }),
   };
