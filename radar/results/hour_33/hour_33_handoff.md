@@ -2,7 +2,7 @@
 
 ## Ismail · H-16 motion stack
 
-`vertical_t034_t042.nc` contains vertical and east–west displacement for 24 intervals on the ascending 80 m grid. Positive values mean up or east. It uses EPSG:32611 and records both tracks’ acquisition dates. There are **764,156 pixels** with valid radar data across the full window, **28.2%** of the ascending grid. The preview map shows totals only for those complete pixels.
+Download [vertical_t034_t042.nc (285 MB)](https://drive.google.com/file/d/1J4cnbKCm0nrT1hWk7FG4mWq47IPHjODk/view) from the shared team Drive. It contains vertical and east–west displacement for 24 intervals on the ascending 80 m grid. Positive values mean up or east. It uses EPSG:32611 and records both tracks’ acquisition dates. There are **764,156 pixels** with valid radar data across the full window, **28.2%** of the ascending grid. The preview map shows totals only for those complete pixels.
 
 The team’s analysis pipeline read the finished NetCDF and generated its grid and time-series outputs. The test produced net estimates for 5,319 of the app’s 12,000 cells with the existing 20% minimum pixel-coverage rule. The test used the measured vertical uncertainty in `vertical_uncertainty.json`. The app’s existing station exporter is built around GPS line-of-sight data, so the test used no GPS overlay. Use the vertical comparison CSVs for GPS Up.
 
@@ -25,6 +25,18 @@ The two inputs are the terrain-corrected T034 F020 v2 and T042 F070 team stacks.
 
 GPS positions use seven-day medians of cleaned daily measurements, with a minimum of three valid days. The two-track comparison uses GPS on ascending dates, relative to P304, and the radar pixel nearest each station. The descending LOS check uses the data lane’s published station samples and projects the GPS onto the descending look vector at each station. P304 sets the reference and is excluded from all error statistics.
 
-In the repository, place `vertical.py` in `radar/` and use the shared Python requirements. Run `python radar/vertical.py --asc /path/to/stack_t034_f020_v2.nc --desc /path/to/stack_t042_f070.nc --out /path/to/hour_33`. For the H-16 analysis run, pass `--component up --var up_disp_m` and the supplied vertical uncertainty JSON.
+To reproduce this cross-check, install the shared Python requirements and run `python radar/vertical.py --asc /path/to/stack_t034_f020_v2.nc --desc /path/to/stack_t042_f070.nc --out /path/to/hour_33`. This uses the two source stacks for the signed-off cross-check. The main ascending analysis uses the [frozen v3 stack](../../../data/README.md). For the H-16 grid and time-series export, download the file above and run from the repository root with an empty `--gps-dir` so the line-of-sight station exporter is skipped:
+
+```sh
+python -m analysis.run --component up --var up_disp_m \
+  --stack /path/to/vertical_t034_t042.nc \
+  --sigma-json radar/results/hour_33/vertical_uncertainty.json \
+  --gps-dir /path/to/empty_directory \
+  --out /path/to/vertical_analysis
+```
+
+## Hour 42 sign-off
+
+Ryan signed off on the field polarization, matched coverage and two-track motion figures. The approved vertical and east–west result is a provisional cross-check for the project page. [Pitch numbers, rows 9–11](../../../docs/pitch/numbers.md#L16-L18) · [Team decision D9](../../../docs/DECISIONS.md#d9-2026-11-14-2120-radar-results-signed-off-final-gps-agreement-is-18-cm-at-13-stations)
 
 [Team stack folder](https://drive.google.com/drive/u/0/folders/152RzXsar-DzAYQNfZgIvnsXe4jqM06Fz) · [Radar station samples](https://github.com/Pratheey/nasaspaceapps/tree/ccbf9dc/data/processed) · [GPS series](https://github.com/Pratheey/nasaspaceapps/tree/ccbf9dc/gps/processed) · [Analysis request](https://github.com/Pratheey/nasaspaceapps/blob/ccbf9dc/analysis/REQUESTS.md)
