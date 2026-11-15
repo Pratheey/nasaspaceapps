@@ -33,7 +33,7 @@ export function Numbers({ D }) {
   }, [D, G]);
   const items = [
     [<CountUp to={D.dates.length} run={seen} />, "radar passes, 12 days apart"],
-    [<CountUp to={s.area} run={seen} suffix="km²" />, "of farmland measured"],
+    [<CountUp to={s.area} run={seen} suffix="km²" />, "of ground measured"],
     [<CountUp to={(s.sinking / s.measured) * 100} run={seen} suffix="%" />, "of it sinking beyond the uncertainty"],
     [<CountUp to={s.worst * 100} decimals={1} run={seen} suffix="cm" />, "the most any spot moved in the record"],
   ];

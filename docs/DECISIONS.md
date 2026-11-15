@@ -224,3 +224,20 @@ at the hour-8 check-in.** Builds on D5.
 - **Impact per lane:** frontend: agreement figure and field texts updated. / story: new video line;
   quote 1.8 cm (n = 13). / radar: rows 9–11 ticked.
 
+## D10: 2026-11-14 22:05: Contracts v1.2, samples on the D5 stations, public deploy
+**Status: decided by the Integrator (Ryan).** Closes H-18.
+- **Decision:**
+  - **Contracts v1.2** (`contracts/app_data.md`): `demo_stations` in `meta.json` (already written by
+    the analysis lane); new optional `canal_profile_<slug>.json` (section 5, the shape `analysis/canal.py`
+    already writes) listed in `meta.json` → `canal_profiles`; new optional `vertical/` folder (section 6)
+    with the four core files for the vertical cross-check. The four core files keep their shape.
+  - **Samples regenerated** (`contracts/samples/`, copied to `frontend/public/samples/`): the 11 D5
+    stations inside the bbox at their real NGL positions, P304 reference, CAFP/CAHA sinking and P300
+    calm, plus a sample canal profile on the real California Aqueduct line. Every value is still synthetic.
+  - **Public deploy:** `.github/workflows/pages.yml` builds `frontend/` and publishes it to GitHub
+    Pages on every push to `main`. CI now also checks that the frontend builds.
+  - Story wording: "of ground measured", not "of farmland measured" (the measured cells include hills).
+- **Impact per lane:** analysis: add `canal_profiles` to `meta.json` when writing profiles; vertical
+  run goes to `frontend/public/data/vertical/`. / frontend: read profiles and the vertical folder only
+  through these keys; label vertical as a cross-check. / integrator: turn on Pages in repo settings.
+
