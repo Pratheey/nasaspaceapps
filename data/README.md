@@ -184,6 +184,15 @@ The data lane's own check of every pair, and of the running sum, against raw NGL
 the three non-reference stations. **Provisional and not the H-9 residual table.** No number
 from it goes in the app or pitch.
 
+### `processed/check_app_vs_stack.csv` (in git)
+Output of `scripts/check_app_vs_stack.py`, an independent re-implementation (nothing imported
+from `analysis/` or `gps/`) that compares the app files with the frozen v3 stack. Columns:
+`check, item, quantity, app_value_m, recomputed_m, diff_mm, tolerance_mm, ok`. Checks: `A` three
+random cells, `B_nisar` / `B_gps` / `B_resid` the stations in `stations.json`, `C_*` Daniel's
+`residuals.csv` and `uncertainty.json`. Rows named `*_count` hold plain counts (diff and tolerance
+are counts, not mm). Rows with an empty `ok` are information only. Tolerance 0.5 mm (the app JSON
+is rounded to 0.1 mm).
+
 Result on 2026-11-14, version 3 (terrain heights; same as v2 because the tie cancels), in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
 far the station moves within the window; "From" is the first date with GPS at that station.
 No pair is within 3 cm of a 12 cm step at any station. A flagged pair also gets `near_cycle_persists` (summary column `persistent_cycle_pairs`): 1 if the running-sum residual is still shifted by that many cycles one pair later, as an unwrapping error would leave it, 0 if it reversed, as one-date atmosphere would. Summary file: `processed/qa_summary_t034_f020.csv`.
@@ -244,6 +253,17 @@ above the ellipsoid. Single-pair RMS at the four hill stations P294, P297, P298 
 Quick-look figure (not committed): `interim/figures/net_change_selfcheck.png`.
 
 ---
+
+### Notes for Ryan and Ismail from the app check (2026-11-14, hour 13)
+
+- **The app matches stack v3.** Three random cells, all 11 app stations and Daniel's residual
+  table agree with an independent recomputation to 0.05 mm (`processed/check_app_vs_stack.csv`).
+- **P300 is a weak calm comparison.** Its map cell has only 7 valid dates out of 26, so its
+  NISAR series in the app is short. P294 and P298 have full series and follow GPS. Your call.
+- **Don't quote a NISAR-only trend.** NISAR net change is on average about 1 cm above GPS at
+  the held-out stations (9 of 12 net residuals are positive). That is inside the 2 cm
+  uncertainty. A shift shared by most stations points at the reference pixel at P304 rather
+  than at each station; this has not been tested.
 
 ### Decisions taken by the data lane (2026-11-14), open to override
 
@@ -350,6 +370,7 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 | `scripts/process_pairs.py` | One `interim/tTTT_fFFF/pair_NN.nc` per pair |
 | `scripts/build_stack.py` | Stack + station table, with the GPS tie |
 | `scripts/qa_stations_vs_gps.py` | Provisional self-check against raw NGL GPS |
+| `scripts/check_app_vs_stack.py` | Independent check of the app files and the GPS residuals against the v3 stack → `processed/check_app_vs_stack.csv`; run `data/.venv/Scripts/python data/scripts/check_app_vs_stack.py` (about 10 s, `--seed` picks the random cells, exit 1 on any failure) |
 
 ---
 
