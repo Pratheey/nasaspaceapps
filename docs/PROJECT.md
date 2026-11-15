@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 5. **Last updated:** 2026-11-14 hour ~36 by the Integrator: final GPS agreement 1.8 cm at 13 stations; radar H-6, H-10, H-13 signed off (D9).
+**Version:** 6. **Last updated:** 2026-11-14 22:05 by the Integrator: contracts v1.2, samples on the D5 stations, public deploy (D10). Earlier: final GPS agreement 1.8 cm at 13 stations, radar signed off (D9).
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
@@ -67,7 +67,7 @@ series reveals the sinking → click a pixel → GPS agrees (or the app says it 
 - **Out of scope:** elastic/inelastic classification, storage-loss estimates, recharge
   recommendations, other basins, tailings dams, anything in `docs/PROPOSAL.md` §11.
 
-## Contracts (v1)
+## Contracts (v1.2)
 `contracts/README.md` lists every agreed file shape. Sample files: `contracts/samples/`
 (synthetic, marked `"is_synthetic": true`).
 
