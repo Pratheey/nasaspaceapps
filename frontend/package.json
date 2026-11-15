@@ -4,6 +4,7 @@
   "description": "The Breathing Ground: NISAR ground motion over Corcoran–Mendota",
   "scripts": {
     "dev": "vite",
+    "test": "node --test",
     "build": "vite build",
     "preview": "vite preview"
   },
