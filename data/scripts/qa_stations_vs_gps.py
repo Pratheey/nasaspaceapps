@@ -14,6 +14,11 @@ satellite. GPS = 7-day median of raw NGL IGS20 daily solutions around each date,
 offsets removed. For the running sum, each station starts at its first date that has GPS
 (some stations have no solution near the first NISAR date).
 
+A pair is flagged near_cycle_flag = 1 when its residual is within 3 cm of a non-zero whole
+number of half wavelengths. The persistence test (near_cycle_persists) then checks whether the
+running-sum residual stays shifted by that many cycles one pair later (1, an unwrapping error
+would do this) or comes back (0, atmosphere on one date); None means it cannot be told.
+
 Writes data/processed/qa_stations_vs_gps_tTTT_fFFF.csv (every pair and running sum) and
 data/processed/qa_summary_tTTT_fFFF.csv (one row per station).
 """
@@ -31,15 +36,39 @@ from build_stack import ngl_tenv3
 
 COLUMNS = ["pair", "ref_date", "sec_date", "station", "kind", "nisar_rel_ref_m",
            "nisar_iono_only_rel_ref_m", "gps_rel_ref_m", "residual_m", "residual_iono_only_m",
-           "residual_cycles", "near_cycle_flag"]
+           "residual_cycles", "near_cycle_flag", "near_cycle_persists"]
 SUMMARY_COLUMNS = ["station", "n_pairs", "rms_pair_residual_m", "worst_pair_residual_m",
-                   "near_cycle_pairs", "cum_start_date", "cum_end_date", "n_cum_dates",
+                   "near_cycle_pairs", "persistent_cycle_pairs", "cum_start_date", "cum_end_date", "n_cum_dates",
                    "gps_net_m", "nisar_net_m", "net_residual_m", "gps_range_m",
                    "rms_cum_residual_m", "corr_cum"]
 
 
 def _f(text: str):
     return None if text == "" else float(text)
+
+
+def cycle_step_persists(res_before, res_after, n_cycles, half_cycle_m, tol=0.03):
+    """1 if the running-sum residual moved by n_cycles half wavelengths across the pair and
+    stays there (unwrapping error), 0 if it reversed (one-date atmosphere), None if unknown."""
+    if res_before is None or res_after is None:
+        return None
+    return int(abs((res_after - res_before) - n_cycles * half_cycle_m) < tol)
+
+
+def add_persistence(rows, station, half_cycle_m):
+    """Fill near_cycle_persists on the flagged "pair" rows of one station."""
+    cum = {r["pair"]: r["residual_m"] for r in rows
+           if r["station"] == station and r["kind"] == "cumulative"}
+    for r in rows:
+        if r["station"] != station or r["kind"] != "pair" or not r["near_cycle_flag"]:
+            continue
+        p = r["pair"]
+        n_cycles = int(round(r["residual_m"] / half_cycle_m))
+        if (p + 1) not in cum:
+            r["near_cycle_persists"] = None
+            continue
+        before = 0.0 if (p - 1) not in cum and p == min(cum) else cum.get(p - 1)
+        r["near_cycle_persists"] = cycle_step_persists(before, cum[p + 1], n_cycles, half_cycle_m)
 
 
 def main() -> int:
@@ -116,6 +145,7 @@ def main() -> int:
                 cum_n.append(cum_full)
                 cum_g.append(g)
 
+        add_persistence(rows, s, half_cycle_m)
         res = np.array([r["residual_m"] for r in pair_res])
         n, g = np.array(cum_n), np.array(cum_g)
         last = next((r for r in reversed(rows) if r["station"] == s and r["kind"] == "cumulative"
@@ -130,6 +160,8 @@ def main() -> int:
             "rms_pair_residual_m": r4(np.sqrt(np.mean(res**2))) if res.size else None,
             "worst_pair_residual_m": r4(np.abs(res).max()) if res.size else None,
             "near_cycle_pairs": " ".join(str(r["pair"]) for r in pair_res if r["near_cycle_flag"]),
+            "persistent_cycle_pairs": " ".join(str(r["pair"]) for r in pair_res
+                                               if r.get("near_cycle_persists") == 1),
             "cum_start_date": last["ref_date"] if last else None,
             "cum_end_date": last["sec_date"] if last else None,
             "n_cum_dates": int(n.size),
@@ -150,11 +182,11 @@ def main() -> int:
         return "   n/a" if v is None else f"{v * 100:6.1f}"
 
     print(f"{len(pairs)} pairs, {len(summary)} stations. NISAR - GPS, both relative to {ref}, LOS, cm.")
-    print("station  pairs  rms_pair  worst  near_cycle   gps_net  nisar_net  gps_range  rms_cum   corr   from")
+    print("station  pairs  rms_pair  worst  near_cycle  persists   gps_net  nisar_net  gps_range  rms_cum   corr   from")
     for r in summary:
         corr = "  n/a" if r["corr_cum"] is None else f"{r['corr_cum']:5.2f}"
         print(f"{r['station']:7s}  {r['n_pairs']:4d}   {cm(r['rms_pair_residual_m'])}  {cm(r['worst_pair_residual_m'])}"
-              f"   {r['near_cycle_pairs'] or '-':9s}  {cm(r['gps_net_m'])}   {cm(r['nisar_net_m'])}"
+              f"   {r['near_cycle_pairs'] or '-':9s}  {r['persistent_cycle_pairs'] or '-':8s}  {cm(r['gps_net_m'])}   {cm(r['nisar_net_m'])}"
               f"     {cm(r['gps_range_m'])}   {cm(r['rms_cum_residual_m'])}  {corr}   {r['cum_start_date']}")
     print("wrote", out.relative_to(common.REPO_ROOT).as_posix(), "and", out_sum.relative_to(common.REPO_ROOT).as_posix())
     return 0
@@ -173,7 +205,8 @@ def _row(pair, d0, d1, station, kind, nisar, nisar_iono, gps, half_cycle_m):
     return {"pair": int(pair), "ref_date": d0, "sec_date": d1, "station": station, "kind": kind,
             "nisar_rel_ref_m": r5(nisar), "nisar_iono_only_rel_ref_m": r5(nisar_iono),
             "gps_rel_ref_m": r5(gps), "residual_m": r5(res), "residual_iono_only_m": r5(res_i),
-            "residual_cycles": None if cycles is None else round(cycles, 3), "near_cycle_flag": flag}
+            "residual_cycles": None if cycles is None else round(cycles, 3), "near_cycle_flag": flag,
+            "near_cycle_persists": None}
 
 
 if __name__ == "__main__":

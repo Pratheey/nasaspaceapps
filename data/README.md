@@ -113,7 +113,7 @@ in step 5. This was derived from how the interferogram is formed, and then confi
 | Correction | Applied | Evidence |
 |---|---|---|
 | Ionosphere screen | Yes, every pair | Required by `docs/PROPOSAL.md` §6 |
-| Troposphere (wet + hydrostatic, model-based), read at terrain height | Yes | Tested without GPS: over the 25 pairs, the spread of displacement across the window drops from 2.2 cm RMS (ionosphere only) to 1.6 cm at a constant 50 m height (version 1); 17 of 25 pairs improve; applying it with the opposite sign gives 3.9 cm |
+| Troposphere (wet + hydrostatic, model-based), read at terrain height | Yes | Tested without GPS: over the 25 pairs, the spread of displacement across the window drops from 2.2 cm RMS (ionosphere only) to 1.6 cm at a constant 50 m height (version 1); 17 of 25 pairs improve; applying it with the opposite sign gives 3.9 cm. Against GPS: 1.86 cm RMS with the troposphere and tide screens, 2.69 cm with the ionosphere only (all 12 stations, all pairs) |
 | Terrain height for the troposphere, tide and LOS cubes (Copernicus GLO-90) | Yes, version 2 and Track 042 | Tested without GPS on Track 034. Spread of displacement across the window, RMS over the 25 pairs: 1.55 cm with a constant 50 m, 1.40 cm with terrain heights, 1.89 cm with the height term reversed. On hill pixels above 150 m (31% of valid pixels): 1.51 cm, 1.25 cm, 2.04 cm. Regressing the measured signal on the height-dependent part of the wet troposphere screen gives a median coefficient of 0.99 (1 = the screen is right) |
 | Solid Earth tides, read at terrain height | Yes | Deterministic; differential effect across the window is ≤ ~3 mm |
 | Unwrapping errors | **No pair corrected** | Waiting for Daniel's flags (H-9) |
@@ -159,7 +159,7 @@ from it goes in the app or pitch.
 
 Result on 2026-11-14, version 2 (terrain heights), in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
 far the station moves within the window; "From" is the first date with GPS at that station.
-No pair is within 3 cm of a 12 cm step at any station. Summary file: `processed/qa_summary_t034_f020.csv`.
+No pair is within 3 cm of a 12 cm step at any station. A flagged pair also gets `near_cycle_persists` (summary column `persistent_cycle_pairs`): 1 if the running-sum residual is still shifted by that many cycles one pair later, as an unwrapping error would leave it, 0 if it reversed, as one-date atmosphere would. Summary file: `processed/qa_summary_t034_f020.csv`.
 
 | Station | Pairs | RMS, single pairs | Worst pair | GPS net | NISAR net | GPS range | RMS, running sum | Correlation | From |
 |---|---|---|---|---|---|---|---|---|---|
@@ -254,7 +254,11 @@ Processed by the data lane to save time; Steven owns what is done with it. Same 
 | Anomaly-flagged pixels | none in any pair |
 | Heights | Terrain height from Copernicus GLO-90, as in version 2 of Track 034 |
 
-Self-check, in cm (NISAR minus GPS, both relative to P304, line of sight). Same columns as the Track 034 table. CAHA has no valid pixels on this track. P300 has 25 pairs but its running sum stops on 2026-01-24 (7 dates). Pair 24 is flagged as near a whole cycle (about 12 cm) at CAKC and P298. Provisional, same status as the Track 034 check.
+Self-check, in cm (NISAR minus GPS, both relative to P304, line of sight). Same columns as the Track 034 table. CAHA has no valid pixels on this track. P300 has 25 pairs but its running sum stops on 2026-01-24 (7 dates). Pair 24 is flagged as near a whole cycle (about 12 cm) at CAKC and P298. A flagged pair also gets `near_cycle_persists` (summary column `persistent_cycle_pairs`): 1 if the running-sum residual is still shifted by that many cycles one pair later, as an unwrapping error would leave it, 0 if it reversed, as one-date atmosphere would. Both flags have `near_cycle_persists` = 0. Provisional, same status as the Track 034 check.
+
+Pair 24 (2026-08-28 to 2026-09-09) is within 3 cm of one phase cycle at CAKC and P298, but it is not an unwrapping error: the misfit reverses in the next pair (CAKC running-sum residual +12.7 cm, then -2.0 cm, then +6.7 cm). It is atmosphere on 2026-08-28. No pair of Track 042 has been corrected or masked.
+
+On Track 042 the troposphere screens help less than on Track 034. Against GPS, all stations and pairs: 3.10 cm RMS with the screens and 3.11 cm with the ionosphere only (Track 034: 1.86 and 2.69 cm). Scene-wide spread without GPS: 2.21 cm with and 2.60 cm without, better in 15 of 27 pairs (Track 034: 1.40 and 2.18 cm, better in 19 of 25).
 
 | Station | Pairs | RMS, single pairs | Worst pair | GPS net | NISAR net | GPS range | RMS, running sum | Correlation | From |
 |---|---|---|---|---|---|---|---|---|---|
@@ -338,3 +342,4 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 
 - **v1, 2026-11-14.** Track 034 / Frame 020 stack with a constant 50 m height for the troposphere, tide and LOS cubes. `interim/stack_t034_f020.nc`, uploaded to the Drive.
 - **v2, 2026-11-14.** Terrain heights from Copernicus GLO-90. `interim/stack_t034_f020_v2.nc` and `interim/stack_t042_f070.nc`. The station tables and self-check summaries in `processed/` now reflect v2.
+- **2026-11-14:** self-check gains a persistence test that separates unwrapping errors from one-date atmosphere.
