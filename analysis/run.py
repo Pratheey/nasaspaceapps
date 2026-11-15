@@ -18,7 +18,7 @@ from pathlib import Path
 
 import numpy as np
 
-from . import canal, export, fit, labels, netchange, regrid, seasonal, stations, timebase
+from . import canal, export, fit, guards, labels, netchange, regrid, seasonal, stations, timebase
 
 REPO = Path(__file__).resolve().parent.parent
 
@@ -67,7 +67,8 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
         is_synthetic: bool = False, exclude_pairs=(), alpha: float = seasonal.ALPHA,
         min_valid_fraction: float = regrid.MIN_VALID_FRACTION, notes=(), gps_dir=None, canals=(), component: str = "los",
         var: str | None = None, placeholder_station_coords: bool = False, calibrate: bool = True,
-        control_boxes=seasonal.STABLE_CONTROL_BOXES, mask_anomaly: bool = False) -> dict:
+        control_boxes=seasonal.STABLE_CONTROL_BOXES, mask_anomaly: bool = False,
+        trend_guard: bool = True) -> dict:
     comp = COMPONENTS[component]
     var = var or comp["var"]
     out_dir = Path(out_dir)
@@ -104,9 +105,17 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
         exclude[int(p) - 1] = True
     f = fit.fit_stack(cells, t_ref, t_sec, exclude_pairs=exclude)
 
+    # 4b. trend guard: hide whole fits that cannot be trusted (missing a season, too few pairs,
+    #     sigma of trend too large). Net change is untouched. See guards.py.
+    guard = None
+    if trend_guard:
+        guard = guards.trend_guard(f, np.isfinite(cells) & ~exclude[:, None], t_ref, t_sec)
+        f = guards.apply(f, guard.ok)
+
     # 5. is the wave real? F-test AND an amplitude threshold calibrated on stable ground (D5);
     #    amplitude + peak month only where both pass
     notes = list(notes)
+    notes.append(guard.describe() if guard else "Trend guard OFF (--no-trend-guard): unreliable fits are shown.")
     notes.append(f"Cells: median of pixel positions per date; a date needs >= {min_valid_fraction:.0%} of the cell's pixels valid.")
     if "anomaly" in ds:
         notes.append("Anomaly-flagged pixels " + ("EXCLUDED (--mask-anomaly)." if mask_anomaly else
@@ -172,7 +181,8 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
     counts = np.bincount(lab, minlength=4).tolist()
     return {"label_counts": counts, "n_fitted": int(f.fitted.sum()), "n_significant": int(s.significant.sum()),
             "n_net": int(np.isfinite(net).sum()), "sizes": sizes, "fit": f, "seasonal": s, "net": net,
-            "labels": lab, "cumulative": cum, "stations": stations_json, "calibration": calib}
+            "labels": lab, "cumulative": cum, "stations": stations_json, "calibration": calib,
+            "guard": guard}
 
 
 def run_synthetic(out_dir=REPO / "analysis" / "_synthetic_out", seed: int = 0) -> dict:
@@ -218,6 +228,7 @@ def main(argv=None) -> None:
     ap.add_argument("--component", choices=sorted(COMPONENTS), default="los", help="los (default) or up")
     ap.add_argument("--var", help="displacement variable in the stack (default: los_disp_m / up_disp_m)")
     ap.add_argument("--out", help="output folder (default: frontend/public/data for los)")
+    ap.add_argument("--no-trend-guard", action="store_true", help="show every fit, even unreliable ones (comparison only)")
     ap.add_argument("--no-calibration", action="store_true", help="F-test only (not recommended, see D5)")
     ap.add_argument("--exclude-pairs", type=int, nargs="*", default=[], help="pair numbers to drop from the fit")
     args = ap.parse_args(argv)
@@ -239,11 +250,14 @@ def main(argv=None) -> None:
         res = run(load_stack(args.stack), sigma, source, out, exclude_pairs=args.exclude_pairs,
                   gps_dir=args.gps_dir, canals=args.canal, component=args.component, var=args.var,
                   calibrate=not args.no_calibration, mask_anomaly=args.mask_anomaly, notes=args.note,
-                  min_valid_fraction=args.min_valid_fraction or regrid.MIN_VALID_FRACTION)
+                  min_valid_fraction=args.min_valid_fraction or regrid.MIN_VALID_FRACTION,
+                  trend_guard=not args.no_trend_guard)
 
     print("labels 0..3:", res["label_counts"], "| fitted cells:", res["n_fitted"],
           "| seasonal significant:", res["n_significant"], "| cells with net change:", res["n_net"])
     print("files:", {k: f"{v / 1e6:.2f} MB" for k, v in res["sizes"].items()})
+    if res.get("guard") is not None:
+        print(res["guard"].describe())
     c = res["calibration"]
     if c is not None:
         thr = "not calibrated" if c.amp_threshold_m is None else f"{c.amp_threshold_m * 1000:.1f} mm"
