@@ -187,3 +187,18 @@ at the hour-8 check-in.** Builds on D5.
   "1 cm" anywhere; any vertical view is labelled cross-check. / integrator and story: quote
   1.7 cm (n = 3 held-out stations, rising as Daniel adds stations) and the 1.2–2.2 cm
   self-check; vertical motion never as a headline.
+
+## D8: 2026-11-14 19:20: Radar results go in the app; new contract radar_app.md
+**Status: decided by the Integrator (Ryan).**
+- **Decision:** Steven's hour-28 polarization and NISAR vs Sentinel-1 coverage results
+  (`radar/results/`) are shown in the app: a story section ("The fields") and a Fields layer on the
+  live map. `radar/app_export.py` writes three small files to `frontend/public/radar/` in the shape of
+  `contracts/radar_app.md`.
+- **Numbers shown:** 30 fields, 26 passes, 780 field measurements; median HV/HH alfalfa −7.7 dB,
+  almonds −6.1 dB, cotton −7.9 dB. Coverage at median coherence ≥ 0.30: NISAR 542 of 690 field checks
+  (78.6%), Sentinel-1 558 of 690 (80.9%), 23 matched pairs.
+- **Why:** Polarization is part of the challenge brief, and the coverage comparison is reported
+  whatever the result (PROPOSAL §8). The result does not favour NISAR, and the app says so.
+- **Impact per lane:** radar: rerun `python3 radar/app_export.py` if the tables change. / frontend:
+  reads `public/radar/`. / story: never say NISAR keeps more fields usable over these fields.
+
