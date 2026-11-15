@@ -28,7 +28,8 @@ def test_contract_files_match_samples(synth):
     sample_keys = set(_load(SAMPLES / "meta.json"))
     assert set(meta) == sample_keys
     assert meta["contract_version"] == 1.2
-    assert meta["demo_stations"] == {"sinking": ["CAFP", "CAHA"], "calm": "P300"}
+    from analysis.export import DEMO_STATIONS
+    assert meta["demo_stations"] == DEMO_STATIONS          # set in one place (calm station: P298 since the freeze)
     assert "AND amplitude >" in meta["significance"]
     assert set(grid) == set(_load(SAMPLES / "grid.json"))
     assert meta["is_synthetic"] is True and grid["is_synthetic"] is True
