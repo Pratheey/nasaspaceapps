@@ -202,3 +202,25 @@ at the hour-8 check-in.** Builds on D5.
 - **Impact per lane:** radar: rerun `python3 radar/app_export.py` if the tables change. / frontend:
   reads `public/radar/`. / story: never say NISAR keeps more fields usable over these fields.
 
+## D9: 2026-11-14 21:20: Radar results signed off; final GPS agreement is 1.8 cm at 13 stations
+**Status: decided by the Integrator (Ryan).**
+- **Decision:**
+  - **Radar H-6, H-10, H-13 signed off** (Steven's hour-42 handoff, rows 9–11 of
+    `docs/pitch/numbers.md`). Every figure was recomputed from `radar/results/` and matches:
+    HV/HH medians −6.1 / −7.7 / −7.9 dB (780 paired observations); coverage 542/690 (78.6%) vs
+    558/690 (80.9%); vertical 2.49 cm and east–west 2.52 cm RMS (4 held-out sites each), per-interval
+    2.35 cm (213 comparisons, 12 sites) and 2.92 cm (197, 11 sites); descending LOS 2.95 cm (254, 12);
+    CAFP shared window 2.5 cm down radar vs 5.7 cm down GPS.
+  - **Vertical/east–west stays a cross-check** (D7): project page only, never a headline; Hanford has
+    no descending coverage.
+  - **Agreement quoted everywhere: 1.8 cm RMS per 12-day pair, 13 held-out stations**
+    (`gps/processed/uncertainty.json`: `sigma_pair_m` = 0.0184, `n_stations` = 13). Replaces the
+    hour-9 figure of 1.7 cm at n = 3 (D7).
+  - **Video wording:** "compares the ground motion with GPS at held-out stations", not "checks every
+    result against GPS". GPS checks displacement only; polarization and coverage use radar returns and
+    coherence.
+  - **Polarization claim limit:** the comparison describes the sampled fields and dates; identifying
+    crops from radar alone would need a separate test.
+- **Impact per lane:** frontend: agreement figure and field texts updated. / story: new video line;
+  quote 1.8 cm (n = 13). / radar: rows 9–11 ticked.
+
