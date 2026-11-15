@@ -65,9 +65,9 @@ def _station_roles(stations_json) -> dict:
 
 def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGrid(),
         is_synthetic: bool = False, exclude_pairs=(), alpha: float = seasonal.ALPHA,
-        min_valid_fraction: float = 0.5, notes=(), gps_dir=None, canals=(), component: str = "los",
+        min_valid_fraction: float = regrid.MIN_VALID_FRACTION, notes=(), gps_dir=None, canals=(), component: str = "los",
         var: str | None = None, placeholder_station_coords: bool = False, calibrate: bool = True,
-        control_boxes=seasonal.STABLE_CONTROL_BOXES) -> dict:
+        control_boxes=seasonal.STABLE_CONTROL_BOXES, mask_anomaly: bool = False) -> dict:
     comp = COMPONENTS[component]
     var = var or comp["var"]
     out_dir = Path(out_dir)
@@ -81,6 +81,12 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
     disp = np.asarray(ds[var].values, dtype=float)
     if "valid" in ds:
         disp[np.asarray(ds["valid"].values) == 0] = np.nan
+    # `valid` does NOT exclude the stack's `anomaly` flags (Pratheek). They cover pairs 1, 2, 3, 7,
+    # 8, 11 and 12 in a diagonal stripe (19% of the window), and their measured effect is ~2 mm.
+    # Dropping them would blank net change across that stripe (one missing pair blanks every later
+    # date), so by default they are kept, like the data lane does. --mask-anomaly drops them.
+    if mask_anomaly and "anomaly" in ds:
+        disp[np.asarray(ds["anomaly"].values) == 1] = np.nan
     npair = disp.shape[0]
 
     # 3. radar pixels -> app cells. Median of each cell's pixel POSITIONS per date, then back
@@ -101,6 +107,10 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
     # 5. is the wave real? F-test AND an amplitude threshold calibrated on stable ground (D5);
     #    amplitude + peak month only where both pass
     notes = list(notes)
+    notes.append(f"Cells: median of pixel positions per date; a date needs >= {min_valid_fraction:.0%} of the cell's pixels valid.")
+    if "anomaly" in ds:
+        notes.append("Anomaly-flagged pixels " + ("EXCLUDED (--mask-anomaly)." if mask_anomaly else
+                     "kept (data lane: measured effect ~2 mm; excluding them blanks a 19% stripe)."))
     calib, significance_text = None, None
     if calibrate:
         lat_c, lon_c = grid.centres()
@@ -196,6 +206,13 @@ def main(argv=None) -> None:
     ap.add_argument("--synthetic", action="store_true", help="run on a fake stack with a known answer")
     ap.add_argument("--stack", help="path to the pair stack (contracts/stack.md)")
     ap.add_argument("--sigma-json", help="path to gps/processed/uncertainty.json (contracts/gps.md)")
+    ap.add_argument("--sigma-net-m", type=float, help="PROVISIONAL sigma of net change (m) when uncertainty.json "
+                    "does not exist yet; needs --sigma-source and is recorded as provisional")
+    ap.add_argument("--sigma-source", help="where --sigma-net-m comes from (written into meta.json)")
+    ap.add_argument("--mask-anomaly", action="store_true", help="drop the stack's anomaly-flagged pixels")
+    ap.add_argument("--min-valid-fraction", type=float, default=None,
+                    help=f"share of a cell's pixels that must be valid up to a date (default {regrid.MIN_VALID_FRACTION})")
+    ap.add_argument("--note", action="append", default=[], help="extra note for meta.json (repeatable)")
     ap.add_argument("--gps-dir", default=str(REPO / "gps" / "processed"), help="folder with Daniel's GPS CSVs")
     ap.add_argument("--canal", action="append", default=[], help="GeoJSON canal centre line (repeatable)")
     ap.add_argument("--component", choices=sorted(COMPONENTS), default="los", help="los (default) or up")
@@ -208,15 +225,21 @@ def main(argv=None) -> None:
     if args.synthetic:
         res = run_synthetic(Path(args.out) if args.out else REPO / "analysis" / "_synthetic_out")
     else:
-        if not (args.stack and args.sigma_json):
-            ap.error("real runs need --stack and --sigma-json (or use --synthetic)")
+        if not args.stack or not (args.sigma_json or args.sigma_net_m is not None):
+            ap.error("real runs need --stack and --sigma-json (or a provisional --sigma-net-m), or use --synthetic")
         if args.component != "los" and not args.out:
             ap.error("--component up needs --out, so it never overwrites the LOS app files")
-        sigma, source = load_sigma(args.sigma_json)
+        if args.sigma_json:
+            sigma, source = load_sigma(args.sigma_json)
+        else:
+            if not args.sigma_source:
+                ap.error("--sigma-net-m needs --sigma-source")
+            sigma, source = args.sigma_net_m, "PROVISIONAL: " + args.sigma_source
         out = Path(args.out) if args.out else REPO / "frontend" / "public" / "data"
         res = run(load_stack(args.stack), sigma, source, out, exclude_pairs=args.exclude_pairs,
                   gps_dir=args.gps_dir, canals=args.canal, component=args.component, var=args.var,
-                  calibrate=not args.no_calibration)
+                  calibrate=not args.no_calibration, mask_anomaly=args.mask_anomaly, notes=args.note,
+                  min_valid_fraction=args.min_valid_fraction or regrid.MIN_VALID_FRACTION)
 
     print("labels 0..3:", res["label_counts"], "| fitted cells:", res["n_fitted"],
           "| seasonal significant:", res["n_significant"], "| cells with net change:", res["n_net"])

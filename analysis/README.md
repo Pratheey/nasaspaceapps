@@ -43,6 +43,42 @@ Add `--exclude-pairs 7 12` to drop pairs flagged as unwrapping errors from the f
 - **Vertical:** `--component up --var up_disp_m` runs the same pipeline on Steven's vertical stack (positive up). It needs `--out`, so it never overwrites the line-of-sight app files.
 - **Stations:** any number of stations; roles come from `gps/processed/stations.csv`.
 
+## First real run (DRAFT, 2026-11-14, hour ~8)
+
+Real stack `data/interim/stack_t034_f020.nc` (25 pairs, 1674 × 1620 px at 80 m, EPSG:32611, tied to
+P304; from the Drive, never in git). Runs in about 7 s. **Draft:** sigma is provisional and the
+real-data gate (PLAN) is not passed until Daniel's residual table exists.
+
+```bash
+python -m analysis.run --stack data/interim/stack_t034_f020.nc --sigma-net-m 0.0182 \
+  --sigma-source "<where it comes from>" --out analysis/_real_draft
+```
+
+| | |
+|---|---|
+| Provisional σ of net change | **1.82 cm**: RMS of first-to-last NISAR − GPS at 13 held-out stations (raw GPS, single points; `data/processed/qa_summary_t034_f020.csv`) |
+| Cells with a net change | 8,116 of 12,000 (68%) |
+| Labels 0 / 1 / 2 / 3 | 6,811 / 2,975 / 1,256 / 958 |
+| Seasonal threshold | **A > 17.1 mm** (F-test alone passes 26.5% of 200 stable control cells; with the threshold, 5.0%) |
+
+Real-data gate:
+- **Sign: passes.** At the moving held-out stations, the cell series correlates positively with
+  GPS: CAFP +0.81, CAFR +0.83, TRAN +0.60, CAHA +0.56. P307 does not track (−0.35), as the data lane found.
+- **Calibration: passes** (5.0% of stable cells).
+- **Residual table: not yet** (waits for H-9).
+
+Findings for the team:
+- **Cell coverage.** Only 49% of pixels stay valid through all 25 pairs. At a 50% valid-pixel rule,
+  only 44% of cells had a net change and CAFP had none; at 20% (default now), 68% do, CAFP tracks
+  GPS (net within 0.7 cm), and agreement at every other station is unchanged.
+- **P300 is a poor "calm" demo station:** its cell has only 6 valid dates. P294 and P298 are
+  calm and track GPS (correlation +0.74, +0.73).
+- **The seasonal bar is high.** On stable hills, noise alone makes fitted amplitudes up to ~17 mm,
+  so only cells with a bigger yearly wave count as seasonal. GPS seasonal motion at the stations
+  is about 1 cm, so **the seasonal labels mark only the strongest seasonal areas**; most stations'
+  breathing is below what single cells can resolve. Say so in the limits panel.
+- Anomaly-flagged pixels are kept (data lane: ~2 mm effect); `--mask-anomaly` drops them.
+
 ## Not done yet
 
 - **Significance threshold calibrated on stable ground** (Pratheek's real-data test: the standard F-test over-fires on bedrock). Needs a decision on control areas; see `REQUESTS.md`.
