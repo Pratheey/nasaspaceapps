@@ -83,9 +83,13 @@ def main(argv=None) -> None:
     f = res["fit"]
     sw_only = seasonal.calibrate_amplitude_threshold(f, seasonal.control_mask(lat_c, lon_c, [seasonal.STABLE_CONTROL_BOXES[1]]))
     calib = res["calibration"]
-    thresholds = {f"calibrated, both boxes ({calib.amp_threshold_m * 1000:.1f} mm)": calib.amp_threshold_m,
-                  f"calibrated, south-west box only ({(sw_only.amp_threshold_m or 0) * 1000:.1f} mm)": sw_only.amp_threshold_m,
-                  "F-test only (no threshold)": None}
+    thresholds = {}
+    for boxes, result in (("both boxes", calib), ("south-west box only", sw_only)):
+        if result.amp_threshold_m is None:
+            thresholds[f"{boxes} (calibration unavailable, seasonal labels disabled)"] = np.inf
+        else:
+            thresholds[f"calibrated, {boxes} ({result.amp_threshold_m * 1000:.1f} mm)"] = result.amp_threshold_m
+    thresholds["F-test only (no threshold)"] = None
     sigmas = sorted({0.012, round(sigma, 4), 0.022, 0.03})
     print("\n## Sensitivity: label counts vs sigma of net change and seasonal threshold\n")
     print("| Seasonal threshold | sigma (cm) | Seasonal cells | 0 | 1 | 2 | 3 |\n|---|---|---|---|---|---|---|")

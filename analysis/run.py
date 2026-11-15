@@ -27,7 +27,7 @@ COMPONENTS = {
             "sign": "positive toward satellite (≈ uplift); negative ≈ sinking",
             "product": None},
     "up": {"var": "up_disp_m",
-           "sign": "positive up (uplift); negative down (sinking). Vertical from ascending + descending LOS",
+           "sign": "positive up",
            "product": "NISAR L2 GUNW, vertical from ascending (T034 F020) + descending (T042 F070)"},
 }
 
@@ -44,23 +44,17 @@ def load_sigma(path) -> tuple[float, str]:
     return float(info["sigma_net_m"]), str(Path(path).as_posix())
 
 
-def pixel_latlon(ds):
+def pixel_latlon(ds, spatial_dims):
     if "lat" in ds and "lon" in ds:
-        return np.asarray(ds["lat"]), np.asarray(ds["lon"])
+        import xarray as xr
+
+        lat, lon = xr.broadcast(ds["lat"], ds["lon"])
+        return lat.transpose(*spatial_dims).values, lon.transpose(*spatial_dims).values
     crs = ds.attrs.get("crs")
     if not crs:
         raise ValueError("stack has no lat/lon variables and no 'crs' attribute")
     crs = f"EPSG:{crs}" if str(crs).isdigit() else str(crs)
     return regrid.pixel_latlon(ds["x"].values, ds["y"].values, crs)
-
-
-def _station_roles(stations_json) -> dict:
-    """Reference and held-out station names from the GPS station list (any number of stations)."""
-    if not stations_json:
-        return {}
-    ref = [s["station"] for s in stations_json["stations"] if s["role"] == "reference"]
-    held = [s["station"] for s in stations_json["stations"] if s["role"] != "reference"]
-    return {"reference_station": ref[0] if ref else "P304", "held_out": held}
 
 
 def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGrid(),
@@ -72,37 +66,43 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
     comp = COMPONENTS[component]
     var = var or comp["var"]
     out_dir = Path(out_dir)
+    if not np.isfinite(sigma_net_m) or sigma_net_m < 0:
+        raise ValueError("Net uncertainty must be finite and nonnegative")
+    if not 0 <= min_valid_fraction <= 1:
+        raise ValueError("Minimum valid fraction must be between 0 and 1")
 
     # 1. dates: check the chain and convert to years
     dates = netchange.check_chain(ds["ref_date"].values, ds["sec_date"].values)
     t_ref = timebase.to_years(ds["ref_date"].values)
     t_sec = timebase.to_years(ds["sec_date"].values)
+    npair = len(t_ref)
+    exclude = np.zeros(npair, dtype=bool)
+    for pair in exclude_pairs:
+        if not 1 <= pair <= npair or int(pair) != pair:
+            raise ValueError(f"Excluded pair {pair} is outside the integer range 1–{npair}")
+        exclude[int(pair) - 1] = True
 
     # 2. masked pixels stay missing
-    disp = np.asarray(ds[var].values, dtype=float)
+    disp = np.array(ds[var].values, dtype=float, copy=True)
     if "valid" in ds:
-        disp[np.asarray(ds["valid"].values) == 0] = np.nan
+        disp[np.asarray(ds["valid"].values) != 1] = np.nan
+    disp[~np.isfinite(disp)] = np.nan
     # `valid` does NOT exclude the stack's `anomaly` flags (Pratheek). They cover pairs 1, 2, 3, 7,
     # 8, 11 and 12 in a diagonal stripe (19% of the window), and their measured effect is ~2 mm.
     # Dropping them would blank net change across that stripe (one missing pair blanks every later
     # date), so by default they are kept, like the data lane does. --mask-anomaly drops them.
     if mask_anomaly and "anomaly" in ds:
         disp[np.asarray(ds["anomaly"].values) == 1] = np.nan
-    npair = disp.shape[0]
-
     # 3. radar pixels -> app cells. Median of each cell's pixel POSITIONS per date, then back
     #    to pairs. (A median of pair values per pair would break the date-noise cancellation
     #    between neighbouring pairs and make the cell series drift; see regrid.py.)
-    lat, lon = pixel_latlon(ds)
+    lat, lon = pixel_latlon(ds, ds[var].dims[1:])
     idx = regrid.cell_index(lat.ravel(), lon.ravel(), grid)
     pixel_positions = netchange.cumulative(disp.reshape(npair, -1))          # (n_dates, n_pixels)
     cell_positions, _ = regrid.aggregate(pixel_positions, idx, grid.ncells, min_valid_fraction)
     cells = np.diff(cell_positions, axis=0)                                   # (n_pairs, ncells)
 
     # 4. fit B, a, b per cell on the pairs
-    exclude = np.zeros(npair, dtype=bool)
-    for p in exclude_pairs:
-        exclude[int(p) - 1] = True
     f = fit.fit_stack(cells, t_ref, t_sec, exclude_pairs=exclude)
 
     # 4b. trend guard: hide whole fits that cannot be trusted (missing a season, too few pairs,
@@ -125,8 +125,11 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
         lat_c, lon_c = grid.centres()
         calib = seasonal.calibrate_amplitude_threshold(f, seasonal.control_mask(lat_c, lon_c, control_boxes), alpha)
         if calib.amp_threshold_m is None:
-            notes.append(f"Seasonal threshold NOT calibrated: only {calib.n_control} usable stable control cells "
-                         f"(need {seasonal.MIN_CONTROL_CELLS}). Seasonal labels use the F-test alone and may over-claim.")
+            significance_text = (
+                f"Seasonal labels unavailable: {calib.n_control} usable stable control cells "
+                f"(need {seasonal.MIN_CONTROL_CELLS})"
+            )
+            notes.append(significance_text)
         else:
             significance_text = (
                 f"joint F-test on (a,b), p < {alpha}, AND amplitude > {calib.amp_threshold_m * 1000:.1f} mm; "
@@ -134,7 +137,11 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
                 f"(F-test alone: {calib.raw_pass_rate:.0%})")
             notes.append("Stable control areas: " + "; ".join(
                 f"{b.name} (lat {b.lat_min}..{b.lat_max}, lon {b.lon_min}..{b.lon_max})" for b in control_boxes))
-    s = seasonal.evaluate(f, alpha, calib.amp_threshold_m if calib else None)
+    calibration_failed = calib is not None and calib.amp_threshold_m is None
+    threshold = np.inf if calibration_failed else (calib.amp_threshold_m if calib else None)
+    s = seasonal.evaluate(f, alpha, threshold)
+    if calibration_failed:
+        s.fitted = np.zeros_like(s.fitted)
 
     # 6. model-free motion
     cum = netchange.cumulative(cells)            # (n_dates, ncells)
@@ -145,6 +152,14 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
     lab = labels.label(net, sigma_net_m, s.significant)
 
     # 8. export the contract files
+    reference_station = ds.attrs.get("reference_station", "P304")
+    if isinstance(reference_station, bytes):
+        reference_station = reference_station.decode("utf-8")
+    if component == "up":
+        notes.append(
+            f"Vertical cross-check only (D7, D9). Relative to {reference_station}. "
+            "Hanford (CAHA) has no descending coverage. North motion is assumed zero."
+        )
     c = fit.offset_for_first_date(timebase.to_years([dates[0]])[0], f.B, f.a, f.b)
     granules = ds["granule_id"].values if "granule_id" in ds else [None] * npair
     iono = ds["iono_applied"].values if "iono_applied" in ds else [None] * npair
@@ -153,34 +168,46 @@ def run(ds, sigma_net_m: float, sigma_source: str, out_dir, *, grid=regrid.AppGr
               "iono_applied": None if iono[k] is None else bool(iono[k]),
               "used_in_fit": not bool(exclude[k])} for k in range(npair)]
     stations_json = None
-    if stations.gps_files_present(gps_dir):
+    if stations.gps_files_present(gps_dir, component):
+        if component == "up":
+            gps = stations.load_vertical_gps(gps_dir, dates, reference_station)
+            notes.append(
+                "Vertical station comparisons use the app cell and seven-day GPS Up medians. "
+                "Curves are aligned at the first shared observation. Residuals compare changes."
+            )
+        else:
+            gps = stations.load_gps(gps_dir)
         stations_json = stations.build_stations(
-            stations.load_gps(gps_dir), dates=dates, grid=grid, cumulative=cum, fit=f, seasonal=s, c=c,
-            is_synthetic=is_synthetic, placeholder_coords=placeholder_station_coords)
+            gps, dates=dates, grid=grid, cumulative=cum, fit=f, seasonal=s, c=c,
+            is_synthetic=is_synthetic, placeholder_coords=placeholder_station_coords,
+            component=component, alpha=alpha)
     else:
-        notes.append("stations.json not written: GPS files missing. The app falls back to samples without it.")
+        notes.append("stations.json not written: GPS files missing.")
 
-    # canal profiles first, so meta.json can list them (contracts v1.2 section 5)
+    # Optional profiles are named before metadata is built (contract v1.2).
     profiles = {}
     for path in canals:
         for name, line in canal.read_lines(path):
-            profiles[f"canal_profile_{canal.slug(name)}.json"] = canal.profile(
-                name, line, grid, net=net, net_sigma=net_sigma, trend=f.B, trend_sigma=f.sigma_B,
-                label=lab, is_synthetic=is_synthetic, source=Path(path).name)
-
+            fname = f"canal_profile_{canal.slug(name)}.json"
+            if fname in profiles:
+                raise ValueError(f"Multiple canal profiles use the same file name: {fname}")
+            profiles[fname] = canal.profile(
+                name, line, grid, net=net, net_sigma=net_sigma, trend=f.B,
+                trend_sigma=f.sigma_B, label=lab, is_synthetic=is_synthetic, source=Path(path).name)
+    held_out = [s["station"] for s in stations_json["stations"] if s["role"] == "held_out"] if stations_json else []
     meta = export.build_meta(is_synthetic=is_synthetic, grid_meta=grid.as_meta(), dates=dates, pairs=pairs,
                              sigma_net_m=sigma_net_m, sigma_source=sigma_source, alpha=alpha, notes=notes,
                              sign_convention=comp["sign"], product=comp["product"] if not is_synthetic else None,
-                             significance=significance_text, canal_profiles=sorted(profiles),
-                             **_station_roles(stations_json))
+                             significance=significance_text, reference_station=reference_station,
+                             held_out=held_out, canal_profiles=sorted(profiles))
+    if component == "up":
+        meta["component"] = component
     grid_json = export.build_grid(is_synthetic=is_synthetic, net=net, net_sigma=net_sigma, label=lab,
                                   seasonal=s, fit=f, c=c, n_valid_dates=netchange.n_valid_dates(cum))
     series = export.build_series(is_synthetic=is_synthetic, cumulative_cells=cum)
-    sizes = export.write_all(out_dir, meta, grid_json, series, stations_json)
-
-    # 9. canal profiles (screening tool; contracts v1.2 section 5)
-    for fname, prof in profiles.items():
-        sizes[fname] = export.write_json(out_dir / fname, prof)
+    out_dir.mkdir(parents=True, exist_ok=True)
+    sizes = {fname: export.write_json(out_dir / fname, prof) for fname, prof in profiles.items()}
+    sizes.update(export.write_all(out_dir, meta, grid_json, series, stations_json))
 
     counts = np.bincount(lab, minlength=4).tolist()
     return {"label_counts": counts, "n_fitted": int(f.fitted.sum()), "n_significant": int(s.significant.sum()),
@@ -251,11 +278,12 @@ def main(argv=None) -> None:
                 ap.error("--sigma-net-m needs --sigma-source")
             sigma, source = args.sigma_net_m, "PROVISIONAL: " + args.sigma_source
         out = Path(args.out) if args.out else REPO / "frontend" / "public" / "data"
-        res = run(load_stack(args.stack), sigma, source, out, exclude_pairs=args.exclude_pairs,
-                  gps_dir=args.gps_dir, canals=args.canal, component=args.component, var=args.var,
-                  calibrate=not args.no_calibration, mask_anomaly=args.mask_anomaly, notes=args.note,
-                  min_valid_fraction=args.min_valid_fraction or regrid.MIN_VALID_FRACTION,
-                  trend_guard=not args.no_trend_guard)
+        with load_stack(args.stack) as ds:
+            res = run(ds, sigma, source, out, exclude_pairs=args.exclude_pairs,
+                      gps_dir=args.gps_dir, canals=args.canal, component=args.component, var=args.var,
+                      calibrate=not args.no_calibration, mask_anomaly=args.mask_anomaly, notes=args.note,
+                      min_valid_fraction=(regrid.MIN_VALID_FRACTION if args.min_valid_fraction is None
+                                          else args.min_valid_fraction), trend_guard=not args.no_trend_guard)
 
     print("labels 0..3:", res["label_counts"], "| fitted cells:", res["n_fitted"],
           "| seasonal significant:", res["n_significant"], "| cells with net change:", res["n_net"])
@@ -268,7 +296,7 @@ def main(argv=None) -> None:
         print(f"seasonal threshold: {thr} | stable control cells: {c.n_control} | pass rate F-test alone "
               f"{c.raw_pass_rate:.1%} -> with threshold {c.pass_rate:.1%}")
     if res["stations"] is None:
-        print("WARNING: no stations.json (GPS files missing); the app will show the samples instead.")
+        print("WARNING: no stations.json (GPS files missing); the app cannot load this dataset.")
 
 
 if __name__ == "__main__":

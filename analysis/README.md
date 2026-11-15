@@ -15,20 +15,36 @@ python -m analysis.run --stack <path>/stack_t034_f020.nc --sigma-json gps/proces
 
 Add `--exclude-pairs 7 12` to drop pairs flagged as unwrapping errors from the fit.
 
+To export the provisional vertical cross-check, pass the shared H-16 stack and its GPS
+uncertainty file:
+
+```bash
+python -m analysis.run --component up --stack <path>/vertical_t034_t042.nc \
+  --sigma-json radar/results/hour_33/vertical_uncertainty.json --out <vertical-output-folder>
+```
+
+The station comparison uses cleaned seven-day GPS Up medians, relative to P304. Curves
+are aligned at the first shared observation, including stations whose GPS starts late.
+The residuals compare changes at the app grid cell. H-13 reports nearest-pixel residuals
+as a separate measurement. Hanford lacks descending coverage.
+
+Pass `--canal context/canals/canals_bbox.geojson` to add profiles to the selected export.
+The filenames are listed in `meta.json` under `canal_profiles`.
+
 ## Pipeline (`run.py`)
 
 | Step | File | In | Out |
 |---|---|---|---|
 | 1 | `timebase.py` | ISO dates | years since 2026-01-01 (D3) |
 | 2 | `netchange.check_chain` | `ref_date`, `sec_date` | the date list; fails if the pairs are not a chain |
-| 3 | `regrid.py` | stack pixels (projected x/y + `crs`) | each pixel's position series → median position per 0.01° app cell per date (kept only if ≥ 50% of its pixels are valid) → back to pairs |
+| 3 | `regrid.py` | stack pixels (projected x/y + `crs`, or lat/lon) | each pixel's position series → median position per 0.01° app cell per date (default at least 20% valid pixels) → back to pairs |
 | 4 | `fit.py` | pair values per cell | B, a, b, covariance, RSS, RSS of trend-only fit |
 | 5 | `seasonal.py` | fit result | F-test p, significant?, A, σA, peak month (A and month hidden where not significant) |
 | 6 | `netchange.py` | pair values per cell | cumulative position per date, net change (null if any pair missing) |
 | 4b | `guards.py` | fit + which pairs each cell used | trend guard: whole fit hidden where pairs miss a season, < 15 pairs, or σ of trend > 5 cm/yr |
 | 7 | `labels.py` | net, σ_net, significant | label 0–3 |
 | 8 | `export.py`, `stations.py` | all of the above + Daniel's GPS CSVs | `meta.json`, `grid.json`, `series.json`, `stations.json` per `contracts/app_data.md` |
-| 9 | `canal.py` | canal GeoJSON + per-cell results | `canal_profile_<name>.json` (screening tool; **not in contracts v1**) |
+| 9 | `canal.py` | canal GeoJSON + per-cell results | `canal_profile_<name>.json` (v1.2 screening tool) |
 
 `synthetic.py` makes fake stacks with a known answer for the tests. Its output is always marked `is_synthetic`.
 
@@ -144,10 +160,4 @@ lanes; trends stay off the headline.
 comes from this lane, recomputed from `frontend/public/data/` the way the app computes it, with its
 source. Rerun after any change to the app data.
 
-## Not done yet
-
-- **Significance threshold calibrated on stable ground** (Pratheek's real-data test: the standard F-test over-fires on bedrock). Needs a decision on control areas; see `REQUESTS.md`.
-- Real-data run (waits for the stack, GPS files and uncertainty).
-- Vertical: waits for Steven's stack. Canal profile: waits for Daniel's canal lines. Both need a contract change before the app shows them.
-
-What each other lane needs to send is in `REQUESTS.md`.
+The optional vertical and canal outputs follow v1.2 of `contracts/app_data.md`.

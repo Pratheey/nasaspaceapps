@@ -1,4 +1,4 @@
-"""Write the app files exactly as contracts/app_data.md (v1) describes.
+"""Write the app files exactly as contracts/app_data.md describes.
 
 Units are metres, values rounded to 4 decimals (0.1 mm), missing values are null.
 stations.json needs Daniel's GPS series (gps/processed/), so it is written only when
@@ -68,7 +68,7 @@ def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_sour
     from .timebase import T0
 
     meta = {
-        "contract_version": 1,
+        "contract_version": 1.2,
         "is_synthetic": bool(is_synthetic),
         "created_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "product": product or ("SYNTHETIC (shape of NISAR L2 GUNW)" if is_synthetic else "NISAR L2 GUNW"),
@@ -96,7 +96,7 @@ def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_sour
 
 
 def write_json(path: Path, obj) -> int:
-    text = json.dumps(obj, separators=(",", ":"), ensure_ascii=False)
+    text = json.dumps(obj, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
     path.write_text(text, encoding="utf-8")
     size = len(text.encode("utf-8"))
     if size > MAX_BYTES:
@@ -112,4 +112,6 @@ def write_all(out_dir, meta, grid, series, stations=None) -> dict:
              "series.json": write_json(out / "series.json", series)}
     if stations is not None:
         sizes["stations.json"] = write_json(out / "stations.json", stations)
+    else:
+        (out / "stations.json").unlink(missing_ok=True)
     return sizes

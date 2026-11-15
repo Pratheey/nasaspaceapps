@@ -6,6 +6,7 @@ Inputs:
       gps_los.csv    station, date, los_m, los_rel_ref_m, sigma_m   (daily, NISAR LOS, tied to P304)
       gps_fits.csv   station, window_start, window_end, component, trend/amp/peak columns
       residuals.csv  pair, station, nisar_los_m, gps_los_m, residual_m, unwrap_flag
+  - for vertical, gps_cleaned_enu.csv and the H-13 GPS epoch sampling method
   - this lane's per-cell results (cumulative series and fit at the station's cell)
 
 Output per station: where it is, its app cell, the GPS series at the NISAR dates, the NISAR
@@ -23,14 +24,17 @@ from pathlib import Path
 
 import numpy as np
 
+from . import fit as fit_model, seasonal as seasonal_model, timebase
 from .export import floats
 from .regrid import AppGrid, cell_index
 
 GPS_FILES = ("stations.csv", "gps_los.csv", "gps_fits.csv", "residuals.csv")
+VERTICAL_GPS_FILES = ("stations.csv", "gps_cleaned_enu.csv")
 
 
-def gps_files_present(gps_dir) -> bool:
-    return gps_dir is not None and all((Path(gps_dir) / f).exists() for f in GPS_FILES)
+def gps_files_present(gps_dir, component: str = "los") -> bool:
+    files = VERTICAL_GPS_FILES if component == "up" else GPS_FILES
+    return gps_dir is not None and all((Path(gps_dir) / f).is_file() for f in files)
 
 
 def _read(path) -> list[dict]:
@@ -64,6 +68,32 @@ def load_gps(gps_dir) -> dict:
     return {"stations": _read(d / "stations.csv"), "los": los, "fits": fits, "residuals": residuals}
 
 
+def load_vertical_gps(gps_dir, dates, reference_station: str) -> dict:
+    """Sample GPS Up with the same cleaned seven-day medians as the H-13 check."""
+    import pandas as pd
+
+    from radar.vertical import gps_positions
+
+    directory = Path(gps_dir)
+    station_rows = _read(directory / "stations.csv")
+    enu = pd.read_csv(directory / "gps_cleaned_enu.csv", parse_dates=["date"])
+    enu = enu.set_index(["station", "date"]).sort_index()
+    available = set(enu.index.get_level_values("station"))
+    if reference_station not in available:
+        raise ValueError(f"Vertical GPS is missing reference station {reference_station}")
+    names = [row["station"] for row in station_rows if row["station"] in available]
+    positions = gps_positions(enu, dates, sorted(set(names) | {reference_station}))
+    reference_up = positions[reference_station][:, 2]
+    up = {}
+    for name in names:
+        relative = positions[name][:, 2] - reference_up
+        observed = np.flatnonzero(np.isfinite(relative))
+        if observed.size:
+            relative -= relative[observed[0]]
+        up[name] = relative
+    return {"stations": station_rows, "up": up}
+
+
 def _residual_summary(rows) -> dict:
     net = next((r for r in rows if r["pair"].lower() == "net"), None)
     pairs = [r for r in rows if r["pair"].lower() != "net"]
@@ -78,8 +108,33 @@ def _residual_summary(rows) -> dict:
     }
 
 
+def _vertical_comparison(gps_up, radar_up, dates, alpha):
+    """Compare matched-date GPS Up with the same radar cell used in the app."""
+    t = timebase.to_years(dates)
+    gps_delta = np.diff(gps_up)
+    result = fit_model.fit_pairs(gps_delta, t[:-1], t[1:])
+    season = seasonal_model.evaluate(result, alpha)
+    gps_fit = {
+        "trend_m_per_yr": result.B,
+        "trend_sigma_m_per_yr": result.sigma_B,
+        "amp_m": season.amp,
+        "amp_sigma_m": season.amp_sigma,
+        "peak_month": season.peak_month,
+    }
+    residual = np.diff(radar_up) - gps_delta
+    good = residual[np.isfinite(residual)]
+    net = (radar_up[-1] - radar_up[0]) - (gps_up[-1] - gps_up[0])
+    return gps_fit, {
+        "net_m": _r4(_num(net)),
+        "pairs_rms_m": _r4(np.sqrt(np.mean(np.square(good)))) if good.size else None,
+        "n_pairs": int(good.size),
+        "unwrap_flagged_pairs": [],
+    }
+
+
 def build_stations(gps: dict, *, dates, grid: AppGrid, cumulative, fit, seasonal, c,
-                   is_synthetic: bool, placeholder_coords: bool = False) -> dict:
+                   is_synthetic: bool, placeholder_coords: bool = False,
+                   component: str = "los", alpha: float = seasonal_model.ALPHA) -> dict:
     """cumulative: (n_dates, ncells); fit/seasonal/c: per-cell results from run.py."""
     iso = [d.isoformat() for d in dates]
     out = []
@@ -87,22 +142,38 @@ def build_stations(gps: dict, *, dates, grid: AppGrid, cumulative, fit, seasonal
         name = st["station"]
         lat, lon = float(st["lat"]), float(st["lon"])
         idx = int(cell_index([lat], [lon], grid)[0])
-        inside = idx >= 0
-        if not inside:
+        if idx < 0:
             continue   # D5: stations outside the app bbox appear only in residuals.csv
 
-        daily = gps["los"].get(name, {})
-        gps_vals = [daily.get(d, (None, None)) for d in iso]   # decimated to the NISAR dates
-
-        gf = gps["fits"].get(name, {}).get("los", {})
+        radar_values = cumulative[:, idx]
+        if component == "up":
+            if not np.isfinite(radar_values[1:]).any():
+                continue
+            gps_up = gps["up"].get(name, np.full(len(iso), np.nan))
+            shared = np.flatnonzero(np.isfinite(radar_values) & np.isfinite(gps_up))
+            if shared.size:
+                start = shared[0]
+                gps_values = floats(gps_up + (radar_values[start] - gps_up[start]))
+            else:
+                gps_values = [None] * len(iso)
+            gps_sigmas = [None] * len(iso)  # no uncertainty series for these GPS medians
+            gf, residuals = _vertical_comparison(gps_up, radar_values, dates, alpha)
+        else:
+            daily = gps["los"].get(name, {})
+            gps_vals = [daily.get(d, (None, None)) for d in iso]
+            gps_values = [_r4(v) for v, _ in gps_vals]
+            gps_sigmas = [_r4(s) for _, s in gps_vals]
+            gf = gps["fits"].get(name, {}).get("los", {})
+            residuals = _residual_summary(gps["residuals"].get(name, []))
         pm = _num(gf.get("peak_month"))
-        sig_known = bool(inside and seasonal.fitted[idx])
+        sig_known = bool(seasonal.fitted[idx])
 
         entry = {
             "station": name, "lat": lat, "lon": lon, "role": st.get("role", "held_out"),
-            "cell_index": idx if inside else None,
-            "gps": {"dates": iso, "los_m": [_r4(v) for v, _ in gps_vals], "sigma_m": [_r4(s) for _, s in gps_vals]},
-            "nisar": {"dates": iso, "los_m": floats(cumulative[:, idx]) if inside else [None] * len(iso)},
+            "cell_index": idx,
+            # The v1.2 vertical contract retains the legacy los_m key.
+            "gps": {"dates": iso, "los_m": gps_values, "sigma_m": gps_sigmas},
+            "nisar": {"dates": iso, "los_m": floats(radar_values)},
             "gps_fit": {
                 "trend_m_per_yr": _r4(_num(gf.get("trend_m_per_yr"))),
                 "trend_sigma_m_per_yr": _r4(_num(gf.get("trend_sigma_m_per_yr"))),
@@ -111,16 +182,16 @@ def build_stations(gps: dict, *, dates, grid: AppGrid, cumulative, fit, seasonal
                 "peak_month": None if pm is None else int(pm),
             },
             "nisar_fit": {
-                "trend_m_per_yr": floats([fit.B[idx]])[0] if inside else None,
-                "trend_sigma_m_per_yr": floats([fit.sigma_B[idx]])[0] if inside else None,
-                "amp_m": floats([seasonal.amp[idx]])[0] if inside else None,
-                "amp_sigma_m": floats([seasonal.amp_sigma[idx]])[0] if inside else None,
+                "trend_m_per_yr": _r4(_num(fit.B[idx])),
+                "trend_sigma_m_per_yr": _r4(_num(fit.sigma_B[idx])),
+                "amp_m": _r4(_num(seasonal.amp[idx])),
+                "amp_sigma_m": _r4(_num(seasonal.amp_sigma[idx])),
                 "seasonal_significant": bool(seasonal.significant[idx]) if sig_known else None,
-                "c_m": floats([c[idx]])[0] if inside else None,
-                "a_m": floats([fit.a[idx]])[0] if inside else None,
-                "b_m": floats([fit.b[idx]])[0] if inside else None,
+                "c_m": _r4(_num(c[idx])),
+                "a_m": _r4(_num(fit.a[idx])),
+                "b_m": _r4(_num(fit.b[idx])),
             },
-            "residuals": None if st.get("role") == "reference" else _residual_summary(gps["residuals"].get(name, [])),
+            "residuals": None if st.get("role") == "reference" else residuals,
         }
         if placeholder_coords:
             entry["coords_are_placeholder"] = True
