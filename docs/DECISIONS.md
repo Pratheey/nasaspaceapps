@@ -121,3 +121,35 @@ or overrides at the next check-in.** Evidence and numbers: `data/README.md` sect
   `src/components/Inspector.jsx`. / radar: unchanged; check the descending track against
   the same 13 stations. / story: 12 held-out stations, not 3; Hanford and Five Points are
   the demo; say "about 2 cm" wherever the pitch states agreement.
+
+## D6: 2026-11-14 16:15: The event is 48 hours; plan rebased at hour 7
+**Status: proposed (from the analysis lane, at the team's request). Ryan confirms or overrides
+at the hour-8 check-in.** Builds on D5.
+- **Decision:**
+  - The event runs **48 hours**: hour 0 ≈ Saturday 09:00 PST, hour 48 ≈ Monday 09:00.
+    `docs/PLAN.md` is rewritten from hour 7 on.
+  - **The extra 24 hours go to the checks first, then to the 48 h extras.** Checks: cleaned GPS at
+    all 13 stations, the unwrapping check, the calibrated seasonal threshold, sensitivity
+    tests, an early public deploy, two claims reviews and a two-person check of every number.
+    Extras now scheduled: polarization, NISAR vs Sentinel-1 coverage, descending track and
+    vertical/east, canal and Corcoran levee profiles, historical context (OPERA unfiltered,
+    DWR/TRE).
+  - **Milestones:** check-ins at hours 8, 12, 28, 34, 38; first real map in the app at 16;
+    final labels v1 at 28; data freeze at 34; feature freeze at 38; submit at 44; buffer to 48.
+  - **Real-data gate:** the real map loses its "draft" label only when the sign checks out at the
+    moving stations, at most 5% of stable control cells pass the seasonal test, and the held-out
+    residual table exists.
+  - **Sleep:** two 6-hour shifts on night 1 (hours 16–22: Daniel, Avi, Steven; hours 22–28:
+    Pratheek, Ismail, Ryan).
+  - **New handoffs H-15 to H-20** (canal/levee lines, vertical stack, GPS up, contracts v1.2,
+    profile and vertical app files, historical series); see `docs/PLAN.md`.
+- **Why:** The plan was written for 24 hours. With 48, cutting checks to add features would
+  weaken the one thing the project promises: showing how sure we are.
+- **Impact per lane:** nisar: stack on the Drive and go/no-go by hour 10, DEM troposphere, help
+  Steven with Track 042 at 28, data freeze at 34. / analysis: first real station numbers now,
+  draft map at 16, final labels v1 at 28, profiles and vertical by 34. / radar: report status at
+  hour 8; polarization by 16, coverage by 28, vertical by 33. / gps: LOS files and go/no-go by 10,
+  13 stations and residuals by 14, canal/levee lines by 16, GPS up by 26, history by 30. /
+  frontend: keyless basemap, visible data-fallback warning, D5 demo, public deploy by 16; new
+  panels 28–36; feature freeze at 38. / integrator: merge #4–#6 and the plan, confirm D5/D6 at
+  hour 8, contracts v1.2 by 14, claims reviews at 28 and 40, submit at 44.

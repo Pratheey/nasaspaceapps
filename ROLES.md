@@ -2,6 +2,10 @@
 
 *For the humans on the team. Read your section. Takes 5 minutes.*
 
+> **The event is 48 hours (D6).** The timeline below is the new one. The "by hour X" goals in
+> each person's section are from the 24-hour version; your current hour-by-hour list is in
+> [docs/PLAN.md](docs/PLAN.md).
+
 ---
 
 ## What we're building, in plain English
@@ -32,20 +36,25 @@ evidence behind every result.*
 4. **Honest about uncertainty.** Show what we know and what we don't. Never overclaim.
 5. **A demo judges remember.** Two GPS stations, Five Points and Hanford, where the ground
    rises about 1 cm over winter and then sinks 5–6 cm by August, and the satellite sees it.
-6. **Submit early.** Target hour 22, not hour 24.
+6. **Don't cut corners, then submit early.** Checks first, extras second. Target hour 44, not 48.
 
 ## Key moments (everyone)
 
 | Hour | What happens |
 |---|---|
-| **0** | Kickoff. Everyone clones the repo and sets their lane. |
-| **2** | Check-in 1. File formats agreed. Everyone can work without waiting on anyone. |
-| **5** | 🚦 **Go/no-go.** Does the satellite agree with GPS? First result: within about 2 cm, with no jumps. Proposed call: go (Daniel confirms). |
-| **6** | Check-in 2. Show what works. |
-| **12** | Check-in 3. Real data should be flowing all the way to the map. |
-| **18** | Check-in 4. 🧊 **Feature freeze.** No new features, only fixes. |
-| **22** | 📨 **Submit.** |
-| **24** | Deadline. Our buffer. |
+| **0** (Sat ~09:00) | Kickoff. Everyone clones the repo and sets their lane. |
+| **2** | Check-in 1. File formats agreed. |
+| **8** (Sat ~17:00) | Check-in. Everyone reports status; PRs merged; D5 and D6 confirmed. |
+| **10** | 🚦 **Go/no-go on cleaned GPS.** First result: within about 2 cm, no jumps. Stack on the Drive. |
+| **12** | Check-in. |
+| **16** (Sun ~01:00) | First real map in the app. App on a public link. |
+| **16–28** | 😴 **Sleep in two shifts:** 16–22 Daniel, Avi, Steven · 22–28 Pratheek, Ismail, Ryan. |
+| **28** (Sun ~13:00) | Check-in. Final labels v1. Claims review 1. |
+| **34** | Check-in. 🧊 **Data freeze.** |
+| **38** (Sun ~23:00) | Check-in. 🧊 **Feature freeze.** No new features, only fixes. |
+| **38–42** | Every number checked by a second person. Claims review 2. Video. |
+| **44** (Mon ~05:00) | 📨 **Submit.** |
+| **48** (Mon ~09:00) | Deadline. Our buffer. |
 
 Check-ins are 15 minutes max. Show what works, say what's blocking you, then get back to it.
 
@@ -268,16 +277,20 @@ Don't panic. Ryan records the decision, and then:
 - Steven's polarization and coverage work doesn't depend on this, so he keeps going.
 - Everyone else keeps going. Your tasks don't change.
 
-## If we get 48 hours instead of 24
+## It's 48 hours: what the extra day is for (D6)
 
-| Who | Extra work |
+**Checks first:** cleaned GPS at all 13 stations, the unwrapping check, the calibrated seasonal
+test, an early public deploy, two claims reviews, and every number checked by a second person.
+**Then the extras:**
+
+| Who | Extra work (times in docs/PLAN.md) |
 |---|---|
-| Pratheek | Recover areas that got masked out; reprocess with any updated NISAR files |
-| Ismail | Seasonal/trend fit on Steven's vertical motion, canal profile |
-| Steven | Full up/down vs sideways time series, more fields and dates in the coverage comparison |
-| Daniel | Historical data along canals and at the stations |
-| Avi | Canal profile, history panel, up/down toggle, polarization and coverage panels in the app |
-| Ryan | Pitch polish, a second video take, practice for judge questions |
+| Pratheek | DEM heights for the troposphere; recover masked areas safely; help Steven with Track 042 |
+| Ismail | Canal and Corcoran levee profiles; seasonal/trend fit on Steven's vertical motion |
+| Steven | Coverage comparison; full descending track; vertical vs east-west, checked against GPS |
+| Daniel | All 13 stations; canal and levee lines; GPS up; historical data at the stations and along the canal |
+| Avi | Profile view, history panel, up/down toggle, polarization and coverage panels |
+| Ryan | Contracts v1.2, two claims reviews, pitch polish, a second video take, judge Q&A prep |
 
 ---
 
