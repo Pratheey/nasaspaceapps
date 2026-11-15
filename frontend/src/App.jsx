@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout } from "lucide-react";
+import FieldCard from "./components/FieldCard.jsx";
 import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
@@ -141,6 +142,7 @@ function Explorer({ D, onStory, startTour }) {
       { id: "t-3d", group: "Tools", label: "3D view", key: "D", icon: Box, run: () => set({ relief: true, lens: false }) },
       { id: "t-prof", group: "Tools", label: "Draw a cross-section", key: "P", icon: Route, run: () => set({ profile: { a: null }, drawing: true }) },
       { id: "t-gps", group: "Tools", label: S.gps ? "Hide GPS check" : "Show GPS check", key: "G", icon: Satellite, run: () => set({ gps: !Sref.current.gps }) },
+      { id: "t-fields", group: "Tools", label: "Crop fields: polarization and coverage", key: "F", icon: Sprout, run: () => set({ fields: true, field: null }) },
       { id: "t-tour", group: "Tools", label: "Walkthrough", key: "W", icon: Compass, run: () => goStep(0) },
       { id: "t-share", group: "Tools", label: "Copy a link to this view", icon: Share2, run: share },
       { id: "t-limits", group: "Tools", label: "What this map can and can't tell you", icon: Info, run: () => setLimits(true) },
@@ -156,6 +158,7 @@ function Explorer({ D, onStory, startTour }) {
       if (e.key === "Escape") {
         if (limits) setLimits(false);
         else if (s.tour >= 0) endTour();
+        else if (s.field) set({ field: null });
         else if (s.profile) { mapRef.current?.showProbe(null); set({ profile: null, drawing: false }); }
         else if (s.awaitPin) set({ awaitPin: false });
         return;
@@ -170,6 +173,7 @@ function Explorer({ D, onStory, startTour }) {
       else if (k === "s") set(s.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false });
       else if (k === "p") set(s.profile ? { profile: null, drawing: false } : { profile: { a: null }, drawing: true });
       else if (k === "w") goStep(0);
+      else if (k === "f") set({ fields: !s.fields, field: null });
       else if (k === "arrowright") step(1);
       else if (k === "arrowleft") step(-1);
     };
@@ -231,7 +235,8 @@ function Explorer({ D, onStory, startTour }) {
         <div className="min-h-0 flex flex-col">
           <div className="@container relative flex-1 min-h-[420px] overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]">
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
-              onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} />
+              onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} onField={(f) => set({ field: f })} />
+            {S.fields && <FieldCard field={S.field} onClose={() => set({ field: null })} />}
 
             {S.mode === "breathe" && !S.relief && (
               // a radar swath sweeps the map on every new pass
@@ -259,15 +264,16 @@ function Explorer({ D, onStory, startTour }) {
                 { icon: SplitSquareHorizontal, label: "Swipe", on: S.swipe != null, act: () => set(S.swipe != null ? { swipe: null } : { swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", playing: false }), key: "S" },
                 { icon: ScanSearch, label: "Lens", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
                 { icon: Box, label: "3D", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },
+                { icon: Sprout, label: "Fields", on: S.fields, act: () => set({ fields: !S.fields, field: null }), key: "F" },
                 { icon: Share2, label: "Share view", on: false, act: share },
               ].map(({ icon: Icon, label, on, act, key }) => (
                 <button key={label} onClick={act} aria-pressed={key ? on : undefined} title={key ? `${label} (${key})` : label}
                   className={`inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] ${on ? "bg-accent text-space font-semibold" : "text-ink/90 hover:bg-deck-2"}`}>
-                  <Icon size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[880px]:sr-only">{label}</span>
+                  <Icon size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[1080px]:sr-only">{label}</span>
                 </button>
               ))}
               <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-accent-2 hover:bg-deck-2">
-                <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[880px]:sr-only">Walkthrough</span>
+                <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[1080px]:sr-only">Walkthrough</span>
               </button>
             </div>
 
@@ -327,7 +333,7 @@ function Explorer({ D, onStory, startTour }) {
 function initialState(D) {
   const N = D.dates.length;
   const S = { mode: "net", sel: -1, pin: -1, k1: 0, k2: N - 1, cursor: N - 1, gps: false, split: false, playing: false,
-    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, swipe: null, lens: false };
+    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, swipe: null, lens: false, fields: false, field: null };
   const h = readHash();
   const int = (x, lo, hi) => { const n = parseInt(x, 10); return isNaN(n) ? null : Math.max(lo, Math.min(hi, n)); };
   if (MODES.some((m) => m.id === h.mode)) S.mode = h.mode;

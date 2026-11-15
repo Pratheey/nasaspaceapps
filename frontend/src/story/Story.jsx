@@ -7,6 +7,7 @@ import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
 import { Numbers } from "./Game.jsx";
 import { MEDIA, NasaVideo, MaybeImage, MissionPatch, Telemetry, Chirp, RadarPing } from "./Space.jsx";
+import FieldsScene from "./Fields.jsx";
 import { demoStations, lieStation, AGREEMENT } from "../lib/demo.js";
 import { Chapter, MissionTimeline, WatchNasa, SeenWall } from "./Media.jsx";
 import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
@@ -46,6 +47,7 @@ export default function Story({ D, onExplore }) {
       <WatchNasa />
       <Chirp className="my-6" />
       <GpsScene D={D} />
+      <FieldsScene />
       <MattersScene />
       <Finale D={D} onExplore={onExplore} />
       <Team />
@@ -527,7 +529,7 @@ function MattersScene() {
   return (
     <section id="matters" ref={ref} className="relative py-[16vh] border-y border-hair bg-[linear-gradient(180deg,#0F1420,#121a2a)]">
       <div className="px-6 md:px-14 max-w-[1400px] mx-auto">
-        <Chapter n={12} title="The stakes" />
+        <Chapter n={13} title="The stakes" />
         <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4 max-w-[1000px]">Sinking ground breaks the things built on it.</h2>
         <div className="grid md:grid-cols-3 gap-px bg-hair rounded-2xl overflow-hidden border border-hair mt-12">
           {items.map(([big, text, src], n) => (
@@ -581,16 +583,16 @@ function Finale({ D, onExplore }) {
 
 /* ------------------------------------------------------------------ */
 const TEAM = [
-  ["01", "Ryan Jian", "rjian", "ryan", "Team lead"],
-  ["02", "Daniel Li", "danielli", "daniel", "GPS"],
-  ["03", "Tsz “Steven” Liang", "s1evenl_", "steven", "Radar"],
-  ["04", "Ismail Churaev", "ischur", "ismail", "Model"],
-  ["05", "Pratheek Danam", "pratheey", "pratheek", "NISAR data"],
-  ["06", "Avinash Lee", "avilee", "avi", "App"],
+  ["01", "Ryan Jian", "rjian", "ryan"],
+  ["02", "Daniel Li", "danielli", "daniel"],
+  ["03", "Tsz “Steven” Liang", "s1evenl_", "steven"],
+  ["04", "Ismail Churaev", "ischur", "ismail"],
+  ["05", "Pratheek Danam", "pratheey", "pratheek"],
+  ["06", "Avinash Lee", "avilee", "avi"],
 ];
 
 // Trading-card style: tilts toward the cursor, colors up on hover, holographic sheen.
-function PlayerCard({ no, name, handle, img, role, delay, seen }) {
+function PlayerCard({ no, name, handle, img, delay, seen }) {
   const ref = useRef(null);
   const [t, setT] = useState({ x: 0, y: 0, on: false });
   const move = (e) => {
@@ -611,7 +613,6 @@ function PlayerCard({ no, name, handle, img, role, delay, seen }) {
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"
           style={{ background: `radial-gradient(circle at ${50 + t.x * 100}% ${50 + t.y * 100}%, rgba(255,255,255,.55), transparent 45%), linear-gradient(${115 + t.x * 60}deg, rgba(240,112,90,.35), rgba(111,168,255,.35), rgba(95,201,224,.35))` }} />
         <span className="absolute top-3 left-4 font-mono text-[13px] text-accent-2">{no}</span>
-        <span className="absolute top-3 right-3 rounded-full border border-accent/50 bg-space/70 backdrop-blur px-2.5 py-0.5 text-[11px] font-medium text-accent-2">{role}</span>
         <div className="absolute left-0 right-0 bottom-0 p-4">
           <p className="font-display text-[21px] font-bold leading-tight">{name}</p>
           <p className="font-mono text-[12px] text-ink/60 mt-0.5">@{handle}</p>
@@ -629,13 +630,12 @@ function Team() {
       <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <Chapter n={13} title="The crew" />
+            <Chapter n={14} title="The crew" />
             <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Mission team</h2>
           </div>
-          <p className="text-[15.5px] text-ink/70 max-w-[460px]">Software, data analysis and engineering, built in one weekend for NASA Space Apps 2026, Dancing with the SARs.</p>
         </div>
         <ul className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mt-10">
-          {TEAM.map(([no, name, handle, img, role], n) => <PlayerCard key={handle} {...{ no, name, handle, img, role, seen }} delay={n * 90} />)}
+          {TEAM.map(([no, name, handle, img], n) => <PlayerCard key={handle} {...{ no, name, handle, img, seen }} delay={n * 90} />)}
         </ul>
       </div>
     </section>

@@ -1,3 +1,4 @@
+import { CROP_COLORS, loadRadar } from "../lib/radar.js";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
 import { fmtShort } from "../lib/fmt.js";
 import * as maplibregl from "maplibre-gl";
@@ -14,13 +15,13 @@ const emptyFC = () => ({ type: "FeatureCollection", features: [] });
 const box = (b) => ({ type: "Feature", geometry: { type: "Polygon", coordinates: [[[b.w, b.n], [b.e, b.n], [b.e, b.s], [b.w, b.s], [b.w, b.n]]] } });
 
 /** The map. Imperative inside (MapLibre), declarative outside (props in, events out). */
-const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onSwipe }, ref) {
+const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onSwipe, onField }, ref) {
   const [, setTick] = useState(0); // re-render the swipe handle when the camera moves
   const el = useRef(null);
   const map = useRef(null);
   const ready = useRef(false);
-  const latest = useRef({ S, onCell, onProfilePoint, onProfileDrag, onHover, onStation });
-  latest.current = { S, onCell, onProfilePoint, onProfileDrag, onHover, onStation };
+  const latest = useRef({ S, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onField });
+  latest.current = { S, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onField };
   const reliefFeatures = useRef(null);
   const stationEls = useRef([]);
   const profMarkers = useRef([]);
@@ -119,6 +120,11 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       m.addLayer({ id: "sel-glow", type: "line", source: "sel", paint: { "line-color": "#6FA8FF", "line-width": 7, "line-opacity": 0.35, "line-blur": 4 } });
       m.addLayer({ id: "sel", type: "line", source: "sel", paint: { "line-color": "#A9CBFF", "line-width": 2 } });
       m.addLayer({ id: "pin", type: "line", source: "pin", paint: { "line-color": "#A98BF0", "line-width": 2, "line-dasharray": [2, 1.5] } });
+      m.addSource("fields", { type: "geojson", data: emptyFC(), promoteId: "field_id" });
+      const crop = ["match", ["get", "crop"], ...Object.entries(CROP_COLORS).flat(), "#8D97AB"];
+      m.addLayer({ id: "fields-fill", type: "fill", source: "fields", layout: { visibility: "none" }, paint: { "fill-color": crop, "fill-opacity": ["case", ["boolean", ["feature-state", "on"], false], 0.75, 0.42] } });
+      m.addLayer({ id: "fields-line", type: "line", source: "fields", layout: { visibility: "none" }, paint: { "line-color": crop, "line-width": 1.6 } });
+      loadRadar().then((R) => R && m.getSource("fields")?.setData(R.fields));
       m.addSource("prof", { type: "geojson", data: emptyFC() });
       m.addLayer({ id: "prof-glow", type: "line", source: "prof", paint: { "line-color": "#6FA8FF", "line-width": 8, "line-opacity": 0.25, "line-blur": 5 } });
       m.addLayer({ id: "prof", type: "line", source: "prof", paint: { "line-color": "#A9CBFF", "line-width": 2.2 } });
@@ -140,6 +146,10 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     m.on("click", (e) => {
       const { S, onCell, onProfilePoint } = latest.current;
       if (S.drawing) { onProfilePoint([e.lngLat.lng, e.lngLat.lat]); return; }
+      if (S.fields) {
+        const f = m.queryRenderedFeatures(e.point, { layers: ["fields-fill"] })[0];
+        if (f) { latest.current.onField(f.properties); return; }
+      }
       const i = cellAt(D, e.lngLat.lng, e.lngLat.lat);
       if (i >= 0) onCell(i, e.originalEvent);
     });
@@ -217,6 +227,19 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     if (S.relief) { m.dragRotate.enable(); m.easeTo({ pitch: 58, bearing: -18, duration: reduceMotion ? 0 : 1400 }); }
     else { m.dragRotate.disable(); m.easeTo({ pitch: 0, bearing: 0, duration: reduceMotion ? 0 : 900 }); }
   }, [S.relief]);
+
+  // crop fields (radar lane)
+  useEffect(() => {
+    const m = map.current;
+    const go = () => {
+      const v = S.fields ? "visible" : "none";
+      m.setLayoutProperty("fields-fill", "visibility", v);
+      m.setLayoutProperty("fields-line", "visibility", v);
+      m.removeFeatureState({ source: "fields" });
+      if (S.field) m.setFeatureState({ source: "fields", id: S.field.field_id }, { on: true });
+    };
+    if (ready.current) go(); else m?.once("bg:ready", go);
+  }, [S.fields, S.field]);
 
   // outlines
   useEffect(() => {
