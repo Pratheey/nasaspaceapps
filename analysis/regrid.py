@@ -1,9 +1,15 @@
 """Radar pixels (projected x/y metres) -> the app's 0.01 deg lat/lon cells (D3).
 
-Each app cell (~0.9 km x 1.1 km) holds many radar pixels. For each pair we take the
-MEDIAN of the valid pixels in the cell. A cell is kept for a pair only if at least
-`min_valid_fraction` of its pixels are valid; otherwise it is NaN for that pair (so a
-cell's value is not built from a different handful of pixels each date).
+Each app cell (~0.9 km x 1.1 km) holds many radar pixels. run.py first adds up each
+pixel's pairs into a POSITION series, then takes the MEDIAN of the valid pixel positions
+in the cell for each date, and only then turns the cell's positions back into pairs.
+
+Why positions and not pairs: each date's noise appears in two neighbouring pairs with
+opposite signs and cancels when they are added up, but only within one pixel. A median of
+pair values picks different pixels for different pairs, so that cancellation breaks and the
+cell's series drifts like a random walk (found in testing: 13 mm drift with 3 pixels).
+
+A cell is kept for a date only if at least `min_valid_fraction` of its pixels are valid.
 
 Grid layout (contracts/app_data.md): row-major, north->south then west->east;
 cell (row, col) centre: lat = lat_max - (row+0.5)*step, lon = lon_min + (col+0.5)*step.

@@ -9,6 +9,9 @@ Inputs come from fit.py (a, b, their covariance, and the two RSS values).
 - Amplitude A = sqrt(a^2 + b^2). Biased upward in noise, so only shown if significant.
 - Peak: a*sin(x) + b*cos(x) is largest at x = atan2(a, b), so the peak is at
   t = atan2(a, b) / (2*pi) years after 1 January (mod 1).
+- Calibration (D5): on real data the F-test alone finds "seasonal" motion on bedrock. A cell
+  therefore also needs A above a threshold calibrated on stable control areas, so that at
+  most 5% of those areas pass both tests.
 """
 from __future__ import annotations
 
@@ -74,12 +77,73 @@ class SeasonalResult:
     peak_month: np.ndarray    # 1..12 as float; NaN where not significant
 
 
-def evaluate(fit: FitResult, alpha: float = ALPHA) -> SeasonalResult:
-    """Run the F-test and, only where it passes, report amplitude and peak month."""
+@dataclass(frozen=True)
+class Box:
+    """A lat/lon rectangle of ground that should not move (stable control area)."""
+    name: str
+    lat_min: float
+    lat_max: float
+    lon_min: float
+    lon_max: float
+
+
+# D5: "hill cells at the window's north-east and south-west corners". These boxes are the
+# analysis lane's reading of that; confirm the exact areas with Pratheek before the real run.
+STABLE_CONTROL_BOXES = (
+    Box("north-east corner hills", 36.85, 36.95, -119.50, -119.40),
+    Box("south-west corner hills", 35.95, 36.05, -120.60, -120.50),
+)
+TARGET_FALSE_RATE = 0.05
+MIN_CONTROL_CELLS = 20
+
+
+def control_mask(lat, lon, boxes=STABLE_CONTROL_BOXES) -> np.ndarray:
+    lat = np.asarray(lat, dtype=float); lon = np.asarray(lon, dtype=float)
+    m = np.zeros(lat.shape, dtype=bool)
+    for b in boxes:
+        m |= (lat >= b.lat_min) & (lat <= b.lat_max) & (lon >= b.lon_min) & (lon <= b.lon_max)
+    return m
+
+
+@dataclass
+class Calibration:
+    amp_threshold_m: float | None   # None = could not calibrate (too few control cells)
+    n_control: int                   # fitted control cells used
+    raw_pass_rate: float             # control cells passing the F-test alone
+    pass_rate: float                 # control cells passing F-test AND amplitude threshold
+    target_rate: float
+
+
+def calibrate_amplitude_threshold(fit: FitResult, control, alpha: float = ALPHA,
+                                  target_rate: float = TARGET_FALSE_RATE) -> Calibration:
+    """The F-test alone over-fires on real data (D5: 'seasonal' on bedrock), because real noise
+    is messier than the test assumes. So a cell also needs amplitude A > threshold, where the
+    threshold is the smallest value that lets at most `target_rate` of the stable control
+    cells pass both tests."""
+    _, p = f_test(fit.rss, fit.rss_trend_only, fit.n_pairs)
+    A, _ = amplitude(fit.a, fit.b, fit.cov[..., 1:, 1:])
+    ctrl = np.asarray(control, dtype=bool) & np.asarray(fit.fitted)
+    n = int(ctrl.sum())
+    passing = ctrl & (np.nan_to_num(p, nan=1.0) < alpha)
+    raw = float(passing.sum() / n) if n else float("nan")
+    if n < MIN_CONTROL_CELLS:
+        return Calibration(None, n, raw, raw, target_rate)
+    allowed = int(np.floor(target_rate * n))
+    amps = np.sort(A[passing])
+    thr = 0.0 if len(amps) <= allowed else float(amps[len(amps) - allowed - 1])
+    rate = float((passing & (A > thr)).sum() / n)
+    return Calibration(thr, n, raw, rate, target_rate)
+
+
+def evaluate(fit: FitResult, alpha: float = ALPHA, amp_threshold_m: float | None = None) -> SeasonalResult:
+    """Run the F-test (plus the calibrated amplitude threshold, if given) and, only where it
+    passes, report amplitude and peak month."""
     F, p = f_test(fit.rss, fit.rss_trend_only, fit.n_pairs)
     fitted = np.asarray(fit.fitted)
-    significant = fitted & (np.nan_to_num(p, nan=1.0) < alpha)
     A, sA = amplitude(fit.a, fit.b, fit.cov[..., 1:, 1:])
+    significant = fitted & (np.nan_to_num(p, nan=1.0) < alpha)
+    if amp_threshold_m is not None:
+        significant &= np.nan_to_num(A, nan=0.0) > amp_threshold_m
     pm = peak_month(fit.a, fit.b)
     hide = ~significant
     return SeasonalResult(

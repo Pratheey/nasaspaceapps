@@ -13,6 +13,7 @@ from pathlib import Path
 import numpy as np
 
 DECIMALS = 4
+DEMO_STATIONS = {"sinking": ["CAFP", "CAHA"], "calm": "P300"}   # D5
 MAX_BYTES = 5 * 1024 * 1024
 
 
@@ -60,7 +61,8 @@ def build_series(*, is_synthetic, cumulative_cells) -> dict:
 
 def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_source,
                alpha, track=34, direction="ascending", frame=20, product_maturity="provisional",
-               reference_station="P304", held_out=("P302", "P303", "P307"), labels=None, notes=()) -> dict:
+               reference_station="P304", held_out=("P302", "P303", "P307"), labels=None, notes=(),
+               sign_convention=None, product=None, demo_stations=None, significance=None) -> dict:
     from .labels import LABEL_TEXT
     from .timebase import T0
 
@@ -68,13 +70,14 @@ def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_sour
         "contract_version": 1,
         "is_synthetic": bool(is_synthetic),
         "created_utc": dt.datetime.now(dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "product": "SYNTHETIC (shape of NISAR L2 GUNW)" if is_synthetic else "NISAR L2 GUNW",
+        "product": product or ("SYNTHETIC (shape of NISAR L2 GUNW)" if is_synthetic else "NISAR L2 GUNW"),
         "product_maturity": "synthetic" if is_synthetic else product_maturity,
         "track": track, "direction": direction, "frame": frame,
-        "sign_convention": "positive toward satellite (≈ uplift); negative ≈ sinking",
+        "sign_convention": sign_convention or "positive toward satellite (≈ uplift); negative ≈ sinking",
         "units": "m",
         "reference_station": reference_station,
         "held_out_stations": list(held_out),
+        "demo_stations": demo_stations if demo_stations is not None else DEMO_STATIONS,
         "grid": grid_meta,
         "dates": [d.isoformat() for d in dates],
         "pairs": pairs,
@@ -82,7 +85,7 @@ def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_sour
                 "model": "u(t)=c+B*t+a*sin(2πt)+b*cos(2πt), t in years since t0, fitted on pairwise differences"},
         "sigma_net_m": round(float(sigma_net_m), DECIMALS),
         "sigma_source": sigma_source,
-        "significance": f"joint F-test on (a,b), p < {alpha}",
+        "significance": significance or f"joint F-test on (a,b), p < {alpha}",
         "labels": labels or LABEL_TEXT,
         "notes": list(notes),
     }
