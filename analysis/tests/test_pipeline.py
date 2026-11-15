@@ -117,3 +117,11 @@ def test_stations_outside_bbox_are_left_out(tmp_path):
     meta = _load(tmp_path / "out" / "meta.json")
     assert "P725" not in names and "P725" not in meta["held_out_stations"]
     assert meta["reference_station"] == "P304"
+
+
+def test_trend_guard_on_synthetic_keeps_good_cells(synth):
+    out, res = synth
+    g = res["guard"]
+    assert g is not None and g.counts["fitted"] > 0
+    assert g.counts["hidden"] / g.counts["fitted"] < 0.05      # synthetic gaps never remove a season
+    assert any(n.startswith("Trend guard:") for n in _load(out / "meta.json")["notes"])

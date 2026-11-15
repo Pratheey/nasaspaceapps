@@ -25,6 +25,7 @@ Add `--exclude-pairs 7 12` to drop pairs flagged as unwrapping errors from the f
 | 4 | `fit.py` | pair values per cell | B, a, b, covariance, RSS, RSS of trend-only fit |
 | 5 | `seasonal.py` | fit result | F-test p, significant?, A, σA, peak month (A and month hidden where not significant) |
 | 6 | `netchange.py` | pair values per cell | cumulative position per date, net change (null if any pair missing) |
+| 4b | `guards.py` | fit + which pairs each cell used | trend guard: whole fit hidden where pairs miss a season, < 15 pairs, or σ of trend > 5 cm/yr |
 | 7 | `labels.py` | net, σ_net, significant | label 0–3 |
 | 8 | `export.py`, `stations.py` | all of the above + Daniel's GPS CSVs | `meta.json`, `grid.json`, `series.json`, `stations.json` per `contracts/app_data.md` |
 | 9 | `canal.py` | canal GeoJSON + per-cell results | `canal_profile_<name>.json` (screening tool; **not in contracts v1**) |
@@ -78,6 +79,28 @@ Findings for the team:
   is about 1 cm, so **the seasonal labels mark only the strongest seasonal areas**; most stations'
   breathing is below what single cells can resolve. Say so in the limits panel.
 - Anomaly-flagged pixels are kept (data lane: ~2 mm effect); `--mask-anomaly` drops them.
+
+## Trend guard (stack v2, 2026-11-14)
+
+With less than a year of data, a cell whose pairs miss a whole season cannot separate the trend
+from the yearly wave, and the fit lands on extreme values. On stack v2:
+
+| Cells whose usable pairs cover | Cells | Median σ of trend | Share with \|trend\| > 30 cm/yr |
+|---|---|---|---|
+| all 4 seasons | 8,960 | 2.2 cm/yr | 0% |
+| 3 seasons | 2,125 | 41.5 cm/yr | 62% |
+| 2 seasons | 310 | 149.5 cm/yr | 75% |
+
+`guards.py` hides the **whole fit** (trend, amplitude, peak month, fitted curve) unless the cell's
+pairs cover all 4 seasons, it has ≥ 15 pairs, and σ of trend ≤ 5 cm/yr. Result: 2,908 of 11,395
+fits hidden; largest trend shown drops from 314 to 22 cm/yr; no cell above 30 cm/yr. **Labels are
+unchanged** (every hidden cell had already lost pairs, so it had no net change). All GPS station
+cells keep their fit. `--no-trend-guard` turns it off for comparison only.
+
+Still open: relative to P304, NISAR trends run less negative than GPS at most stations (same
+model, same dates, stack v2: CAFP +0.6 vs GPS −2.2, CAHA +0.3 vs −4.0, P307 +2.1 vs −2.8 cm/yr).
+Seasonal amplitudes agree well at the demo stations (CAFP 26.3 vs 26.7 mm, CAHA 14.5 vs 16.6 mm,
+both peaking in February). The guard does not address the trend gap; it needs the data and gps lanes.
 
 ## Not done yet
 
