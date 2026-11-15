@@ -6,12 +6,13 @@ let cache = null;
 export function loadRadar() {
   if (!cache) {
     const get = (n) => fetch(`./radar/${n}`).then((r) => {
-      if (!r.ok || !(r.headers.get("content-type") || "").includes("json")) throw new Error(n);
+      // Some static hosts serve GeoJSON as application/octet-stream.
+      if (!r.ok) throw new Error(n);
       return r.json();
     });
     cache = Promise.all([get("polarization.json"), get("coverage.json"), get("fields.geojson")])
       .then(([pol, cov, fields]) => ({ pol, cov, fields }))
-      .catch(() => null);
+      .catch(() => { cache = null; return null; });
   }
   return cache;
 }
