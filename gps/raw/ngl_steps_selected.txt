@@ -1,0 +1,17 @@
+P302  17NOV21  1  Antenna_Type_Changed
+P302  17NOV21  1  Elevation_Cutoff_Changed
+P303  16APR14  1  Elevation_Cutoff_Changed
+P303  24APR22  1  Antenna_Type_Changed
+P303  24APR22  1  Receiver_Make_and_Model_Changed
+P304  18FEB09  1  Elevation_Cutoff_Changed
+P307  19MAR27  1  Elevation_Cutoff_Changed
+P307  25NOV12  1  Antenna_Type_Changed
+P307  25NOV12  1  Receiver_Make_and_Model_Changed
+P304  04SEP28  2   162.181   102.392  6.0 nc30228270
+P302  19JUL06  2   575.440   287.471  7.1 ci38457511
+P303  19JUL06  2   575.440   312.490  7.1 ci38457511
+P304  19JUL06  2   575.440   269.706  7.1 ci38457511
+P307  19JUL06  2   575.440   256.157  7.1 ci38457511
+P303  20MAY15  2   288.403   280.388  6.5 nn00725272
+P304  20MAY15  2   288.403   272.467  6.5 nn00725272
+P307  20MAY15  2   288.403   237.351  6.5 nn00725272

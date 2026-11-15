@@ -1,0 +1,5 @@
+station,lat,lon,height_m,role,steps_removed
+P302,36.6347271,-120.6185799,122.637,held_out,"none removed: 2021-11-17 antenna change is <=0.8 mm"
+P303,37.0543829,-120.7053006,-2.451,held_out,"none removed: 2024-04-22 antenna/receiver change is <=1.4 mm"
+P304,36.7390040,-120.3566036,16.847,reference,"none in the NISAR window"
+P307,36.9472697,-120.0579247,48.598,held_out,"2025-11-12 antenna/receiver: north -12.9 mm removed; east step unresolved (8-17 mm) and up not significant, neither removed; 2025-11-13 to 2025-12-31 flagged noisy"
