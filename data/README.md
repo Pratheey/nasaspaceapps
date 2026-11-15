@@ -13,7 +13,7 @@ data/
 └── tests/        tests of the processing arithmetic on a synthetic file
 ```
 
-Status on 2026-11-14: **both tracks are processed with terrain heights (Track 034 ascending, 25 pairs; Track 042 descending, 27 pairs). Track 034 version 2 is `interim/stack_t034_f020_v2.nc`. Version 1 (constant 50 m height, the file uploaded to the Drive on 14 Nov) is unchanged as `interim/stack_t034_f020.nc`. The v2 stack and the Track 042 stack are not on the Drive yet. The tie to P304 uses raw NGL GPS and is provisional. No unwrapping corrections. Read section 4 ("What we found") before using the numbers.**
+Status on 2026-11-14: **both tracks are processed with terrain heights (Track 034 ascending, 25 pairs; Track 042 descending, 27 pairs). The current, frozen Track 034 stack is version 3, `interim/stack_t034_f020_v3.nc` (goes on the Drive). Use v3. Version 2 (`interim/stack_t034_f020_v2.nc`, tied to raw NGL GPS) is superseded. Version 1 (constant 50 m height, the file uploaded to the Drive on 14 Nov) is unchanged as `interim/stack_t034_f020.nc`. The Track 042 stack is not on the Drive yet and is still tied to raw NGL P304 (cross-check only). No unwrapping corrections. Read section 4 ("What we found") before using the numbers.**
 
 Shared Drive folder: https://drive.google.com/drive/u/0/folders/152RzXsar-DzAYQNfZgIvnsXe4jqM06Fz (stacks go in its `data/interim` folder).
 
@@ -99,7 +99,8 @@ For each pair, over the window only:
    rather than being referenced somewhere else.
 5. **Metres.** `los_disp = −λ / (4π) × phase`.
 6. **Tie.** Add P304's own GPS line-of-sight motion over the pair's dates to every pixel
-   (done in `build_stack.py`, stored per pair as `ref_tie_m` so it can be undone).
+   (done in `build_stack.py`, stored per pair as `ref_tie_m` so it can be undone). Versions
+   1 and 2 use the raw NGL series; version 3 uses `gps/processed/gps_los.csv` (see section 3).
 
 Masked pixels are `NaN`. Nothing is interpolated or filled.
 
@@ -116,7 +117,7 @@ in step 5. This was derived from how the interferogram is formed, and then confi
 | Troposphere (wet + hydrostatic, model-based), read at terrain height | Yes | Tested without GPS: over the 25 pairs, the spread of displacement across the window drops from 2.2 cm RMS (ionosphere only) to 1.6 cm at a constant 50 m height (version 1); 17 of 25 pairs improve; applying it with the opposite sign gives 3.9 cm. Against GPS: 1.86 cm RMS with the troposphere and tide screens, 2.69 cm with the ionosphere only (all 12 stations, all pairs) |
 | Terrain height for the troposphere, tide and LOS cubes (Copernicus GLO-90) | Yes, version 2 and Track 042 | Tested without GPS on Track 034. Spread of displacement across the window, RMS over the 25 pairs: 1.55 cm with a constant 50 m, 1.40 cm with terrain heights, 1.89 cm with the height term reversed. On hill pixels above 150 m (31% of valid pixels): 1.51 cm, 1.25 cm, 2.04 cm. Regressing the measured signal on the height-dependent part of the wet troposphere screen gives a median coefficient of 0.99 (1 = the screen is right) |
 | Solid Earth tides, read at terrain height | Yes | Deterministic; differential effect across the window is ≤ ~3 mm |
-| Unwrapping errors | **No pair corrected** | Waiting for Daniel's flags (H-9) |
+| Unwrapping errors | **No pair corrected** | None found: Daniel's residual table (H-9, `gps/processed/residuals.csv`) flags no pair, and the data-lane persistence test agrees |
 
 `docs/PROPOSAL.md` §6 names only the ionosphere. Troposphere and tides are an addition by
 the data lane; `build_stack.py --iono-only` produces the stack without them, and
@@ -127,15 +128,41 @@ the data lane; `build_stack.py --iono-only` produces the stack without them, and
 ## 3. Outputs
 
 ### `interim/stack_t034_f020.nc` (version 1, constant 50 m height; shared Drive, not in git)
-### `interim/stack_t034_f020_v2.nc` (version 2, terrain heights; not on the Drive yet)
+### `interim/stack_t034_f020_v2.nc` (version 2, terrain heights, raw NGL tie; superseded by v3)
+### `interim/stack_t034_f020_v3.nc` (version 3, **current, frozen**; git-ignored, goes on the Drive)
 Exactly `contracts/stack.md` §1, plus these additive extras: `cmr_concept_id`,
 `tropo_applied`, `set_applied`, `anomalies_masked`, `ref_tie_m`, `valid_fraction` (all
 per pair), the `anomaly` layer (pair, y, x; 1 = flagged), and global
 attributes `track`, `frame`, `polarization`, `wavelength_m`, `geometry_height_m`.
 `granule_id` is the granule name. 25 pairs, 1674 × 1620 pixels. Valid fraction per pair: 78% to 97%
-(both versions). Version 1 is 424 MB, version 2 is 426 MB. Anomaly-flagged pixels (about
+(all versions). Version 1 is 424 MB, versions 2 and 3 are 426 MB. Anomaly-flagged pixels (about
 510,000 per flagged pair) appear in pairs 1, 2, 3, 7, 8, 11 and 12. The global attribute
 `notes` of version 2 records that the cubes were read at terrain height.
+
+**Version 3 (data freeze).** Built 2026-11-14, about hour 12 of the event:
+`python data/scripts/build_stack.py --track 34 --frame 20 --suffix _v3 --notes "v3 = v2 re-tied to the cleaned P304 series (data freeze)"`.
+Its `notes` attribute says the same. The only difference from v2 is the tie to P304
+(step 6): v3 uses Daniel's cleaned series `gps/processed/gps_los.csv` (7-day median at each
+date) instead of the raw NGL IGS20 `tenv3` file. Same granules (listed in
+[`processed/granules_t034_f020.csv`](processed/granules_t034_f020.csv); product, collection and
+DOI are in section 1), same per-pair files, same corrections (ionosphere, wet and
+hydrostatic troposphere, solid Earth tides, cubes read at Copernicus GLO-90 terrain height),
+same masks, coherence threshold 0.3. 25 pairs, 1674 × 1620 pixels. No pair was corrected for
+unwrapping errors (none found).
+
+Size of the change from v2: the tie of any single pair changes by at most 3.29 mm, and every
+pixel in a pair shifts by the same amount. Summed over all 25 pairs, the net change of every
+pixel is +3.2 mm (slightly less sinking) compared with v2. That is small next to the
+measured uncertainty (`sigma_net` 1.98 cm, `sigma_pair` 1.84 cm, from
+`gps/processed/uncertainty.json`, 13 held-out stations). Values relative to P304 do not
+change (the tie cancels), so the comparison with GPS in this section is the same as for v2.
+The 17 tests in `data/tests` pass.
+
+Regenerated from v3: `processed/station_values_t034_f020.csv`, `processed/station_values.csv`,
+`processed/qa_stations_vs_gps_t034_f020.csv`, `processed/qa_summary_t034_f020.csv`.
+v1 and v2 stay on the Drive unchanged. Anyone who ran on v2 should rerun on v3: analysis
+(Ismail) reruns the app export, gps (Daniel) reruns the residual table and `uncertainty.json`.
+Expected effect: millimetres. The Track 042 stack was not rebuilt (see section 4b).
 
 ### `processed/station_values.csv` (in git)
 `contracts/stack.md` §2: one row per pair per station. Values are the **median of the valid
@@ -157,7 +184,7 @@ The data lane's own check of every pair, and of the running sum, against raw NGL
 the three non-reference stations. **Provisional and not the H-9 residual table.** No number
 from it goes in the app or pitch.
 
-Result on 2026-11-14, version 2 (terrain heights), in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
+Result on 2026-11-14, version 3 (terrain heights; same as v2 because the tie cancels), in cm (NISAR minus GPS, both relative to P304, line of sight). "GPS range" is how
 far the station moves within the window; "From" is the first date with GPS at that station.
 No pair is within 3 cm of a 12 cm step at any station. A flagged pair also gets `near_cycle_persists` (summary column `persistent_cycle_pairs`): 1 if the running-sum residual is still shifted by that many cycles one pair later, as an unwrapping error would leave it, 0 if it reversed, as one-date atmosphere would. Summary file: `processed/qa_summary_t034_f020.csv`.
 
@@ -231,7 +258,7 @@ to the plan, roles, contracts and pitch, in `proposals/d5_first_real_stack.patch
 | N3 | "Sample slip" anomaly pixels kept and flagged, not masked | Measured effect about 2 mm; masking removes 19% of the window from the whole series | `process_pairs.py --mask-anomalies --overwrite` |
 | N4 | Coherence threshold 0.3 | Common default; not tuned yet | `process_pairs.py --coherence` |
 | N5 | Reference = median of a 5 × 5 pixel block at P304; station value = median of a 3 × 3 block | Keeps single-pixel noise out of the reference | code constants in `nisar_gunw.py` |
-| N6 | Tie to P304 from raw NGL GPS, 7-day median at each date | Daniel's cleaned series does not exist yet | automatic once `gps/processed/gps_los.csv` exists; `build_stack.py --no-tie` |
+| N6 | Tie to P304 from a 7-day median at each date. Versions 1 and 2: raw NGL GPS. Version 3: Daniel's cleaned series `gps/processed/gps_los.csv` | The cleaned series did not exist for v1 and v2. Changes a pair's tie by at most 3.29 mm | automatic once `gps/processed/gps_los.csv` exists; `build_stack.py --no-tie` |
 | N8 | Station table covers all 14 NGL stations in the window, not only the 4 in the contract | The 4 barely move; CAFP and CAHA move 5–7 cm and NISAR follows them | edit `processed/stations_ngl.csv`, then `build_stack.py --stations-only` |
 | N7 | Sign: `los = −λ/(4π) × phase` | Follows from reference × conj(secondary); the opposite sign fits GPS worse | `PHASE_SIGN_TOWARD_SATELLITE` in `nisar_gunw.py` |
 | N9 | Terrain heights from Copernicus GLO-90 for the troposphere, tide and LOS cubes | Tested without GPS on Track 034: spread of displacement across the window 1.55 cm RMS at constant 50 m, 1.40 cm with terrain heights, 1.89 cm with the height term reversed; on hill pixels above 150 m (31% of valid pixels) 1.51, 1.25 and 2.04 cm; median regression coefficient on the height-dependent wet screen 0.99 | `process_pairs.py --flat-height --overwrite`, then rebuild the stack |
@@ -252,7 +279,8 @@ Processed by the data lane to save time; Steven owns what is done with it. Same 
 | Valid fraction per pair | 59% to 75% |
 | Valid in all 27 pairs | 33% of pixels |
 | Anomaly-flagged pixels | none in any pair |
-| Heights | Terrain height from Copernicus GLO-90, as in version 2 of Track 034 |
+| Heights | Terrain height from Copernicus GLO-90, as in versions 2 and 3 of Track 034 |
+| Tie to P304 | Raw NGL GPS. **Not rebuilt for the data freeze**, so it is not on the cleaned series that Track 034 v3 uses. Cross-check only |
 
 Self-check, in cm (NISAR minus GPS, both relative to P304, line of sight). Same columns as the Track 034 table. CAHA has no valid pixels on this track. P300 has 25 pairs but its running sum stops on 2026-01-24 (7 dates). Pair 24 is flagged as near a whole cycle (about 12 cm) at CAKC and P298. A flagged pair also gets `near_cycle_persists` (summary column `persistent_cycle_pairs`): 1 if the running-sum residual is still shifted by that many cycles one pair later, as an unwrapping error would leave it, 0 if it reversed, as one-date atmosphere would. Both flags have `near_cycle_persists` = 0. Provisional, same status as the Track 034 check.
 
@@ -299,8 +327,10 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 
 - After changing the station list, `build_stack.py --track 34 --frame 20 --stations-only`
   rewrites the station table in seconds without touching the stack file.
-- `build_stack.py --suffix _v2` writes `interim/stack_t034_f020_v2.nc` instead of
-  overwriting the existing stack file.
+- `build_stack.py --suffix _v3` writes `interim/stack_t034_f020_v3.nc` instead of
+  overwriting the existing stack file. The frozen v3 was built with
+  `build_stack.py --track 34 --frame 20 --suffix _v3 --notes "v3 = v2 re-tied to the cleaned P304 series (data freeze)"`
+  (with `gps/processed/gps_los.csv` present).
 - `process_pairs.py` builds the DEM itself (`interim/dem_tTTT_fFFF.nc`, via `make_dem.py`)
   the first time it runs for a track. It takes about 70 s per pair and skips pairs already
   on disk, so it can be interrupted and restarted. `--pairs 1`, `--pairs 3-7` and
@@ -342,4 +372,5 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 
 - **v1, 2026-11-14.** Track 034 / Frame 020 stack with a constant 50 m height for the troposphere, tide and LOS cubes. `interim/stack_t034_f020.nc`, uploaded to the Drive.
 - **v2, 2026-11-14.** Terrain heights from Copernicus GLO-90. `interim/stack_t034_f020_v2.nc` and `interim/stack_t042_f070.nc`. The station tables and self-check summaries in `processed/` now reflect v2.
+- **v3, 2026-11-14 (data freeze).** `interim/stack_t034_f020_v3.nc` (426 MB, git-ignored, goes on the Drive). v2 re-tied to P304 with the cleaned series `gps/processed/gps_los.csv` instead of raw NGL. Everything else is the same. A single pair's tie changes by at most 3.29 mm; the net change of every pixel is +3.2 mm against v2. The four station and QA files in `processed/` were regenerated from v3. v2 is superseded; v1 and v2 stay on the Drive unchanged. Track 042 was not rebuilt. Ismail and Daniel rerun on v3.
 - **2026-11-14:** self-check gains a persistence test that separates unwrapping errors from one-date atmosphere.
