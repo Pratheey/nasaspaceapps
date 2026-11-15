@@ -1,5 +1,23 @@
 # NASA Space Apps 2026: Dancing with the SARS
 
+**The Breathing Ground**: where seasonal rebound hides continued sinking in California's San Joaquin
+Valley, measured with NISAR L-band radar and checked against held-out GPS.
+**Live app:** https://pratheey.github.io/nasaspaceapps/
+
+## Use of AI (Super Intelligence) tools
+
+The team used an AI assistant (Claude, by Anthropic, through Claude Code and claude.ai) for:
+- **Code:** much of the website (`frontend/`) and parts of the processing scripts (`data/`, `analysis/`,
+  `gps/`, `radar/`) were written or debugged with it. Team members reviewed, ran and tested the code.
+- **Research and analysis support:** finding data sources, checking numbers against the source tables,
+  and drafting documentation.
+- **Illustrations:** the satellite drawing, the aquifer and radar diagrams and the pole drawing on the
+  website were coded with AI help. Each carries a visible "AI-assisted illustration" label.
+
+Not AI-generated: the measurements. Every number in the app comes from NISAR, GPS and the other listed
+datasets through the scripts in this repository. NASA videos and images are NASA's own (credited on the
+site). No AI-generated content uses NASA logos or mission insignia.
+
 - 👋 **Start here, humans: your role and goals:** [ROLES.md](ROLES.md)
 - **What we're building:** [docs/PROJECT.md](docs/PROJECT.md)
 - **How we work together (git, pivots, check-ins):** [docs/WORKFLOW.md](docs/WORKFLOW.md)
