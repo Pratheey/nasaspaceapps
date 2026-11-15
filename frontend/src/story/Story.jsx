@@ -7,6 +7,8 @@ import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
 import { Numbers } from "./Game.jsx";
 import { MEDIA, NasaVideo, MaybeImage, MissionPatch, Telemetry, Chirp, RadarPing } from "./Space.jsx";
+import FieldsScene from "./Fields.jsx";
+import { demoStations, lieStation, AGREEMENT } from "../lib/demo.js";
 import { Chapter, MissionTimeline, WatchNasa, SeenWall } from "./Media.jsx";
 import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
@@ -23,10 +25,7 @@ export default function Story({ D, onExplore }) {
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); lenis.destroy(); };
   }, []);
-  const demo = useMemo(() => ({
-    sink: D.stations.find((s) => s.station === "P307") || D.stations[0],
-    calm: D.stations.find((s) => s.station === "P302") || D.stations[1] || D.stations[0],
-  }), [D]);
+  const demo = useMemo(() => ({ ...demoStations(D), lie: lieStation(D) }), [D]);
 
   return (
     <div className="bg-space text-ink overflow-x-clip">
@@ -38,7 +37,7 @@ export default function Story({ D, onExplore }) {
       <AquiferScene />
       <Chirp className="my-6" />
       <BreatheScene D={D} demo={demo} />
-      <LieScene D={D} st={demo.sink} />
+      <LieScene D={D} st={demo.lie} />
       <Numbers D={D} />
       <MissionTimeline />
       <OrbitScene />
@@ -48,6 +47,7 @@ export default function Story({ D, onExplore }) {
       <WatchNasa />
       <Chirp className="my-6" />
       <GpsScene D={D} />
+      <FieldsScene />
       <MattersScene />
       <Finale D={D} onExplore={onExplore} />
       <Team />
@@ -97,19 +97,18 @@ function Hero({ D, onExplore }) {
         <NasaVideo srcs={MEDIA.heroVideo} className="absolute inset-0 w-full h-full object-cover object-[60%_50%]"
           fallback={<NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
             className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
-            fallback={<div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="w-[70%] max-w-[760px] opacity-90 translate-x-[18%]" /></div>} />} />
+            fallback={<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="absolute right-[-6%] top-[22%] w-[46%] max-w-[640px] opacity-90 max-lg:hidden" /></div>} />} />
       </div>
       <Starfield className="absolute inset-0 w-full h-full opacity-60 mix-blend-screen" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#0F1420_0%,rgba(15,20,32,.86)_34%,rgba(15,20,32,.25)_70%,rgba(15,20,32,.1)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-space to-transparent" />
 
-      <MissionPatch size={170} className="absolute right-10 top-28 z-10 opacity-90 max-lg:hidden drop-shadow-[0_0_30px_rgba(111,168,255,.25)]" />
       <div className="relative h-full flex flex-col justify-center pt-24 max-sm:pt-36 pb-10 px-6 md:px-14 max-w-[1400px] mx-auto" style={{ opacity: fade }}>
-        <div className="intro-in max-w-[780px]">
-          <p className="font-serif italic text-accent-2 text-[22px] leading-none flex items-center gap-2"><Radar size={16} /> NASA Space Apps 2026, Dancing with the SARs</p>
-          <h1 className="font-display font-bold leading-[0.92] tracking-[-0.01em] text-[clamp(46px,6.6vw,104px)] mt-4">
+        <div className="intro-in relative z-10 max-w-[720px]">
+          <p className="text-[15px] text-mute flex items-center gap-2"><Radar size={16} /> NASA Space Apps 2026, Dancing with the SARs</p>
+          <h1 className="font-display font-bold leading-[1] tracking-[-0.015em] text-[clamp(44px,6vw,92px)] mt-5">
             The ground breathes.
-            <span className="block font-serif italic font-normal tracking-normal text-[1.08em] leading-[0.85] mt-1">It also sinks.</span>
+            <span className="block text-ink/55">It also sinks.</span>
           </h1>
           <p className="text-[clamp(16px,1.5vw,19px)] leading-relaxed text-ink/80 mt-7 max-w-[600px]">
             Every winter California's San Joaquin Valley rises a little. Every summer it settles. Underneath that rhythm,
@@ -152,7 +151,7 @@ function PoleScene() {
     <section id="pole" ref={ref} className="relative h-[260vh]">
       <div className="sticky top-0 h-[100svh] overflow-hidden grid md:grid-cols-2 items-center gap-10 px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className="max-w-[560px]">
-          <Chapter n={1} title="THE POLE" kicker="it has happened here before" />
+          <Chapter n={1} title="The pole" />
           <h2 className="font-mono font-medium tracking-[-0.04em] text-[clamp(64px,9vw,150px)] leading-[0.9] mt-5">
             {year < 1977 ? <>{year}</> : <>9.0<span className="text-[0.4em] text-ink/50 ml-2">m</span></>}
           </h2>
@@ -202,8 +201,8 @@ function AquiferScene() {
     <section ref={ref} className="relative py-[14vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <Chapter n={2} title="THE AQUIFER" kicker="why the ground breathes" />
-          <h2 className="font-serif text-[clamp(44px,5.4vw,84px)] leading-[0.95] mt-5">The valley floor sits on a sponge.</h2>
+          <Chapter n={2} title="The aquifer" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">The valley floor sits on a sponge.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             Beneath the farms is an <Term t="aquifer" />: sand and gravel full of water, interleaved with clay. Water pressure helps hold up
             the ground above. Pump in summer and the pressure drops. Recharge in winter and it comes back.
@@ -223,8 +222,8 @@ function OrbitScene() {
       <Starfield className="absolute inset-0 w-full h-full opacity-40" density={160} />
       <div className={`relative grid lg:grid-cols-[1fr_1.1fr] gap-10 items-center px-6 md:px-14 max-w-[1400px] mx-auto transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <Chapter n={6} title="THE ORBIT" kicker="every 12 days, almost everywhere" />
-          <h2 className="font-wide text-[clamp(26px,3vw,44px)] leading-[1.15] mt-5">One satellite, circling pole to pole.</h2>
+          <Chapter n={6} title="The orbit" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">One satellite, circling pole to pole.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             NISAR flies about 747 km up on a near-polar orbit, so Earth turns beneath it and each pass covers a new strip. Every 12 days it
             comes back over the same ground from the same angle. That repeat is what lets us compare passes.
@@ -264,11 +263,11 @@ function MeasureScene() {
     <section ref={ref} className="relative py-[12vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <Chapter n={9} title="THE PHYSICS" kicker="how a radar measures a centimetre" />
-          <h2 className="font-serif text-[clamp(44px,5.4vw,84px)] leading-[0.95] mt-5">It counts the wave, not the picture.</h2>
+          <Chapter n={9} title="The physics" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">It counts the wave, not the picture.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             When the ground sinks, the radar pulse has a little farther to travel, there and back, so the wave comes home slightly later in
-            its cycle. That shift in phase can be measured to a small fraction of a wavelength, which is how a 24 cm radar sees millimetres.
+            its cycle. That shift in phase can be measured to a small fraction of a wavelength, which is how a 24 cm radar sees movements far smaller than its own wavelength.
             Drag the slider.
           </p>
           <p className="text-[15px] text-mute mt-5">Each full <Term t="fringe" /> of color is 11.9 cm of motion.</p>
@@ -288,24 +287,24 @@ function BreatheScene({ D, demo }) {
   const N = D.dates.length;
   const series = [
     { st: demo.calm, color: "#5FC9E0" },
-    { st: demo.sink, color: "#F0705A" },
-  ].map(({ st, color }) => ({ st, color, v: D.values[st.cell_index] || [] }));
+    ...demo.sinking.map((st, n) => ({ st, color: n ? "#F7A88F" : "#F0705A" })),
+  ].filter((s, n, a) => s.st && a.findIndex((x) => x.st === s.st) === n).map(({ st, color }) => ({ st, color, v: D.values[st.cell_index] || [] }));
   const all = series.flatMap((s) => s.v.filter((x) => x != null).map((x) => x * 100));
   const lo = Math.min(0, ...all) - 1, hi = Math.max(0, ...all) + 1;
   const X = (k) => P.l + (k / (N - 1)) * (W - P.l - P.r);
   const Y = (v) => P.t + ((hi - v) / (hi - lo)) * (H - P.t - P.b);
   const shown = Math.max(1, Math.round(draw * (N - 1)));
   const captions = [
-    "Two GPS stations, one radar. Scroll to play eleven months of NISAR passes.",
-    "One stays almost level. The other drops, pass after pass.",
-    "Both rise and fall with the seasons by a few millimetres. Under that, one keeps sinking.",
+    `${series.length} GPS stations, one radar. Scroll to play eleven months of NISAR passes.`,
+    `${demo.calm.station} stays almost level. ${demo.sinking.length > 1 ? "The others drop" : "The other drops"}, pass after pass.`,
+    "The ground rises a little in winter and settles in the dry months. Under that, the sinking keeps going.",
   ];
   const cap = split > 0.1 ? 2 : draw > 0.6 ? 1 : 0;
   return (
     <section id="breathe" ref={ref} className="relative h-[320vh]">
       <div className="sticky top-0 h-[100svh] grid lg:grid-cols-[1fr_1.35fr] items-center gap-10 px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className="max-w-[520px]">
-          <Chapter n={3} title="THE RECORD" kicker="the valley breathes" />
+          <Chapter n={3} title="The record" />
           <h2 className="font-display font-bold text-[clamp(38px,4.8vw,72px)] leading-[0.98] mt-3">Every pass tells you where the ground is today.</h2>
           <p key={cap} className="text-[18px] leading-relaxed text-ink/85 mt-6 min-h-[5.5em] [animation:rise-in_.6s_both]">{captions[cap]}</p>
           <div className="mt-4 flex gap-5 text-[14px]">
@@ -368,8 +367,8 @@ function LieScene({ D, st }) {
     <section ref={inRef} className="relative py-[18vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-[1fr_1.35fr] gap-12 items-center transition-all duration-1000 ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-8"}`}>
         <div className="max-w-[520px]">
-          <Chapter n={4} title="TWO DATES" kicker="two dates can lie" />
-          <h2 className="font-serif italic text-[clamp(42px,5vw,80px)] leading-[0.96] mt-5">Compare the wrong two days and the sinking disappears.</h2>
+          <Chapter n={4} title="Two dates" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Compare the wrong two days and the sinking disappears.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             The quickest way to read satellite data is before and after. Here that can mislead. Drag A and B along the record at GPS station {st.station}.
           </p>
@@ -422,8 +421,8 @@ function InstrumentScene({ D }) {
             <p className="absolute left-4 bottom-3 text-[11.5px] text-ink/70">NISAR in orbit, artist's concept. NASA/JPL-Caltech.</p>
           </div>
           <div>
-            <Chapter n={7} title="THE INSTRUMENT" kicker="how NISAR sees it" />
-            <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Radar that measures the ground to the centimetre, through cloud, day and night.</h2>
+            <Chapter n={7} title="The instrument" />
+            <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Radar that measures how the ground moves, through cloud, day and night.</h2>
             <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
               NISAR is a joint mission of NASA and ISRO. Its <Term t="L-band" /> radar bounces 24 cm microwaves off the ground from a 12-metre gold mesh reflector,
               the largest NASA has deployed in space. Comparing two passes makes an <Term t="interferogram" />: how far the ground moved along the radar's <Term t="line of sight" />.
@@ -490,17 +489,21 @@ function GpsScene({ D }) {
     <section ref={ref} className="relative py-[14vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className={`grid lg:grid-cols-2 gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
-          <Chapter n={11} title="THE CHECK" kicker="how sure are we" />
-          <h2 className="font-display font-bold uppercase tracking-[-0.01em] text-[clamp(36px,4.6vw,70px)] leading-[0.92] mt-5">We check the radar against instruments it has never seen.</h2>
+          <Chapter n={11} title="The check" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">We check the radar against instruments it has never seen.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
-            Four GPS stations sit in the study area. One, {D.meta.reference_station}, ties the radar to the ground. The other three,
-            {" "}{D.meta.held_out_stations.join(", ")}, are <Term t="held out" /> and used only to test it. Each pass is also corrected for the <Term t="ionosphere" />. Every number in the map comes with its uncertainty,
+            {D.stations.length} GPS stations sit on the map. One, {D.meta.reference_station}, ties the radar to the ground. The other {D.meta.held_out_stations.length} are
+            {" "}<Term t="held out" /> and used only to test it. Each pass is also corrected for the <Term t="ionosphere" />. Every number in the map comes with its uncertainty,
             and where the evidence is too thin, the map says so instead of guessing.
           </p>
+          <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
+            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.rms_cm} cm</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">NISAR vs GPS per 12-day pair, root mean square, {AGREEMENT.n_stations} held-out stations so far</p></div>
+            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.selfcheck.replace(" to ", "–")}</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">Separate check at {AGREEMENT.selfcheck_n} stations. Motion smaller than this isn't resolved at a single spot.</p></div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${D.stations.length > 6 ? "grid-cols-3 max-sm:grid-cols-2" : "grid-cols-2"}`}>
           {D.stations.map((st, n) => (
-            <div key={st.station} className="rounded-xl border border-hair-2 bg-deck/70 p-5" style={{ transitionDelay: `${n * 120}ms` }}>
+            <div key={st.station} className={`rounded-xl border border-hair-2 bg-deck/70 ${D.stations.length > 6 ? "p-4" : "p-5"}`} style={{ transitionDelay: `${n * 120}ms` }}>
               <div className="flex items-center justify-between">
                 <span className="font-display text-[24px] font-bold">{st.station}</span>
                 <Satellite size={18} className={st.role === "reference" ? "text-accent" : "text-rise"} />
@@ -526,8 +529,8 @@ function MattersScene() {
   return (
     <section id="matters" ref={ref} className="relative py-[16vh] border-y border-hair bg-[linear-gradient(180deg,#0F1420,#121a2a)]">
       <div className="px-6 md:px-14 max-w-[1400px] mx-auto">
-        <Chapter n={12} title="THE STAKES" kicker="why it matters" />
-        <h2 className="font-serif text-[clamp(48px,6.4vw,104px)] leading-[0.92] mt-5 max-w-[1000px]">Sinking ground breaks the things built on it.</h2>
+        <Chapter n={13} title="The stakes" />
+        <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4 max-w-[1000px]">Sinking ground breaks the things built on it.</h2>
         <div className="grid md:grid-cols-3 gap-px bg-hair rounded-2xl overflow-hidden border border-hair mt-12">
           {items.map(([big, text, src], n) => (
             <div key={big} className={`bg-space p-7 transition-all duration-1000 ${seen ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`} style={{ transitionDelay: `${n * 140}ms` }}>
@@ -559,7 +562,7 @@ function Finale({ D, onExplore }) {
       <Starfield className="absolute inset-0 w-full h-full opacity-50" density={180} />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_50%_100%,rgba(111,168,255,.16),transparent_60%)]" />
       <div className="relative px-6 md:px-14 max-w-[1100px] mx-auto text-center">
-        <h2 className="font-serif text-[clamp(60px,10vw,160px)] leading-[0.88] tracking-[-0.01em]">See it <span className="italic">for yourself.</span></h2>
+        <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">See it for yourself.</h2>
         <p className="text-[19px] text-ink/80 mt-6 max-w-[620px] mx-auto">{D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, over Corcoran and Mendota. Click any spot.</p>
         <button onClick={onExplore} className="mt-10 inline-flex items-center gap-2 rounded-full bg-accent text-space font-semibold text-[17px] px-8 py-4 hover:bg-accent-2 shadow-[0_0_50px_rgba(111,168,255,.5)] transition">
           <MapIcon size={19} /> Open the live map
@@ -580,16 +583,16 @@ function Finale({ D, onExplore }) {
 
 /* ------------------------------------------------------------------ */
 const TEAM = [
-  ["01", "Ryan Jian", "rjian", "ryan", "Team lead"],
-  ["02", "Daniel Li", "danielli", "daniel", "GPS"],
-  ["03", "Tsz “Steven” Liang", "s1evenl_", "steven", "Radar"],
-  ["04", "Ismail Churaev", "ischur", "ismail", "Model"],
-  ["05", "Pratheek Danam", "pratheey", "pratheek", "NISAR data"],
-  ["06", "Avinash Lee", "avilee", "avi", "App"],
+  ["01", "Ryan Jian", "rjian", "ryan"],
+  ["02", "Daniel Li", "danielli", "daniel"],
+  ["03", "Tsz “Steven” Liang", "s1evenl_", "steven"],
+  ["04", "Ismail Churaev", "ischur", "ismail"],
+  ["05", "Pratheek Danam", "pratheey", "pratheek"],
+  ["06", "Avinash Lee", "avilee", "avi"],
 ];
 
 // Trading-card style: tilts toward the cursor, colors up on hover, holographic sheen.
-function PlayerCard({ no, name, handle, img, role, delay, seen }) {
+function PlayerCard({ no, name, handle, img, delay, seen }) {
   const ref = useRef(null);
   const [t, setT] = useState({ x: 0, y: 0, on: false });
   const move = (e) => {
@@ -609,8 +612,7 @@ function PlayerCard({ no, name, handle, img, role, delay, seen }) {
         <div className="absolute inset-0 opacity-30 bg-[repeating-linear-gradient(0deg,rgba(255,255,255,.06)_0_1px,transparent_1px_3px)]" />
         <div className="absolute inset-0 opacity-0 group-hover:opacity-100 transition-opacity duration-300 mix-blend-overlay"
           style={{ background: `radial-gradient(circle at ${50 + t.x * 100}% ${50 + t.y * 100}%, rgba(255,255,255,.55), transparent 45%), linear-gradient(${115 + t.x * 60}deg, rgba(240,112,90,.35), rgba(111,168,255,.35), rgba(95,201,224,.35))` }} />
-        <span className="absolute top-3 left-4 font-wide text-[13px] text-accent-2">{no}</span>
-        <span className="absolute top-3 right-3 rounded-full border border-accent/50 bg-space/70 backdrop-blur px-2.5 py-0.5 font-wide text-[9.5px] tracking-wider text-accent-2">{role}</span>
+        <span className="absolute top-3 left-4 font-mono text-[13px] text-accent-2">{no}</span>
         <div className="absolute left-0 right-0 bottom-0 p-4">
           <p className="font-display text-[21px] font-bold leading-tight">{name}</p>
           <p className="font-mono text-[12px] text-ink/60 mt-0.5">@{handle}</p>
@@ -628,13 +630,12 @@ function Team() {
       <div className="relative px-6 md:px-14 max-w-[1400px] mx-auto">
         <div className="flex flex-wrap items-end justify-between gap-6">
           <div>
-            <Chapter n={13} title="THE CREW" />
-            <h2 className="font-wide text-[clamp(26px,3.2vw,46px)] leading-[1.05] mt-4">Mission team</h2>
+            <Chapter n={14} title="The crew" />
+            <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Mission team</h2>
           </div>
-          <p className="text-[15.5px] text-ink/70 max-w-[460px]">Software, data analysis and engineering, built in one weekend for NASA Space Apps 2026, Dancing with the SARs.</p>
         </div>
         <ul className="grid grid-cols-2 md:grid-cols-3 xl:grid-cols-6 gap-4 mt-10">
-          {TEAM.map(([no, name, handle, img, role], n) => <PlayerCard key={handle} {...{ no, name, handle, img, role, seen }} delay={n * 90} />)}
+          {TEAM.map(([no, name, handle, img], n) => <PlayerCard key={handle} {...{ no, name, handle, img, seen }} delay={n * 90} />)}
         </ul>
       </div>
     </section>

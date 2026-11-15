@@ -13,8 +13,8 @@ const LABEL_TEXT = { 0: "text-mute", 1: "text-sink", 2: "text-rise", 3: "text-vi
 function Section({ title, children, aside }) {
   return (
     <section className="border-t border-hair pt-4 mt-5">
-      <div className="flex items-baseline justify-between gap-3 mb-2">
-        <h3 className="font-display text-[17px] font-semibold">{title}</h3>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-3 gap-y-2 mb-2">
+        <h3 className="font-display text-[17px] font-semibold whitespace-nowrap">{title}</h3>
         {aside}
       </div>
       {children}
@@ -34,7 +34,7 @@ export default function Inspector({ D, S, set, actions, stationAt, placeName }) 
   useEffect(() => { if (last.current !== S.sel && scroller.current) scroller.current.scrollTop = 0; last.current = S.sel; }, [S.sel]);
 
   return (
-    <aside ref={scroller} aria-label="Selected spot" className="scroll-thin overflow-y-auto h-full px-6 pt-5 pb-12">
+    <aside ref={scroller} aria-label="Selected spot" className="scroll-thin overflow-y-auto overflow-x-hidden h-full max-lg:h-auto px-6 pt-5 pb-12 max-sm:px-4">
       {S.sel < 0 ? <Overview D={D} actions={actions} /> : <Spot {...{ D, S, set, actions, stationAt, placeName }} />}
     </aside>
   );
@@ -106,15 +106,17 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           <div className="pt-3">
             <dt className="text-[13px] text-mute">Fitted trend</dt>
             <dd className="text-[16px]">{G.trend_m_per_yr[i] == null ? "no value" : `${cm(G.trend_m_per_yr[i])} a year`}</dd>
-            <dd className="text-[12.5px] text-mute">{pm(G.trend_sigma_m_per_yr[i])}. Less than a year of data, so never the headline.</dd>
+            <dd className="text-[12.5px] text-mute">{G.trend_m_per_yr[i] == null && G.net_change_m[i] != null
+              ? "No fit here: this spot's usable dates don't cover all four seasons, so trend and seasonal can't be told apart."
+              : `${G.trend_sigma_m_per_yr[i] != null ? `${pm(G.trend_sigma_m_per_yr[i])}. ` : ""}Less than a year of data, so never the headline.`}</dd>
           </div>
         </dl>
       </div>
 
-      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
+      <div role="tablist" aria-label="Details" className="sticky -top-5 z-10 -mx-6 px-6 max-sm:-mx-4 max-sm:px-4 pt-3 pb-0 mt-5 bg-[#141b29]/95 backdrop-blur border-b border-hair flex gap-1">
         {TABS.map(([id, name, Icon]) => (
           <button key={id} role="tab" aria-selected={tab === id} onClick={() => setTab(id)}
-            className={`relative inline-flex items-center gap-1.5 px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
+            className={`relative inline-flex items-center gap-1.5 whitespace-nowrap px-3 pb-2.5 pt-1 text-[14px] font-medium transition-colors ${tab === id ? "text-accent-2" : "text-mute hover:text-ink"}`}>
             <Icon size={14} /> {name}
             {tab === id && <span className="absolute left-2 right-2 -bottom-px h-[2px] bg-accent shadow-[0_0_8px_#6FA8FF]" />}
           </button>
@@ -169,7 +171,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </>}
 
       {tab === "evidence" && <>
-      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the four stations on the map to see the radar checked against it.</p></Section>}
+      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the {D.stations.length} stations on the map to see the radar checked against it.</p></Section>}
 
       {st && (
         <Section title="GPS check">
@@ -202,9 +204,10 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             ["Uncertainty", `${pm(D.meta.sigma_net_m)} on the net change, from ${D.meta.sigma_source}.`],
             ["Seasonal test", `${D.meta.significance}.`],
             ["Model", D.meta.fit.model],
+            ...(D.meta.notes || []).filter(Boolean).map((n, k) => [k ? "" : "Notes from the analysis", n]),
             ["First and last granule", `${pairs[0]?.granule_id ?? "?"} … ${pairs[pairs.length - 1]?.granule_id ?? "?"}`],
           ].map(([k, val]) => (
-            <div key={k}><dt className="text-mute">{k}</dt><dd className="break-all">{val}</dd></div>
+            <div key={k + val}><dt className="text-mute">{k}</dt><dd className="[overflow-wrap:anywhere]">{val}</dd></div>
           ))}
         </dl>
       </details>
@@ -237,7 +240,7 @@ function Leaders({ D, actions }) {
     <Section title="Where to look first" aside={
       <div className="flex rounded-md border border-hair overflow-hidden text-[12.5px]">
         {[["sink", "Sinking fastest"], ["breathe", "Breathing most"]].map(([id, t]) => (
-          <button key={id} onClick={() => setTab(id)} className={`px-2.5 py-1 ${tab === id ? "bg-accent/15 text-accent-2" : "text-mute hover:text-ink"}`}>{t}</button>
+          <button key={id} onClick={() => setTab(id)} className={`whitespace-nowrap px-2.5 py-1 ${tab === id ? "bg-accent/15 text-accent-2" : "text-mute hover:text-ink"}`}>{t}</button>
         ))}
       </div>}>
       <ol className="divide-y divide-hair">
@@ -307,7 +310,7 @@ function Overview({ D, actions }) {
 
   return (
     <div>
-      <h2 className="font-serif text-[34px] leading-[1.05]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
+      <h2 className="font-display font-bold tracking-[-0.01em] text-[30px] leading-[1.08]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Groundwater pumping lowers the water pressure underground, and the ground settles. Some of that comes back when the water returns each winter, and some doesn't. Compare the wrong two dates and sinking ground can look stable.</p>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Click anywhere on the map, or a GPS station, to see every measurement at that spot and how sure we are.</p>
       <div className="grid grid-cols-2 gap-2 mt-5">

@@ -9,10 +9,9 @@ import { SatelliteArt } from "./art.jsx";
 // don't all share one template.
 export function Chapter({ n, title, kicker, align = "left" }) {
   return (
-    <div className={`flex items-baseline gap-4 ${align === "center" ? "justify-center" : ""}`}>
-      <span className="font-mono text-[12px] text-accent-2 border border-accent/40 rounded-full px-2.5 py-0.5">{String(n).padStart(2, "0")}</span>
-      <span className="font-wide text-[11px] tracking-[0.18em] text-ink/55">{title}</span>
-      {kicker && <span className="font-serif italic text-[20px] text-accent-2 leading-none">{kicker}</span>}
+    <div className={`flex items-baseline gap-3 ${align === "center" ? "justify-center" : ""}`}>
+      <span className="font-mono text-[13px] text-accent-2">{String(n).padStart(2, "0")}</span>
+      <span className="text-[15px] text-mute">{title}</span>
     </div>
   );
 }
@@ -39,8 +38,8 @@ export function MissionTimeline() {
     <section ref={ref} className="relative h-[460vh]">
       <div className="sticky top-0 h-[100svh] overflow-hidden flex flex-col justify-center">
         <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto">
-          <Chapter n={5} title="MISSION LOG" kicker="from the clean room to orbit" />
-          <h2 className="font-serif text-[clamp(44px,6vw,92px)] leading-[0.95] mt-4">Three years to get here.</h2>
+          <Chapter n={5} title="Mission log" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Three years to get here.</h2>
         </div>
         <div ref={track} className="flex gap-6 mt-10 pl-6 md:pl-14 will-change-transform" style={{ transform: `translate3d(${-p * tw}px,0,0)` }}>
           {STEPS.map((s, k) => (
@@ -48,7 +47,7 @@ export function MissionTimeline() {
               <div className="relative aspect-[16/10] bg-space overflow-hidden">
                 {s.ours ? (
                   <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,rgba(240,112,90,.35),#0F1420_70%)]">
-                    <span className="font-wide text-[13px] tracking-[0.2em] text-sink">SAN JOAQUIN VALLEY</span>
+                    <span className="font-display font-bold text-[15px] text-sink">SAN JOAQUIN VALLEY</span>
                   </div>
                 ) : s.video ? (
                   <NasaVideo srcs={s.video} className="absolute inset-0 w-full h-full object-cover" fallback={<SatelliteArt className="absolute inset-0 m-auto w-[70%] h-full" />} />
@@ -89,9 +88,9 @@ export function WatchNasa() {
     <section ref={ref} className="relative py-[14vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <div className="grid lg:grid-cols-[0.8fr_1.6fr] gap-12 items-center">
         <div>
-          <Chapter n={10} title="FROM NASA" />
-          <h2 className="font-wide text-[clamp(24px,2.6vw,38px)] leading-[1.15] mt-5">Advancing Earth science with NISAR</h2>
-          <p className="font-serif italic text-[24px] text-ink/80 leading-snug mt-5">A short film from NASA on what the mission will watch: ice, forests, crops, and ground that moves.</p>
+          <Chapter n={10} title="From nasa" />
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Advancing Earth science with NISAR</h2>
+          <p className="text-[18px] text-ink/75 leading-relaxed mt-5">A short film from NASA on what the mission will watch: ice, forests, crops, and ground that moves.</p>
           <p className="text-[12px] text-mute mt-5">Video: NASA Scientific Visualization Studio.</p>
         </div>
         <div className={`group relative aspect-video rounded-2xl overflow-hidden border border-hair-2 bg-black shadow-[0_40px_120px_rgba(0,0,0,.6)] transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 scale-[0.97]"}`}>
@@ -139,8 +138,8 @@ export function SeenWall() {
   ].filter((x) => !gone[x.id]);
   return (
     <section ref={ref} className="relative py-[12vh] px-6 md:px-14 max-w-[1400px] mx-auto">
-      <Chapter n={8} title="FIRST LIGHT" kicker="what NISAR has seen" />
-      <h2 className="font-display font-bold uppercase tracking-[-0.01em] text-[clamp(40px,6vw,96px)] leading-[0.9] mt-4">Radar sees<br />through everything.</h2>
+      <Chapter n={8} title="First light" />
+      <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Radar sees through clouds and dark.</h2>
       <div className={`grid md:grid-cols-4 auto-rows-[230px] gap-4 mt-10 transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         {tiles.map((x) => (
           <figure key={x.id} className={`group relative overflow-hidden rounded-2xl border border-hair-2 bg-deck ${x.cls || ""}`}>

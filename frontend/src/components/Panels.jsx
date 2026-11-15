@@ -3,6 +3,7 @@ import { X, ChevronLeft, ChevronRight, Radar, Route } from "lucide-react";
 import { sampleLine, distKm } from "../lib/profile.js";
 import { cm, fmtDate } from "../lib/fmt.js";
 import { cellAt } from "../lib/data.js";
+import { AGREEMENT, isDraft } from "../lib/demo.js";
 
 /* ---------------- cross-section ---------------- */
 const PW = 900, PH = 150, PP = { l: 54, r: 14, t: 12, b: 26 };
@@ -132,21 +133,41 @@ export function Limits({ D, onClose }) {
         <button onClick={onClose} aria-label="Close" className="absolute right-4 top-4 p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2"><X size={18} /></button>
         <h2 className="font-display text-[26px] font-semibold">What this map can and can't tell you</h2>
         {[
-          ["What it shows", `Ground motion measured by NISAR along the radar's line of sight, relative to GPS station ${D.meta.reference_station}. Negative means moving away from the satellite, which here is mostly sinking. The main map is the change from the first to the last date. Those dates fall in nearly the same season, so most of the seasonal movement cancels out.`],
-          ["What the fit means", "Each spot is fitted with a steady trend plus a once-a-year cycle. With less than a year of data the two can trade off, so the trend is shown with its uncertainty and is never the headline. Seasonal size and timing are shown only where the cycle passes a significance test."],
-          ["What it does not mean", "It does not say how much of the sinking is permanent. It does not measure water volume, aquifer health, or where to recharge. Hatched areas mean we could not tell, not that the ground is stable."],
-          ["How we checked it", `GPS stations ${D.meta.held_out_stations.join(", ")} were never used to calibrate the radar. Their disagreement with NISAR is shown when GPS check is on. Three check stations make a prototype check, not a valley-wide accuracy claim.`],
-          ["About the data", "NISAR data here is provisional. NASA and ISRO will release reprocessed, validated versions in 2027. Each pair is corrected for the ionosphere using the product's own correction layer. Published figures (levee heights, canal capacity) are other people's measurements and are credited where shown."],
+          ["What it shows", `Ground motion measured by NISAR along the radar's line of sight, from ${fmtDate(D.dates[0])} to ${fmtDate(D.dates[D.dates.length - 1])}, relative to GPS station ${D.meta.reference_station}. Negative means moving away from the satellite, which here is mostly sinking. The main map is the change from the first to the last date. Those dates fall in nearly the same season, so most of the seasonal movement cancels out.`],
+          ["What the fit means", "Each spot is fitted with a steady trend plus a once-a-year cycle. With less than a year of data the two can trade off, so the trend is shown with its uncertainty and is never the headline. Seasonal size and timing are shown only where the cycle passes a significance test. Elsewhere the app says the seasonal term is not significant here."],
+          ["What it does not mean", "It does not say how much of the sinking is permanent. It does not measure water volume, aquifer health, or where to recharge. \"Insufficient evidence\" (hatched on the map) means we could not tell, not that the ground is stable."],
+          ["How we checked it", `GPS stations that were never used to calibrate the radar (${D.meta.held_out_stations.join(", ")}) are compared with NISAR in the GPS check, including the one that disagrees most. NISAR and GPS agree to about ${AGREEMENT.rms_cm} cm per 12-day pair (root mean square, ${AGREEMENT.n_stations} held-out stations checked so far). A separate check at ${AGREEMENT.selfcheck_n} stations gives ${AGREEMENT.selfcheck}. Motion smaller than that is not resolved at a single spot. A handful of check stations in one radar frame make a prototype check, not a valley-wide accuracy claim.`],
+          ["About the data", `NISAR data here is provisional. NASA and ISRO will release reprocessed, validated versions in 2027. Corrected for the ionosphere, the troposphere and solid Earth tides using the product's own correction layers, read at each spot's ground height. A second NISAR viewing direction (descending track) is used only as a cross-check of vertical vs east-west motion. It is noisier (about ${AGREEMENT.descending_cm} cm per pair) and misses Hanford. Each map cell is the median of the radar pixels inside it. Single pixels on farmland can show soil-moisture effects that look like sinking. Published figures (levee heights, canal capacity, valley-wide subsidence) are other people's measurements, credited where shown.`],
         ].map(([h, p]) => (
           <div key={h}><h3 className="font-display text-[18px] font-semibold mt-5 mb-1 text-accent-2">{h}</h3><p className="text-ink/90">{p}</p></div>
         ))}
         <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-accent-2">Keyboard</h3>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[14px]">
-          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
+          {[["1–5", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["F", "Crop fields"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
             <li key={k} className="flex items-center gap-2"><kbd className="font-sans text-[12px] font-semibold border border-hair-2 border-b-2 rounded px-1.5 py-0.5 bg-space">{k}</kbd><span className="text-ink/85">{d}</span></li>
           ))}
         </ul>
       </div>
+    </div>
+  );
+}
+
+// Explorer header: says plainly when the map is not real NISAR results (D6), or is a draft.
+export function DataStatus({ D }) {
+  const [open, setOpen] = useState(false);
+  const draft = isDraft(D);
+  if (!D.synthetic && !draft) return null;
+  const text = D.synthetic
+    ? "The real NISAR files are not in public/data yet, so the map shows synthetic data in the same format. Nothing here is a NISAR measurement."
+    : "First real NISAR results. Labels can still change until the checks pass: sign at the moving GPS stations, the seasonal test on stable ground, and the held-out residual table.";
+  return (
+    <div className="relative shrink-0">
+      <button onClick={() => setOpen(!open)} aria-expanded={open}
+        className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-full border px-2.5 py-1 text-[12px] font-medium ${D.synthetic ? "border-sink/60 text-sink bg-sink/10" : "border-accent/50 text-accent-2 bg-accent/10"}`}>
+        <span className={`w-1.5 h-1.5 rounded-full ${D.synthetic ? "bg-sink" : "bg-accent"}`} />
+        {D.synthetic ? "Synthetic preview" : "Draft results"}
+      </button>
+      {open && <p className="absolute left-0 top-full mt-2 z-40 w-[300px] rounded-lg border border-hair-2 bg-deck p-3 text-[13px] leading-snug text-ink/90 shadow-xl">{text}</p>}
     </div>
   );
 }
