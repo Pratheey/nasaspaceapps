@@ -31,7 +31,7 @@ export default function FieldsScene() {
               almond orchards sent back the most HV for their HH. The median HV/HH was{" "}
               {pol.crops.map((c, k) => <span key={c}>{k ? (k === pol.crops.length - 1 ? " and " : ", ") : ""}<span style={{ color: CROP_COLORS[c] }}>{c.toLowerCase()} {pol.median_hv_over_hh_db[c].toFixed(1)} dB</span></span>)}.
             </p>
-            <p className="text-[14px] text-mute mt-4 leading-relaxed">{pol.caveat} Crop labels: {pol.crop_labels}. NISAR L2 GCOV, provisional.</p>
+            <p className="text-[14px] text-mute mt-4 leading-relaxed">{pol.caveat} This describes the sampled fields and dates; telling crops apart from radar alone would need a separate test. Crop labels: {pol.crop_labels}. NISAR L2 GCOV, provisional.</p>
           </div>
           <PolChart pol={pol} />
         </div>
@@ -41,7 +41,7 @@ export default function FieldsScene() {
             <h3 className="font-display font-bold tracking-[-0.01em] leading-[1.05] text-[clamp(28px,3vw,44px)]">Does the longer wave keep more fields usable?</h3>
             <p className="text-[18px] leading-relaxed text-ink/80 mt-5">
               Not over these fields. We matched {cov.pairs.length} NISAR pairs with Sentinel-1 pairs of the same length, starting at most six days apart,
-              and counted a field as usable when its median coherence was at least {cov.threshold_median_coherence.toFixed(2)}.
+              and counted a field as usable when at least half its pixels had a valid coherence and the median was at least {cov.threshold_median_coherence.toFixed(2)}.
             </p>
             <div className="mt-7 flex flex-wrap gap-x-10 gap-y-5">
               <div><p className="font-mono text-[44px] leading-none text-rise">{pct(t.nisar.usable, t.nisar.checks)}</p><p className="text-[14px] text-mute mt-2">NISAR, {t.nisar.usable} of {t.nisar.checks} field checks</p></div>

@@ -30,8 +30,8 @@ export function lieStation(D) {
 // gps/processed/uncertainty.json (sigma_pair_m, n_stations) when Daniel adds stations.
 // Never write "1 cm" or "centimetre-level" anywhere in the app.
 export const AGREEMENT = {
-  rms_cm: 1.7,
-  n_stations: 3,
+  rms_cm: 1.8,
+  n_stations: 13,
   selfcheck: "1.2 to 2.2 cm",
   selfcheck_n: 13,
   descending_cm: 3,
