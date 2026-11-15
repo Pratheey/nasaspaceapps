@@ -48,7 +48,7 @@ export default function CommandBar({ open, onClose, items }) {
               </li>
             );
           })}
-          {!list.length && <li className="px-4 py-6 text-mute text-[14px]">Nothing matches. Try a station name like P307, or a view like fringes.</li>}
+          {!list.length && <li className="px-4 py-6 text-mute text-[14px]">Nothing matches. Try a station name, or a view like fringes.</li>}
         </ul>
       </div>
     </div>

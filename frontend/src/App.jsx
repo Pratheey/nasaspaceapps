@@ -5,7 +5,7 @@ import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
 import Timeline from "./components/Timeline.jsx";
 import Legend from "./components/Legend.jsx";
-import { ProfilePanel, TourCard, Limits } from "./components/Panels.jsx";
+import { ProfilePanel, TourCard, Limits, DataStatus } from "./components/Panels.jsx";
 import { loadData, cellAt, cellBounds, fitAt } from "./lib/data.js";
 import { cellValue, netDomain, MODES } from "./lib/view.js";
 import { cm } from "./lib/fmt.js";
@@ -199,6 +199,7 @@ function Explorer({ D, onStory, startTour }) {
             <h1 className="font-display font-bold text-[21px] leading-none whitespace-nowrap">The Breathing Ground</h1>
             <p className="text-[12px] text-mute mt-1 truncate max-[1500px]:hidden">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
           </div>
+          <DataStatus D={D} />
         </div>
         <nav aria-label="Map view" className="flex gap-1 mx-auto max-lg:order-3 max-lg:w-full max-lg:overflow-x-auto">
           {MODES.map((m) => {

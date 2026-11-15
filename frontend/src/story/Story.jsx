@@ -7,6 +7,7 @@ import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
 import { Numbers } from "./Game.jsx";
 import { MEDIA, NasaVideo, MaybeImage, MissionPatch, Telemetry, Chirp, RadarPing } from "./Space.jsx";
+import { demoStations, lieStation, AGREEMENT } from "../lib/demo.js";
 import { Chapter, MissionTimeline, WatchNasa, SeenWall } from "./Media.jsx";
 import { useInView, useProgress, useScrollY, seg, ease, reduceMotion } from "./hooks.js";
 import { fitAt, mostMisleadingPair } from "../lib/data.js";
@@ -23,10 +24,7 @@ export default function Story({ D, onExplore }) {
     raf = requestAnimationFrame(loop);
     return () => { cancelAnimationFrame(raf); lenis.destroy(); };
   }, []);
-  const demo = useMemo(() => ({
-    sink: D.stations.find((s) => s.station === "P307") || D.stations[0],
-    calm: D.stations.find((s) => s.station === "P302") || D.stations[1] || D.stations[0],
-  }), [D]);
+  const demo = useMemo(() => ({ ...demoStations(D), lie: lieStation(D) }), [D]);
 
   return (
     <div className="bg-space text-ink overflow-x-clip">
@@ -38,7 +36,7 @@ export default function Story({ D, onExplore }) {
       <AquiferScene />
       <Chirp className="my-6" />
       <BreatheScene D={D} demo={demo} />
-      <LieScene D={D} st={demo.sink} />
+      <LieScene D={D} st={demo.lie} />
       <Numbers D={D} />
       <MissionTimeline />
       <OrbitScene />
@@ -267,7 +265,7 @@ function MeasureScene() {
           <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">It counts the wave, not the picture.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             When the ground sinks, the radar pulse has a little farther to travel, there and back, so the wave comes home slightly later in
-            its cycle. That shift in phase can be measured to a small fraction of a wavelength, which is how a 24 cm radar sees millimetres.
+            its cycle. That shift in phase can be measured to a small fraction of a wavelength, which is how a 24 cm radar sees movements far smaller than its own wavelength.
             Drag the slider.
           </p>
           <p className="text-[15px] text-mute mt-5">Each full <Term t="fringe" /> of color is 11.9 cm of motion.</p>
@@ -287,17 +285,17 @@ function BreatheScene({ D, demo }) {
   const N = D.dates.length;
   const series = [
     { st: demo.calm, color: "#5FC9E0" },
-    { st: demo.sink, color: "#F0705A" },
-  ].map(({ st, color }) => ({ st, color, v: D.values[st.cell_index] || [] }));
+    ...demo.sinking.map((st, n) => ({ st, color: n ? "#F7A88F" : "#F0705A" })),
+  ].filter((s, n, a) => s.st && a.findIndex((x) => x.st === s.st) === n).map(({ st, color }) => ({ st, color, v: D.values[st.cell_index] || [] }));
   const all = series.flatMap((s) => s.v.filter((x) => x != null).map((x) => x * 100));
   const lo = Math.min(0, ...all) - 1, hi = Math.max(0, ...all) + 1;
   const X = (k) => P.l + (k / (N - 1)) * (W - P.l - P.r);
   const Y = (v) => P.t + ((hi - v) / (hi - lo)) * (H - P.t - P.b);
   const shown = Math.max(1, Math.round(draw * (N - 1)));
   const captions = [
-    "Two GPS stations, one radar. Scroll to play eleven months of NISAR passes.",
-    "One stays almost level. The other drops, pass after pass.",
-    "Both rise and fall with the seasons by a few millimetres. Under that, one keeps sinking.",
+    `${series.length} GPS stations, one radar. Scroll to play eleven months of NISAR passes.`,
+    `${demo.calm.station} stays almost level. ${demo.sinking.length > 1 ? "The others drop" : "The other drops"}, pass after pass.`,
+    "The ground rises a little in winter and settles in the dry months. Under that, the sinking keeps going.",
   ];
   const cap = split > 0.1 ? 2 : draw > 0.6 ? 1 : 0;
   return (
@@ -422,7 +420,7 @@ function InstrumentScene({ D }) {
           </div>
           <div>
             <Chapter n={7} title="The instrument" />
-            <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Radar that measures the ground to the centimetre, through cloud, day and night.</h2>
+            <h2 className="font-display font-bold text-[clamp(36px,4.4vw,64px)] leading-[0.98] mt-3">Radar that measures how the ground moves, through cloud, day and night.</h2>
             <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
               NISAR is a joint mission of NASA and ISRO. Its <Term t="L-band" /> radar bounces 24 cm microwaves off the ground from a 12-metre gold mesh reflector,
               the largest NASA has deployed in space. Comparing two passes makes an <Term t="interferogram" />: how far the ground moved along the radar's <Term t="line of sight" />.
@@ -492,14 +490,18 @@ function GpsScene({ D }) {
           <Chapter n={11} title="The check" />
           <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">We check the radar against instruments it has never seen.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
-            Four GPS stations sit in the study area. One, {D.meta.reference_station}, ties the radar to the ground. The other three,
-            {" "}{D.meta.held_out_stations.join(", ")}, are <Term t="held out" /> and used only to test it. Each pass is also corrected for the <Term t="ionosphere" />. Every number in the map comes with its uncertainty,
+            {D.stations.length} GPS stations sit on the map. One, {D.meta.reference_station}, ties the radar to the ground. The other {D.meta.held_out_stations.length} are
+            {" "}<Term t="held out" /> and used only to test it. Each pass is also corrected for the <Term t="ionosphere" />. Every number in the map comes with its uncertainty,
             and where the evidence is too thin, the map says so instead of guessing.
           </p>
+          <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
+            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.rms_cm} cm</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">NISAR vs GPS per 12-day pair, root mean square, {AGREEMENT.n_stations} held-out stations so far</p></div>
+            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.selfcheck.replace(" to ", "–")}</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">Separate check at {AGREEMENT.selfcheck_n} stations. Motion smaller than this isn't resolved at a single spot.</p></div>
+          </div>
         </div>
-        <div className="grid grid-cols-2 gap-3">
+        <div className={`grid gap-3 ${D.stations.length > 6 ? "grid-cols-3 max-sm:grid-cols-2" : "grid-cols-2"}`}>
           {D.stations.map((st, n) => (
-            <div key={st.station} className="rounded-xl border border-hair-2 bg-deck/70 p-5" style={{ transitionDelay: `${n * 120}ms` }}>
+            <div key={st.station} className={`rounded-xl border border-hair-2 bg-deck/70 ${D.stations.length > 6 ? "p-4" : "p-5"}`} style={{ transitionDelay: `${n * 120}ms` }}>
               <div className="flex items-center justify-between">
                 <span className="font-display text-[24px] font-bold">{st.station}</span>
                 <Satellite size={18} className={st.role === "reference" ? "text-accent" : "text-rise"} />

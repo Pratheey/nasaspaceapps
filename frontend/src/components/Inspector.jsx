@@ -106,7 +106,9 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           <div className="pt-3">
             <dt className="text-[13px] text-mute">Fitted trend</dt>
             <dd className="text-[16px]">{G.trend_m_per_yr[i] == null ? "no value" : `${cm(G.trend_m_per_yr[i])} a year`}</dd>
-            <dd className="text-[12.5px] text-mute">{G.trend_sigma_m_per_yr[i] != null ? `${pm(G.trend_sigma_m_per_yr[i])}. ` : ""}Less than a year of data, so never the headline.</dd>
+            <dd className="text-[12.5px] text-mute">{G.trend_m_per_yr[i] == null && G.net_change_m[i] != null
+              ? "No fit here: this spot's usable dates don't cover all four seasons, so trend and seasonal can't be told apart."
+              : `${G.trend_sigma_m_per_yr[i] != null ? `${pm(G.trend_sigma_m_per_yr[i])}. ` : ""}Less than a year of data, so never the headline.`}</dd>
           </div>
         </dl>
       </div>
@@ -169,7 +171,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
       </>}
 
       {tab === "evidence" && <>
-      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the four stations on the map to see the radar checked against it.</p></Section>}
+      {!st && <Section title="GPS check"><p className="text-[14px] text-mute">No GPS station at this spot. Open one of the {D.stations.length} stations on the map to see the radar checked against it.</p></Section>}
 
       {st && (
         <Section title="GPS check">
@@ -202,9 +204,10 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
             ["Uncertainty", `${pm(D.meta.sigma_net_m)} on the net change, from ${D.meta.sigma_source}.`],
             ["Seasonal test", `${D.meta.significance}.`],
             ["Model", D.meta.fit.model],
+            ...(D.meta.notes || []).filter(Boolean).map((n, k) => [k ? "" : "Notes from the analysis", n]),
             ["First and last granule", `${pairs[0]?.granule_id ?? "?"} … ${pairs[pairs.length - 1]?.granule_id ?? "?"}`],
           ].map(([k, val]) => (
-            <div key={k}><dt className="text-mute">{k}</dt><dd className="[overflow-wrap:anywhere]">{val}</dd></div>
+            <div key={k + val}><dt className="text-mute">{k}</dt><dd className="[overflow-wrap:anywhere]">{val}</dd></div>
           ))}
         </dl>
       </details>
