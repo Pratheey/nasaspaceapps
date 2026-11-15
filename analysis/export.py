@@ -13,7 +13,8 @@ from pathlib import Path
 import numpy as np
 
 DECIMALS = 4
-DEMO_STATIONS = {"sinking": ["CAFP", "CAHA"], "calm": "P300"}   # D5
+DEMO_STATIONS = {"sinking": ["CAFP", "CAHA"], "calm": "P298"}   # D5; calm P300 -> P298 (hour ~14):
+# P300's cell has 7 valid radar dates and no net change; P298 has all 26, GPS -0.7 cm, NISAR within 0.9 cm of GPS
 MAX_BYTES = 5 * 1024 * 1024
 
 

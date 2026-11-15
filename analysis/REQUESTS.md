@@ -12,13 +12,15 @@ Written by the analysis lane (Ismail). Numbers come from `analysis/NUMBERS.md` (
 2. **CAHA's seasonal term does not pass in NISAR** (GPS amplitude 16.3 mm is below the calibrated 18.5 mm
    bar), so the app says "seasonal not significant" there. Use **CAFP for the breathing** (NISAR 30.3 mm vs
    GPS 27.4 mm, both peaking in February) and **CAHA for the sinking**.
-3. **Calm demo station:** P300's cell has only 7 valid radar dates and no net change. **P294 or P298**
-   are calm and complete. Tell me which and I set `demo_stations` in `meta.json` (one line in `analysis/export.py`).
+3. **Calm demo station is now P298** (set at the analysis freeze): all 26 radar dates, GPS −0.7 cm,
+   NISAR within 0.9 cm of GPS. P300 had 7 valid dates and no net change. Swap it in `analysis/export.py` if you prefer.
 4. **Amplitude wording:** the app's "29.6 mm up and down" is the amplitude A. Peak-to-trough is 2A
    (about 59 mm). Pick one and make the label say which.
-5. **Decide whether the north-east control box is stable ground** (with Pratheek). It alone sets the
-   seasonal bar; without it about 1,100 more cells count as seasonal (`analysis/README.md`, sensitivity).
-6. **Canal:** the Aqueduct profile follows contracts v1.2 section 5 and is in the app (tool "Aqueduct", key A).
+5. **North-east control box:** kept for now (conservative). On v3 it behaves like ground that moves (78% of
+   its cells "seasonal", +4.3 cm/yr), so it may set the bar too high: without it about 1,300 more cells count
+   as seasonal, CAHA included. Decide with Pratheek (`analysis/README.md`, "Decisions taken at the analysis freeze").
+6. **Tick rows 5, 6, 12, 13 and 14 of `numbers.md`:** second-checked by the analysis lane (`analysis/SECOND_CHECK.md`).
+7. **Canal:** the Aqueduct profile follows contracts v1.2 section 5 and is in the app (tool "Aqueduct", key A).
    A standalone explorer for the project page or pitch: https://claude.ai/artifact/MvwyTvTDxKsEUsrosYcTqf
    (shared on request). Sinking under the canal is mostly 5–17 cm, deepest −16.3 cm at km 84;
    screening only.
@@ -46,8 +48,8 @@ Written by the analysis lane (Ismail). Numbers come from `analysis/NUMBERS.md` (
    flowlines, gives a second profile.
 2. **Corcoran levee:** no source yet (DWR's levee layer has none in the bbox). Send a source and its date,
    or we drop the levee profile and say so.
-3. The hand-off branches `ismail/h15-canals-for-daniel` and `ismail/gps-tenv3-for-daniel` can be deleted
-   once the files are in `context/` and `gps/raw/`.
+3. **H-8 files** (Census places, DWR groundwater for Fresno/Kings/Tulare) are on the hand-off branch
+   `ismail/h8-context-for-daniel`, folder `analysis/handoff/h8/`. The earlier canal and GPS hand-off branches are deleted (both copied to `main`).
 
 ## Steven (radar)
 
