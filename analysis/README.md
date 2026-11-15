@@ -102,6 +102,27 @@ model, same dates, stack v2: CAFP +0.6 vs GPS −2.2, CAHA +0.3 vs −4.0, P307 
 Seasonal amplitudes agree well at the demo stations (CAFP 26.3 vs 26.7 mm, CAHA 14.5 vs 16.6 mm,
 both peaking in February). The guard does not address the trend gap; it needs the data and gps lanes.
 
+## Checks: cells vs station values, and label sensitivity (stack v2, σ = 1.75 cm preliminary)
+
+`python -m analysis.checks --stack data/interim/stack_t034_f020_v2.nc --sigma-json gps/processed/uncertainty.json`
+reruns both. Rerun when Daniel's final `uncertainty.json` lands.
+
+**Cells vs Pratheek's station values** (1 km cell median vs his 3 × 3-pixel median at the station):
+correlation +0.95 to +1.00 at all 11 stations in the bbox; RMS difference 0.1–0.7 cm except TRAN
+(1.5 cm). Net change, cell / point: CAFP −6.4 / −5.4, CAHA −5.3 / −5.6 cm. The cell median does not
+distort the station series. P300's cell has only 7 valid dates.
+
+**Label sensitivity** (cells per label 0 / 1 / 2 / 3):
+
+| Seasonal threshold | σ = 1.2 cm | σ = 1.75 cm | σ = 2.2 cm | σ = 3.0 cm |
+|---|---|---|---|---|
+| Calibrated on both boxes (18.2 mm; 4,105 seasonal cells) | 7041 / 3285 / 533 / 1141 | 7283 / 2945 / 887 / 885 | 7449 / 2580 / 1256 / 715 | 7799 / 2084 / 1752 / 365 |
+| South-west box only = F-test only (5,234 seasonal cells) | 6185 / 3515 / 1389 / 911 | 6340 / 3108 / 1830 / 722 | 6469 / 2708 / 2236 / 587 | 6768 / 2161 / 2783 / 288 |
+
+Two settings matter: **σ** (1.2 → 3.0 cm moves ~1,200 cells from label 1 to label 2) and **whether the
+north-east box counts as stable** (it alone sets the 18.2 mm bar; without it ~1,100 more cells are
+seasonal). Both need a team decision; σ comes from Daniel.
+
 ## Not done yet
 
 - **Significance threshold calibrated on stable ground** (Pratheek's real-data test: the standard F-test over-fires on bedrock). Needs a decision on control areas; see `REQUESTS.md`.
