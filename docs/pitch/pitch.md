@@ -50,7 +50,8 @@ All figures in beat 1 and 4 are published figures, not our measurements. Say so 
 ## Claims review (Ryan signs off at hour 18, before recording)
 - [ ] No "only NISAR can do this" (ALOS-2, SAOCOM also fly L-band).
 - [ ] No "permanent", "irreversible" or "storage loss" on anything fitted.
-- [ ] No "validated" unless the held-out residual table exists; then quote it with n = 12 stations and the measured agreement (about 2 cm, not "centimetre-level").
+- [ ] No "validated" unless the held-out residual table exists; then quote the measured agreement with its n (D7: 1.7 cm RMS per pair, n = 3 held-out stations so far; 1.2–2.2 cm in the 13-station self-check). Never "1 cm" or "centimetre-level".
+- [ ] Vertical vs east-west motion (descending track) only as a cross-check, never a headline (D7).
 - [ ] No amplitude or timing shown where the seasonal term isn't significant.
 - [ ] 14 km³, 30 cm/yr, levee and canal figures labelled as published, with source.
 - [ ] Reference station (P304) and "provisional NISAR" named on the map legend.

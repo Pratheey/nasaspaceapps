@@ -15,23 +15,23 @@ Monday 09:00. If the real start time differs, shift every hour below by the same
 Every deliverable has **one owner**. Nobody edits another person's folder. Work moves between
 people only through the **handoffs** below: a file the owner produces and others only read.
 
-## Where we are at hour 7
+## Where we are at hour 9 (updated with D7)
 
-| Lane | Person | Done | Open |
+| Lane | Person | Done (on `main`) | Open |
 |---|---|---|---|
-| nisar | Pratheek | 25-pair stack built (424 MB), station values at 14 stations, scripts ready for another track, D5 proposal; pipeline merged to `main` | Stack not on the Drive yet; no DEM for the troposphere; no unwrapping check against cleaned GPS |
-| analysis | Ismail | Fit, calibrated significance, labels, cell medians, `stations.json`, canal profile, vertical input; 39 tests; PR #4 | No run on real data yet |
-| gps | Daniel | Coordinates and cleaned ENU for P302, P303, P304, P307; P307 offset handled; PR #6 | No LOS files, fits, residuals or uncertainty yet; 4 of 13 stations |
-| radar | Steven | Nothing pushed yet | Polarization (H-6) was due at hour 6 |
-| frontend | Avi | (Ryan built the app; it runs on the samples) | Basemap shows "API KEY REQUIRED"; app silently falls back to samples; demo still P302/P307 |
-| integrator | Ryan | Contracts v1, samples, the whole frontend v1 | PRs #3–#6 open, D5 unconfirmed, no issue board |
+| nisar | Pratheek | Stack v1 and **v2** (terrain heights) on the Drive; Track 042 stack processed and on the Drive; station self-checks on both tracks; unwrapping persistence test (no unwrapping errors); go/no-go evidence | Net-change coverage (only 46% of pixels valid in all 25 pairs): mask tuning, bridging pairs; data freeze on v2 |
+| analysis | Ismail | Pipeline, calibrated significance, `stations.json`, canal profile, vertical input (#4); first real run on v1 and v2, 20% cell rule (#9); reads Daniel's GPS files | Trend guard (per-cell trends can be wild); north-east control box may not be stable; NISAR trends run less negative than GPS at most stations; draft not in the app yet |
+| gps | Daniel | 14-station list; cleaned series, LOS files, fits (LOS and up), residuals and `uncertainty.json` for P302, P303, P304, P307 (#6) | The other held-out stations, **CAFP and CAHA first** (no GPS curves for the demo yet); `uncertainty.json` uses 3 stations |
+| radar | Steven | Nothing pushed yet | Polarization (H-6) overdue; coverage; vertical cross-check from Track 042 |
+| frontend | Avi | (Ryan built the app; it runs on the samples) | Nothing pushed yet: basemap "API KEY REQUIRED"; silent fallback to samples; demo still P302/P307; no public deploy |
+| integrator | Ryan | D5, D6, D7; PRs #4–#9 merged | Contracts v1.2 and samples; calm demo station (P300's cell has only 6 valid dates; P294/P298 track GPS); issue board |
 
 ## Milestones
 
 | Hour | Clock (≈) | What |
 |---|---|---|
 | **8** | Sat 17:00 | **Check-in.** Every lane reports status; Ryan merges #4, #5, #6, closes #3, confirms D5 and D6 |
-| 10 | Sat 19:00 | **Go/no-go confirmed on cleaned GPS** (H-5). Stack on the Drive (H-7) |
+| 10 | Sat 19:00 | ~~Go/no-go~~ **GO at hour 9 (D7)**: 1.7 cm RMS per pair. Stacks on the Drive (H-7) |
 | **12** | Sat 21:00 | Check-in |
 | 16 | Sun 01:00 | **First real map in the app** (draft H-12). App deployed to a public link (on samples is fine) |
 | 16–28 | night 1 | **Sleep in two shifts** (see "Sleep" below) |

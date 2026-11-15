@@ -4,7 +4,7 @@
 > Integrator merges changes to it. Every change also gets an entry in `docs/DECISIONS.md`
 > and a version bump below. Agents: if anything you were told conflicts with this file, ask.
 
-**Version:** 3 (proposed). **Last updated:** 2026-11-14 hour 7: event is 48 hours, plan rebased (D6, proposed); first real stack (D5, proposed). Both pending Integrator confirmation
+**Version:** 4. **Last updated:** 2026-11-14 hour ~9 by the Integrator: go/no-go GO, stack v2 replaces v1, descending track is a cross-check (D7). D5 and D6 merged.
 
 ## Theme
 **Dancing with the SARs** (NASA Space Apps 2026). Project: **The Breathing Ground**.
@@ -37,8 +37,9 @@ measurement, the fitted seasonal and trend parts, their uncertainty, and whether
 
 **What the first real stack showed (D5):** at Five Points and Hanford, GPS rises about
 1 cm into late winter, then sinks 5–6 cm by August, and NISAR follows. NISAR and GPS agree
-to about 2 cm per date, so the app shows where the signal clears that and says so where
-it doesn't.
+to 1.7 cm RMS per 12-day pair (3 held-out stations so far; 1.2–2.2 cm in the data-lane
+self-check at 13 stations, D7), so the app shows where the signal clears that and says so
+where it doesn't.
 
 **60-second demo a judge sees:** the Corcoran story → two dates that "look fine" → the full
 series reveals the sinking → click a pixel → GPS agrees (or the app says it doesn't).
@@ -61,7 +62,7 @@ series reveals the sinking → click a pixel → GPS agrees (or the app says it 
   3. **Honest styling.** Hatched/faded cells for "Insufficient evidence"; nothing is drawn
      as blank-meaning-zero.
 - **Now scheduled (48 h event, D6):** polarization panel, NISAR vs Sentinel-1 coverage,
-  descending track and vertical/east, canal and Corcoran levee profiles (screening only),
+  descending track and vertical/east (a cross-check only, D7), canal and Corcoran levee profiles (screening only),
   historical panel. All after the checks in `docs/PLAN.md` "Rules that stop us cutting corners".
 - **Out of scope:** elastic/inelastic classification, storage-loss estimates, recharge
   recommendations, other basins, tailings dams, anything in `docs/PROPOSAL.md` §11.
@@ -75,9 +76,9 @@ Full hour-by-hour plan: `docs/PLAN.md`.
 
 | Lane | Person | Current goal |
 |---|---|---|
-| nisar | Pratheek | Stack on the Drive + go/no-go with Daniel by hour 10; unwrapping check; DEM troposphere; Track 042 with Steven at 28; data freeze at 34 |
-| analysis | Ismail | Pipeline done (PR #4). First real numbers from the station values now; draft map at 16; final labels v1 at 28; canal/levee profiles and vertical by 34 |
-| radar | Steven | Report status at hour 8. HyP3 jobs submitted now; polarization by 16; coverage by 28; descending + vertical by 33 |
-| gps | Daniel | LOS files + go/no-go by 10; all 13 stations, residuals and uncertainty by 14; canal/levee lines by 16; GPS up by 26; history by 30 |
-| frontend | Avi | Keyless basemap; visible warning when `public/data/` is incomplete; CAFP/CAHA/P300 demo; public deploy by 16; real data from 22; new panels 28–36 |
-| integrator | Ryan | Hour-8 check-in: merge #4, #5, #6 and the plan, close #3, confirm D5/D6. Contracts v1.2 + samples by 14; claims reviews at 28 and 40; submit at 44 |
+| nisar | Pratheek | Done: stack v2 (terrain heights) and Track 042 stack on the Drive, unwrapping persistence check, GO. Next: coverage (mask tuning, bridging pairs), help Steven with Track 042, data freeze on v2 at 34 |
+| analysis | Ismail | Done: pipeline and first real run on v1 and v2 (#4, #9; draft, not in the app). Next: trend guard, stable-box check, rerun on v2 with Daniel's σ; draft map in the app at 16; final labels v1 at 28 |
+| radar | Steven | Nothing pushed yet: report status now. HyP3 jobs; polarization by 16; coverage by 28; vertical vs east-west cross-check from the processed Track 042 stack by 33 |
+| gps | Daniel | Done: LOS files, fits, residuals, uncertainty for P302–P307 (#6). Next: all held-out stations by 14, CAFP and CAHA first; canal/levee lines by 16; GPS up by 26; history by 30 |
+| frontend | Avi | Nothing pushed yet. Keyless basemap; visible warning when `public/data/` is incomplete; CAFP/CAHA demo; public deploy by 16; real data from 22; limits text per D7 |
+| integrator | Ryan | Done: #4–#9 merged, D7. Next: contracts v1.2 + samples by 14 (calm demo station: P300's cell has only 6 valid dates); claims reviews at 28 and 40; submit at 44 |

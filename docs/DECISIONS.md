@@ -153,3 +153,37 @@ at the hour-8 check-in.** Builds on D5.
   frontend: keyless basemap, visible data-fallback warning, D5 demo, public deploy by 16; new
   panels 28–36; feature freeze at 38. / integrator: merge #4–#6 and the plan, confirm D5/D6 at
   hour 8, contracts v1.2 by 14, claims reviews at 28 and 40, submit at 44.
+
+## D7: 2026-11-14 17:35: Go/no-go is GO; stack v2 replaces v1; descending track is a cross-check
+**Status: decided by the Integrator (Ryan) at hour ~9.**
+- **Decision:**
+  - **Go/no-go (H-5): GO.** NISAR vs cleaned GPS in line of sight agrees to **1.7 cm RMS per
+    pair** (Daniel, `gps/processed/uncertainty.json`: `sigma_pair_m` = 0.0174, 3 held-out
+    stations so far). The data-lane self-check on stack v2 gives **1.2 to 2.2 cm** per station
+    at the 13 non-reference stations (`data/processed/qa_summary_t034_f020.csv`). No unwrapping
+    errors on either track (the one near-cycle step on Track 042 reverses in the next pair, so
+    it is atmosphere: persistence test, `data/README.md`), and no drift. **The original 1 cm
+    target was not met; uncertainty is stated as measured, never as "1 cm" or
+    "centimetre-level".**
+  - **Stack v2 replaces v1.** v2 reads the troposphere, tide and line-of-sight screens at
+    terrain height (Copernicus GLO-90; data-lane decision N9) instead of a constant 50 m. Same
+    valid-pixel mask as v1. Both are on the Drive; v1 is kept only so running work does not
+    break. Every result from now on is from v2.
+  - **The descending track (042/070) is processed and on the Drive.** It is noisier (about 3 cm
+    RMS per pair against GPS; 1.3 to 5.4 cm per station, `qa_summary_t042_f070.csv`) and has no
+    data at CAHA. **Vertical vs east-west is a cross-check, not a headline.**
+- **Why:** The measured agreement is the honest number; overstating it would undercut the
+  project's promise. v2 removes a height-dependent troposphere error on the hills (fake
+  seasonal signal there drops sharply) without changing the valley floor. The descending
+  track is too noisy, and misses a demo station, to carry a headline claim.
+- **Impact per lane:** nisar: v2 is the stack of record; keep v1 on the Drive until nobody uses
+  it; next is coverage (mask tuning, bridging pairs) and the data freeze on v2. / analysis: run
+  on v2 with `uncertainty.json`; rerun when Daniel adds stations (σ will change); vertical app
+  files are a cross-check, lower priority than the trend guard and final labels. / gps: extend
+  cleaned series, residuals and `uncertainty.json` to all held-out stations, CAFP and CAHA
+  first; GPS up for the vertical cross-check. / radar: build vertical vs east-west from the
+  processed Track 042 stack as a cross-check with GPS up (no CAHA); polarization and coverage
+  stay your core results. / frontend: limits panel numbers as in `docs/pitch/limits.md`; no
+  "1 cm" anywhere; any vertical view is labelled cross-check. / integrator and story: quote
+  1.7 cm (n = 3 held-out stations, rising as Daniel adds stations) and the 1.2–2.2 cm
+  self-check; vertical motion never as a headline.
