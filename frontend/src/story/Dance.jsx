@@ -625,14 +625,14 @@ function DanceInner({ D, onClose, onOpenSpot }) {
     <div ref={wrapRef} role="dialog" aria-modal="true" aria-label="The dance" data-lenis-prevent
       className="fixed inset-0 z-[70] bg-space text-ink overflow-hidden select-none">
       <canvas ref={canvasRef} role="img" tabIndex={-1} style={{ touchAction: "none", cursor: "grab" }} className="absolute inset-0 outline-none"
-        aria-label={`Animated 3D view of ${P.anyIdx.length.toLocaleString("en-US")} one-square-kilometre cells of the San Joaquin Valley. Each point's height is how far the ground moved relative to the first of ${N} NISAR radar passes, from ${fmtDate(D.dates[0])} to ${fmtDate(D.dates[N - 1])}. Heights are exaggerated.`} />
+        aria-label={`Animated 3D view of ${P.anyIdx.length.toLocaleString("en-US")} one-square-kilometre cells of the San Joaquin Valley. Each point's height represents motion along the satellite's angled line of sight, not vertical height, relative to the first of ${N} NISAR radar passes, from ${fmtDate(D.dates[0])} to ${fmtDate(D.dates[N - 1])}. Heights are exaggerated.`} />
       <canvas ref={glRef} aria-hidden="true" className="pointer-events-none absolute inset-0" />
 
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-5 md:p-7">
         <div className={`flex items-start justify-between gap-4 ${ui}`}>
           <div className="max-w-[420px] min-w-0">
             <h2 className="font-display font-bold text-[clamp(30px,3.4vw,46px)] leading-none tracking-[-0.01em]">The dance</h2>
-            <p className="text-[14.5px] leading-snug text-ink/75 mt-3 max-sm:text-[12.5px]">Each point is one square kilometre of the San Joaquin Valley. Its height is how far the ground moved, measured by NISAR on {N} passes.</p>
+            <p className="text-[14.5px] leading-snug text-ink/75 mt-3 max-sm:text-[12.5px]">Each point covers about one square kilometre. Height represents motion along NISAR's angled line of sight over {N} passes.</p>
             <div className="mt-5 w-[220px] max-sm:w-[150px] max-sm:mt-3" aria-label="Colour key">
               <div className="h-2 rounded-full" style={{ background: legendGradient() }} />
               <div className="flex justify-between text-[11.5px] text-mute mt-1"><span>Sinking</span><span>Still</span><span>Rising</span></div>
@@ -696,7 +696,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
           <p className="mt-2 text-[11.5px] leading-snug text-mute max-w-[1100px]">
             {D.synthetic && <span className="inline-flex items-center gap-1 mr-2 rounded-full border border-sink/60 bg-sink/10 px-2 py-0.5 text-sink font-medium">Synthetic preview: sample data, not NASA measurements.</span>}
             {/(^|[#&])fps=1/.test(location.hash) && <span ref={fpsRef} className="font-mono text-accent-2 mr-1" />}
-            Heights exaggerated ×{P.exag.toLocaleString("en-US")}. Movement between the {N} measured passes is interpolated for display. Grey points: no reliable measurement. Dimmer points: some passes missing, last value held. {maturity} NISAR data, relative to GPS station {D.meta.reference_station || "P304"}.
+            Height represents angled line-of-sight motion, not vertical displacement. The pattern alone does not identify its cause. Heights exaggerated ×{P.exag.toLocaleString("en-US")}. Movement between the {N} measured passes is interpolated for display. Grey points: no reliable measurement. Dimmer points: some passes missing, last value held. {maturity} NISAR line-of-sight data, tied to GPS station {D.meta.reference_station || "P304"}.
           </p>
         </div>
       </div>

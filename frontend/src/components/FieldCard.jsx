@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { X } from "lucide-react";
 import { CROP_COLORS, loadRadar } from "../lib/radar.js";
 import { fmtShort } from "../lib/fmt.js";
+import { dateFractions, linePath } from "../lib/chart.js";
 
 // Crop-field layer on the live map: a legend while it's on, and the clicked field's record.
 export default function FieldCard({ field, onClose }) {
@@ -49,11 +50,13 @@ export default function FieldCard({ field, onClose }) {
 
 function Spark({ values, dates, color }) {
   const W = 268, H = 82, ok = values.map((v, k) => [k, v]).filter(([, v]) => v != null);
-  const lo = Math.min(...ok.map(([, v]) => v)) - 0.3, hi = Math.max(...ok.map(([, v]) => v)) + 0.3;
-  const X = (k) => 4 + (k / (values.length - 1)) * (W - 8), Y = (v) => 18 + ((hi - v) / (hi - lo)) * (H - 34);
+  const lo = ok.length ? Math.min(...ok.map(([, v]) => v)) - 0.3 : 0;
+  const hi = ok.length ? Math.max(...ok.map(([, v]) => v)) + 0.3 : 1;
+  const fractions = dateFractions(dates);
+  const X = (k) => 4 + fractions[k] * (W - 8), Y = (v) => 18 + ((hi - v) / (hi - lo)) * (H - 34);
   return (
     <svg viewBox={`0 0 ${W} ${H}`} className="w-full mt-3" role="img" aria-label="HV relative to HH at this field over the year">
-      <polyline points={ok.map(([k, v]) => `${X(k)},${Y(v)}`).join(" ")} fill="none" stroke={color} strokeWidth="2" />
+      <path d={linePath(values.map((v, k) => v == null ? null : [X(k), Y(v)]))} fill="none" stroke={color} strokeWidth="2" />
       {ok.map(([k, v]) => <circle key={k} cx={X(k)} cy={Y(v)} r="2" fill={color} />)}
       <text x="4" y={H - 3} fontSize="10" fill="#9E9A92" style={{ fontFamily: "IBM Plex Mono" }}>{fmtShort(new Date(dates[0] + "T00:00:00Z"))}</text>
       <text x={W - 4} y={H - 3} fontSize="10" fill="#9E9A92" textAnchor="end" style={{ fontFamily: "IBM Plex Mono" }}>{fmtShort(new Date(dates[dates.length - 1] + "T00:00:00Z"))}</text>

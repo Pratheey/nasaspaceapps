@@ -9,9 +9,9 @@ No number goes on screen or in the video unless it is here.
 | 2 | Friant-Kern up to 60% capacity loss | Pitch beat 1 | Maven's Notebook 2026; Ag Alert 2025 | Ryan | [ ] |
 | 3 | ~14 km³ valley volume loss 2006–2022, >30 cm/yr locally | Project page | [citation from proposal §2] | Ryan | [ ] |
 | 4 | Number of NISAR dates used | App legend | `meta.json` → `dates` | Ismail | [ ] |
-| 5 | Held-out residual (net), per station | GPS reveal | `gps/processed/residuals.csv` | Daniel | [ ] |
+| 5 | App-cell change minus GPS, from first shared date to final pass; missing final samples give no net | GPS reveal | `frontend/src/lib/gps.js`, from app cell and GPS samples in `stations.json`; native-pixel residuals remain a separate validation | Daniel | [ ] |
 | 6 | σ used for 2σ test | Limits / legend | `gps/processed/uncertainty.json` → `sigma_net_m` | Daniel | [ ] |
-| 7 | CAFP / CAHA (and P300) net change, winter rise and trend | Demo, video | `stations.json` | Ismail | [ ] |
+| 7 | CAFP / CAHA (and P298) net change, winter rise and trend | Demo, video | `stations.json` | Ismail | [ ] |
 | 8 | Granule IDs and versions | Evidence receipts | `data/README.md` | Pratheek | [ ] |
 | 9 | Median HV/HH −6.1 dB almonds, −7.7 dB alfalfa, −7.9 dB cotton. 780 paired observations across 30 fields and 26 dates. | Brief answers, project page, app ("The fields") | Median over the 26 `hv_over_hh_db` values per group in `radar/results/nisar-polarization-by-crop.csv`; count of paired HH and HV in `radar/results/nisar-polarization-fields.csv` | Steven | [x] Ryan, recomputed 2026-11-14 |
 | 10 | NISAR 542/690 (78.6%), Sentinel-1 558/690 (80.9%). Median coherence ≥ 0.30 and valid coherence at ≥ 50% of field pixel centers. Same 30 fields, 23 matched pairs. | Project page, app ("The fields", Fields layer) | Sum `fields_usable` and `fields_total` by sensor in `radar/results/matched-radar-coverage-by-pair.csv`; thresholds in `min_median_coherence`, `min_valid_pixel_fraction` | Steven | [x] Ryan, recomputed 2026-11-14 |
@@ -22,7 +22,7 @@ No number goes on screen or in the video unless it is here.
 | 15 | 26 radar passes, 2025-11-24 to 2026-10-14 (row 4's value) | App legend, timeline, story | `meta.json` → `dates`; `analysis/NUMBERS.md` | Ismail | [ ] |
 | 16 | 8,044 km² of ground measured | Story "By the numbers" | `grid.json` → `net_change_m`, cells with a net change × cell area; `analysis/NUMBERS.md` | Ismail | [ ] |
 | 17 | 41% sinking beyond the uncertainty (labels 1 or 3 ÷ cells with a net change) | Story "By the numbers" | `grid.json` → `label`, `net_change_m`; `analysis/NUMBERS.md` | Ismail | [ ] |
-| 18 | Most any spot moved: −16.3 ± 2.0 cm (one cell, 36.175 N, 120.045 W) | Story "By the numbers" | `grid.json` → `net_change_m`; `analysis/NUMBERS.md` | Ismail | [ ] |
+| 18 | Largest motion away from satellite: −16.3 ± 2.0 cm (one cell, 36.175 N, 120.045 W) | Story "By the numbers" | `grid.json` → `net_change_m`; `analysis/NUMBERS.md` | Ismail | [ ] |
 | 19 | Overview shares: 22% / 6% / 10% / 62% of 12,000 cells (labels 1 / 3 / 2 / 0) | Live map overview | `grid.json` → `label`; `analysis/NUMBERS.md` | Ismail | [ ] |
 | 20 | σ of net change 1.98 cm (the ± on every net change) | Legend, inspector | `meta.json` → `sigma_net_m` ← `gps/processed/uncertainty.json` | Daniel | [ ] |
 | 21 | CAFP net −6.1 ± 2.0 cm NISAR vs −7.0 cm GPS; CAHA −3.9 ± 2.0 vs −7.4 cm (from 2025-12-06) (row 7's values) | Demo, video | `stations.json`; `analysis/NUMBERS.md` demo table | Ismail | [ ] |

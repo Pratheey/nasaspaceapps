@@ -20,22 +20,22 @@ export function Numbers({ D }) {
   const [ref, seen] = useInView(0.3);
   const G = D.grid;
   const s = useMemo(() => {
-    let measured = 0, sinking = 0, breathing = 0, worst = 0, amp = 0;
+    let measured = 0, sinking = 0, breathing = 0, worst = 0, worstSigma = null, amp = 0;
     for (let i = 0; i < D.n; i++) {
       if (G.net_change_m[i] == null) continue;
       measured++;
       if (G.label[i] === 1 || G.label[i] === 3) sinking++;
       if (G.seasonal_significant[i] === true) { breathing++; amp = Math.max(amp, G.amp_m[i] || 0); }
-      worst = Math.min(worst, G.net_change_m[i]);
+      if (G.net_change_m[i] < worst) { worst = G.net_change_m[i]; worstSigma = G.net_change_sigma_m[i]; }
     }
     const km2 = (D.meta.grid.step_deg * 111) * (D.meta.grid.step_deg * 111 * Math.cos((36.45 * Math.PI) / 180));
-    return { measured, sinking, breathing, worst, amp, area: Math.round(measured * km2) };
+    return { measured, sinking, breathing, worst, worstSigma, amp, area: Math.round(measured * km2) };
   }, [D, G]);
   const items = [
-    [<CountUp to={D.dates.length} run={seen} />, "radar passes, 12 days apart"],
+    [<CountUp to={D.dates.length} run={seen} />, "radar passes across the record"],
     [<CountUp to={s.area} run={seen} suffix="km²" />, "of ground measured"],
-    [<CountUp to={(s.sinking / s.measured) * 100} run={seen} suffix="%" />, "of it sinking beyond the uncertainty"],
-    [<CountUp to={s.worst * 100} decimals={1} run={seen} suffix="cm" />, "the most any spot moved in the record"],
+    [s.measured ? <CountUp to={(s.sinking / s.measured) * 100} run={seen} suffix="%" /> : "—", "of it sinking beyond the uncertainty"],
+    [s.measured ? <CountUp to={s.worst * 100} decimals={1} run={seen} suffix="cm" /> : "—", `largest motion away from the satellite${s.worstSigma != null ? `, ± ${(s.worstSigma * 100).toFixed(1)} cm (1σ)` : ""}`],
   ];
   return (
     <section ref={ref} className="relative py-[12vh] border-y border-hair overflow-hidden">

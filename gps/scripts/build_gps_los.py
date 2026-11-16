@@ -10,9 +10,10 @@ Outputs (gps/processed/)
   gps_los.csv, gps_fits.csv, residuals.csv, uncertainty.json   (shapes: contracts/gps.md)
 
 Conventions: LOS positive toward the satellite; unit vectors point from the ground to the
-satellite, so los = e*dE + n*dN + u*dU. Every GPS date value is the 7-day median of the daily
-positions (+-3 days), the same smoothing the data lane uses for its tie, so NISAR and GPS are
-compared like with like. Everything is relative to P304 (D3).
+satellite, so los = e*dE + n*dN + u*dU. Pair residuals use 7-day median positions (+-3 days)
+relative to P304, matching the radar tie. gps_los.csv instead contains daily absolute LOS,
+zeroed against the first available NISAR-date 7-day median; its separate los_rel_ref_m
+column subtracts P304. The app-cell chart is a different comparison from pair residuals.
 
 Days in EXCLUDE are left out of the fits but kept in the residuals.
 Known equipment steps are removed in STEP_FIXES (only steps confirmed in NGL's steps list and
@@ -35,7 +36,7 @@ CYCLE_M = 0.12098          # half the L-band wavelength (0.24196 m)
 UNWRAP_TOL_M = 0.03
 # station -> list of (first_date_affected, component, offset_m_to_add)
 STEP_FIXES = {"P307": [(dt.date(2025, 11, 13), "n", 0.0129)]}
-# station -> (first_date, last_date, reason): days left out of fits and residuals
+# station -> (first_date, last_date, reason): days left out of fits only
 EXCLUDE = {"P307": (dt.date(2025, 11, 13), dt.date(2025, 12, 31), "post-swap noisy/transient")}
 NOTES = {
     "P307": "north +12.9 mm removed from 2025-11-13 (antenna/receiver swap 2025-11-12); east step unresolved; up not significant; 2025-11-13..12-31 left out",
@@ -98,6 +99,9 @@ def robust_fit(t, y):
 
 
 def fit_row(station, comp, days, y):
+    y = np.asarray(y, dtype=float)
+    if len(days) != len(y) or len(y) <= 21 or not np.isfinite(y).all():
+        raise ValueError("GPS fits need more than 21 finite observations with matching dates for block uncertainty")
     t = np.array([(d - dt.date(2026, 1, 1)).days / 365.25 for d in days])
     beta, resid, X, keep = robust_fit(t, y)
     amp = math.hypot(beta[2], beta[3])
@@ -106,7 +110,7 @@ def fit_row(station, comp, days, y):
     rng = np.random.default_rng(307)
     n, blk, trends, amps = len(y), 21, [], []
     fitted = X @ beta
-    starts = np.arange(0, n - blk)
+    starts = np.arange(0, n - blk + 1)  # include the block ending at the final observation
     for _ in range(400):
         rs = np.concatenate([resid[s:s + blk] for s in rng.choice(starts, n // blk + 1)])[:n]
         b, _, _, _ = robust_fit(t, fitted + rs)

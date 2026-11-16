@@ -18,7 +18,7 @@ over the NISAR window only.
 | Column | Meaning |
 |---|---|
 | `station`, `date` | |
-| `los_m` | LOS displacement relative to the first NISAR date (2025-11-24), positive toward satellite. **Absolute** (not differenced with P304) |
+| `los_m` | Daily LOS displacement relative to the seven-day median at the first NISAR date with available GPS (2025-11-24, or 2025-12-06 for late-starting stations), positive toward satellite. **Absolute** (not differenced with P304) |
 | `los_rel_ref_m` | Same minus P304's `los_m` on that date: the quantity NISAR measures before tying |
 | `sigma_m` | 1σ from the NGL ENU sigmas projected into LOS |
 
@@ -37,6 +37,12 @@ Refit over the NISAR window (not calendar 2025), same model as `docs/PROPOSAL.md
 ## `residuals.csv` (H-9)
 One row per pair per **held-out** station, plus one `pair = net` row per station for the
 first-to-last net change.
+
+These residuals use native radar station samples and seven-day GPS medians, with both
+changes relative to P304. They are not residuals of the 1 km app-cell chart and its daily
+GPS samples. The app calculates that comparison separately over shared dates. Missing
+final samples give no app-cell net comparison. Keep these scopes distinct when quoting
+agreement; the published overall uncertainty still comes from this native-pixel check.
 
 | Column | Meaning |
 |---|---|

@@ -123,7 +123,13 @@ def _vertical_comparison(gps_up, radar_up, dates, alpha):
     }
     residual = np.diff(radar_up) - gps_delta
     good = residual[np.isfinite(residual)]
-    net = (radar_up[-1] - radar_up[0]) - (gps_up[-1] - gps_up[0])
+    shared = np.flatnonzero(np.isfinite(radar_up) & np.isfinite(gps_up))
+    # Use the first shared sample, but require the final pass: an incomplete record
+    # must not silently become a full-window net comparison.
+    net = np.nan
+    if shared.size >= 2 and shared[-1] == len(dates) - 1:
+        start = shared[0]
+        net = (radar_up[-1] - radar_up[start]) - (gps_up[-1] - gps_up[start])
     return gps_fit, {
         "net_m": _r4(_num(net)),
         "pairs_rms_m": _r4(np.sqrt(np.mean(np.square(good)))) if good.size else None,

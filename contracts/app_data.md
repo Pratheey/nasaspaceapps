@@ -99,6 +99,13 @@ or weekly to keep the file small. The reference station's residuals are `null` (
 `stations.json` lists only stations inside the app bbox; P302, P303 and P725 are held out
 too but lie outside it, so they appear only in `gps/processed/residuals.csv`.
 
+For LOS, `residuals` preserves the GPS lane's native-pixel/seven-day-median validation.
+It does not describe the `nisar` 1 km cell and daily `gps` curves directly. The website
+computes its chart comparison from shared dates, aligns GPS at their first common date,
+and requires the final pass for a net change. Flagged pair IDs are one-based. For the
+vertical cross-check, residuals use the exported cell and seven-day GPS Up samples;
+its net comparison likewise starts at the first shared date and requires the final pass.
+
 ## 5. `canal_profile_<slug>.json` (optional, v1.2)
 Written by `analysis/canal.py` (`run.py --canal <geojson>`) next to the four core files, one file
 per canal line in `context/canals/`. `<slug>` is the canal name in lower case with `_` for spaces

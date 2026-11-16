@@ -8,7 +8,7 @@ export const GLOSSARY = {
   "line of sight": "The slanted direction from the ground up to the satellite. Radar only measures motion along this line, so we compare GPS in the same direction.",
   "L-band": "Radar with a 24 cm wavelength. It passes through clouds and much of the vegetation, and keeps working over fields that change from week to week.",
   "interferogram": "An image made by comparing two radar passes over the same place. Its colors show how far the ground moved between them.",
-  "fringe": "One full cycle of color in an interferogram. For NISAR's L-band radar, one fringe is 11.9 cm of motion toward or away from the satellite.",
+  "fringe": `One full cycle of color in an interferogram. For this NISAR record, one fringe is ${(FRINGE_M * 100).toFixed(1)} cm of motion toward or away from the satellite.`,
   "aquifer": "Layers of sand and gravel underground that hold water between the grains, mixed with layers of clay.",
   "ionosphere": "A layer of charged gas high in the atmosphere. It slows radar signals a little and can fake ground motion unless it is corrected.",
   "held out": "Kept back on purpose. A held-out GPS station is never used to tune the radar, so it can test it honestly.",
@@ -35,7 +35,7 @@ export function InsarExplainer() {
   const [distance, setDistance] = useState(3);
   // Direct manipulation: keep the geometry and readouts in sync with the thumb.
   const d = distance;
-  const phase = 4 * Math.PI * d / 23.84;
+  const phase = 4 * Math.PI * d / (FRINGE_M * 200);
   const ground = 205 + d * 4;
   const wave = (shift) => Array.from({ length: 241 }, (_, i) => `${i ? "L" : "M"}${24 + i * 2.3},${55 - 17 * Math.sin(i / 240 * Math.PI * 6 - shift)}`).join(" ");
   return (

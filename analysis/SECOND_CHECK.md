@@ -12,3 +12,8 @@ independently from the source file named in `docs/pitch/numbers.md`. Ryan: tick 
 | 14 | Pratheek | Descending ~3 cm RMS per pair | `qa_summary_t042_f070.csv`: median 2.78 cm, range 1.28–5.35 cm, 12 stations | ✓ |
 
 Not checked here: row 8 (granule IDs and versions) is a list, not a number; it needs a read against `data/README.md`.
+
+**2026-11-15 local follow-up:** Row 5 above verifies the historical native-pixel residual export.
+The website now computes the disagreement of its actual 1 km cell and daily GPS curve instead;
+the scopes are different. See `ACCURACY_REVIEW.md`. The original two-person check remains
+a historical record, and this automated review is not a new team sign-off.

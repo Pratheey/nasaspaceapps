@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { useInView } from "./hooks.js";
 import { Chapter } from "./Media.jsx";
 import { CROP_COLORS, loadRadar } from "../lib/radar.js";
+import { dateFractions, linePath } from "../lib/chart.js";
 
 const d = (s) => new Date(s + "T00:00:00Z");
 const short = (s) => d(s).toLocaleDateString("en-US", { month: "short", day: "numeric", timeZone: "UTC" });
@@ -60,10 +61,11 @@ function PolChart({ pol }) {
   const [view, setView] = useState("hv_over_hh_db");
   const [hk, setHk] = useState(null);
   const W = 760, H = 380, P = { l: 52, r: 18, t: 20, b: 34 };
-  const N = pol.dates.length;
+  const fractions = dateFractions(pol.dates);
   const all = pol.crops.flatMap((c) => pol.series[c][view]).filter((v) => v != null);
-  const lo = Math.floor(Math.min(...all)) - 0.5, hi = Math.ceil(Math.max(...all)) + 0.5;
-  const X = (k) => P.l + (k / (N - 1)) * (W - P.l - P.r);
+  const lo = all.length ? Math.floor(Math.min(...all)) - 0.5 : 0;
+  const hi = all.length ? Math.ceil(Math.max(...all)) + 0.5 : 1;
+  const X = (k) => P.l + fractions[k] * (W - P.l - P.r);
   const Y = (v) => P.t + ((hi - v) / (hi - lo)) * (H - P.t - P.b);
   const step = hi - lo > 12 ? 4 : hi - lo > 6 ? 2 : 1;
   const ticks = []; for (let v = Math.ceil(lo / step) * step; v <= hi; v += step) ticks.push(v);
@@ -71,7 +73,9 @@ function PolChart({ pol }) {
   const onMove = (e) => {
     const r = e.currentTarget.getBoundingClientRect();
     const x = ((e.clientX - r.left) / r.width) * W;
-    setHk(Math.max(0, Math.min(N - 1, Math.round(((x - P.l) / (W - P.l - P.r)) * (N - 1)))));
+    const target = (x - P.l) / (W - P.l - P.r);
+    setHk(fractions.reduce((best, fraction, k) =>
+      Math.abs(fraction - target) < Math.abs(fractions[best] - target) ? k : best, 0));
   };
   return (
     <div>
@@ -90,7 +94,7 @@ function PolChart({ pol }) {
           const v = pol.series[c][view];
           return (
             <g key={c}>
-              <polyline points={v.map((y, k) => (y == null ? null : `${X(k)},${Y(y)}`)).filter(Boolean).join(" ")} fill="none" stroke={CROP_COLORS[c]} strokeWidth="2.4" />
+              <path d={linePath(v.map((y, k) => y == null ? null : [X(k), Y(y)]))} fill="none" stroke={CROP_COLORS[c]} strokeWidth="2.4" />
               {v.map((y, k) => y != null && <circle key={k} cx={X(k)} cy={Y(y)} r={hk === k ? 4.5 : 2.6} fill={CROP_COLORS[c]} />)}
             </g>
           );

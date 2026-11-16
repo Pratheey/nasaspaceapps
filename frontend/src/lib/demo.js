@@ -1,5 +1,5 @@
 // Demo stations and measured agreement, from the team decisions in docs/DECISIONS.md.
-// D5: the demo uses meta.demo_stations (CAFP and CAHA sinking, P300 calm). The synthetic
+// D5: the demo uses meta.demo_stations (CAFP and CAHA sinking, P298 calm after D10). The synthetic
 // samples predate D5, so they fall back to their old pair (P307 sinking, P302 calm).
 import { mostMisleadingPair } from "./data.js";
 
@@ -26,7 +26,7 @@ export function lieStation(D) {
   return best;
 }
 
-// D7: NISAR vs cleaned GPS, line of sight, per 12-day pair. Update from
+// D7: NISAR vs cleaned GPS, line of sight, per pair (mostly 12 days, two 24-day intervals). Update from
 // gps/processed/uncertainty.json (sigma_pair_m, n_stations) when Daniel adds stations.
 // Never write "1 cm" or "centimetre-level" anywhere in the app.
 export const AGREEMENT = {

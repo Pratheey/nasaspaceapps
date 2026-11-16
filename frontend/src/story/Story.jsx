@@ -14,6 +14,7 @@ import { fitAt, mostMisleadingPair } from "../lib/data.js";
 import { cm, fmtShort, fmtDate } from "../lib/fmt.js";
 import { fringe, rgb, FRINGE_M } from "../lib/colors.js";
 import { linePath } from "../lib/chart.js";
+import { stationComparison } from "../lib/gps.js";
 
 /* ------------------------------------------------------------------ */
 export default function Story({ D, onExplore, onDance }) {
@@ -33,7 +34,7 @@ export default function Story({ D, onExplore, onDance }) {
     <div className="bg-space text-ink overflow-x-clip">
       <TopBar D={D} onExplore={onExplore} />
       <Hero D={D} onExplore={onExplore} onDance={onDance} />
-      <Telemetry items={[["mission", "NASA–ISRO NISAR"], ["launched", "2025-07-30"], ["orbit", "~747 km, sun-synchronous"], ["inclination", "98.4°"], ["reflector", "12 m gold mesh"], ["L-band", "λ 24 cm"], ["revisit", "12 days"], ["fringe", "11.9 cm"], ["study area", "36.45° N 120.0° W"], ["passes", `${D.dates.length}`], ["reference", `GPS ${D.meta.reference_station}`]]} />
+      <Telemetry items={[["mission", "NASA–ISRO NISAR"], ["launched", "2025-07-30"], ["orbit", "~747 km, sun-synchronous"], ["inclination", "98.4°"], ["reflector", "12 m gold mesh"], ["L-band", "λ 24 cm"], ["revisit", "12 days"], ["fringe", `${(FRINGE_M * 100).toFixed(1)} cm`], ["study area", "36.45° N 120.0° W"], ["passes", `${D.dates.length}`], ["reference", `GPS ${D.meta.reference_station}`]]} />
       <PoleScene />
       <AquiferScene />
       {demo.calm && demo.sinking.length > 0 && <BreatheScene D={D} demo={demo} />}
@@ -109,8 +110,9 @@ function Hero({ D, onExplore, onDance }) {
             <span className="block text-ink/55">in the San Joaquin Valley</span>
           </h1>
           <p className="text-[clamp(16px,1.5vw,19px)] leading-relaxed text-ink/80 mt-7 max-w-[600px]">
-            Every winter California's San Joaquin Valley rises a little. Every summer it settles. Underneath that rhythm,
-            parts of it keep going down. We used the first year of NISAR radar to separate the two, and to show how sure we are.
+            Parts of California's San Joaquin Valley rise and fall with the seasons while others keep sinking.
+            We compare eleven months of provisional NISAR radar with GPS to distinguish seasonal motion from net change,
+            and show where atmospheric noise or missing measurements limit what we can say.
           </p>
           <div className="flex flex-wrap gap-3 mt-9">
             <button onClick={onExplore} className="inline-flex items-center gap-2 rounded-full bg-accent text-space font-semibold px-6 py-3 hover:bg-accent-2 transition">
@@ -244,7 +246,7 @@ function MeasureScene() {
             NISAR compares radar echoes from repeated passes. If the ground moves away, the signal travels farther to reach it—and farther to return.
             Drag the slider to see the added distance and how it shifts the returning wave. That shift is called phase.
           </p>
-          <p className="text-[15px] text-mute mt-5">Each full <Term t="fringe" /> of color is about 11.9 cm of motion along the radar’s viewing direction.</p>
+          <p className="text-[15px] text-mute mt-5">Each full <Term t="fringe" /> of color is about {(FRINGE_M * 100).toFixed(1)} cm of motion along the radar’s viewing direction.</p>
         </div>
         <InsarExplainer />
       </div>
@@ -484,7 +486,7 @@ function FringeStrip({ D }) {
         </div>
         <div className="mt-3">
           <div className="h-2.5 rounded" style={{ background: `linear-gradient(90deg, ${Array.from({ length: 13 }, (_, k) => rgb(fringe(-(k / 12) * FRINGE_M))).join(",")})` }} aria-hidden="true" />
-          <div className="flex justify-between text-[12px] text-mute mt-1"><span>0 cm</span><span>one full cycle = 11.9 cm of motion, then the colours repeat</span><span>11.9 cm</span></div>
+          <div className="flex justify-between text-[12px] text-mute mt-1"><span>0 cm</span><span>one full cycle = {(FRINGE_M * 100).toFixed(1)} cm of motion, then the colours repeat</span><span>{(FRINGE_M * 100).toFixed(1)} cm</span></div>
         </div>
       </figure>
       <div>
@@ -495,7 +497,7 @@ function FringeStrip({ D }) {
           scientists draw it.
         </p>
         <ul className="text-[16px] leading-relaxed text-ink/80 mt-4 space-y-2 list-disc pl-5">
-          <li>Each full trip through the colours is 11.9 cm of motion along the radar's line of sight (half the 23.8 cm wavelength).</li>
+          <li>Each full trip through the colours is {(FRINGE_M * 100).toFixed(1)} cm of motion along the radar's line of sight (half the {(FRINGE_M * 200).toFixed(1)} cm wavelength).</li>
           <li>Count the bands to get the total: tightly packed bands mean the ground moved a lot, wide single colours mean it barely moved.</li>
           <li>The animation adds up the motion from zero, so you can watch the bands appear where the ground sinks most.</li>
           <li>Near-black pixels have no reliable measurement.</li>
@@ -518,24 +520,26 @@ function GpsScene({ D }) {
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
             {D.stations.length} GPS stations sit on the map. One, {D.meta.reference_station}, ties the radar to the ground. The other {D.meta.held_out_stations.length} are
             {" "}<Term t="held out" /> and used only to test it. Each pass is also corrected for the <Term t="ionosphere" />. Every number in the map comes with its uncertainty,
-            and where the evidence is too thin, the map says so instead of guessing.
+            and where the evidence is too thin, the map says so instead of guessing. The overall check includes three more stations outside this map.
           </p>
           <div className="mt-8 flex flex-wrap gap-x-10 gap-y-4">
-            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.rms_cm} cm</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">NISAR vs GPS per 12-day pair, root mean square, {AGREEMENT.n_stations} held-out stations</p></div>
+            <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.rms_cm} cm</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">NISAR vs GPS per pair, root mean square, {AGREEMENT.n_stations} held-out stations. Most pairs span 12 days; two span 24.</p></div>
             <div><p className="font-mono text-[44px] leading-none">{AGREEMENT.selfcheck.replace(" to ", "–")}</p><p className="text-[14px] text-mute mt-2 max-w-[240px]">Separate check at {AGREEMENT.selfcheck_n} stations. Motion smaller than this isn't resolved at a single spot.</p></div>
           </div>
         </div>
         <div className={`grid gap-3 ${D.stations.length > 6 ? "grid-cols-3 max-sm:grid-cols-2" : "grid-cols-2"}`}>
-          {D.stations.map((st, n) => (
+          {D.stations.map((st, n) => {
+            const check = st.role === "reference" ? null : stationComparison(D, st);
+            return (
             <div key={st.station} className={`rounded-xl border border-hair-2 bg-deck/70 ${D.stations.length > 6 ? "p-4" : "p-5"}`} style={{ transitionDelay: `${n * 120}ms` }}>
               <div className="flex items-center justify-between">
                 <span className="font-display text-[24px] font-bold">{st.station}</span>
                 <Satellite size={18} className={st.role === "reference" ? "text-accent" : "text-rise"} />
               </div>
               <p className={`text-[13px] mt-1 ${st.role === "reference" ? "text-accent-2" : "text-rise"}`}>{st.role === "reference" ? "Reference: ties the radar down" : "Held out: an independent check"}</p>
-              {st.residuals && st.residuals.net_m != null && <p className="text-[13px] text-mute mt-3">Radar minus GPS over the record: <span className="text-ink">{cm(st.residuals.net_m)}</span></p>}
+              {check && <p className="text-[13px] text-mute mt-3">{check.net_m == null ? "No complete net comparison at this map cell." : <>Map-cell change minus GPS: <span className="text-ink">{cm(check.net_m)}</span><br />{fmtShort(check.start)} to {fmtShort(check.end)}</>}</p>}
             </div>
-          ))}
+          ); })}
         </div>
       </div>
     </section>
@@ -590,8 +594,9 @@ function MattersScene() {
           </div>
         </div>
         <p className="text-[18px] leading-relaxed text-ink/80 mt-12 max-w-[760px]">
-          Once NISAR's validated data arrives in 2027, the same method can watch every pumped farm basin it covers, every 12 days:
-          the San Joaquin Valley, Punjab, Mexico City, Tehran.
+          Validated products for newer acquisitions are already available. Reprocessing of this older record is planned for 2027.
+          Applying the method in other basins would require local validation and checks for missing passes.
+          {" "}<a href="https://nisar-docs.asf.alaska.edu/availability-overview/" target="_blank" rel="noreferrer" className="underline text-accent-2">NISAR data availability</a>.
         </p>
       </div>
     </section>

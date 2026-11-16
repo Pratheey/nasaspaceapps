@@ -71,7 +71,7 @@ export default function Legend({ D, S, domain }) {
         {S.relief && (
           <p className="mt-1.5 text-mute leading-snug">3D height shows the same values, exaggerated: 1 cm of motion is about {Math.round(RELIEF_H / (2 * domain * 100))} m of height. Right-drag to turn the view.</p>
         )}
-        <p className="mt-1.5 text-mute leading-snug">Along the radar's line of sight, relative to GPS station {D.meta.reference_station}. {prov}.</p>
+        <p className="mt-1.5 text-mute leading-snug">Along the radar's line of sight, tied to GPS station {D.meta.reference_station}. Change relative to the first pass. {prov}.</p>
       </details>
     </div>
   );
@@ -79,9 +79,10 @@ export default function Legend({ D, S, domain }) {
 
 function PatternsLegend({ D }) {
   const P = motionPatterns(D);
+  if (!P.K) return <p className="text-mute">No spots have enough measurements for motion patterns.</p>;
   const T = P.centers[0].length;
   const lo = Math.min(...P.centers.flat()), hi = Math.max(...P.centers.flat());
-  const pts = (m) => m.map((v, k) => `${(k / (T - 1)) * 70},${2 + ((hi - v) / (hi - lo || 1)) * 20}`).join(" ");
+  const pts = (m) => m.map((v, k) => `${((D.dates[k] - D.dates[0]) / (D.dates[T - 1] - D.dates[0])) * 70},${2 + ((hi - v) / (hi - lo || 1)) * 20}`).join(" ");
   return (
     <ul className="space-y-1.5">
       {P.centers.map((m, g) => (
@@ -100,6 +101,7 @@ function PatternsNote({ D }) {
   return (
     <p className="mt-1.5 text-mute leading-snug">
       Exploratory machine learning: k-means groups {P.used.toLocaleString()} spots whose 11-month records have a similar shape (curves: group averages, relative to the first date).
+      Both endpoints and at least 20 passes are required. Internal gaps are interpolated by elapsed time.
       It describes the measurements; it does not say why the ground moves or whether the sinking is permanent.
     </p>
   );

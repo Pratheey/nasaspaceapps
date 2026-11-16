@@ -130,7 +130,9 @@ def test_vertical_component(tmp_path):
     assert late["gps"]["los_m"][:2] == [None, None]
     assert late["gps"]["los_m"][2] == late["nisar"]["los_m"][2]
     assert late["gps"]["los_m"][3] - late["gps"]["los_m"][2] == pytest.approx(0.006)
-    assert late["residuals"]["net_m"] is None
+    radar_change = late["nisar"]["los_m"][-1] - late["nisar"]["los_m"][2]
+    gps_change = late["gps"]["los_m"][-1] - late["gps"]["los_m"][2]
+    assert late["residuals"]["net_m"] == pytest.approx(radar_change - gps_change, abs=0.0001)
 
 
 def test_geographic_stack_keeps_masks_and_input_unchanged(tmp_path):

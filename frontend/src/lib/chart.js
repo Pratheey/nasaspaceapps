@@ -9,3 +9,10 @@ export function linePath(points) {
   }
   return path;
 }
+
+// Preserve the time axis when acquisition intervals are not all the same length.
+export function dateFractions(dates) {
+  const times = dates.map((date) => Date.parse(date + "T00:00:00Z"));
+  const span = times.at(-1) - times[0];
+  return times.map((time) => span > 0 ? (time - times[0]) / span : 0);
+}

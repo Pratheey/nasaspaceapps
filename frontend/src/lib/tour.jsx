@@ -3,6 +3,7 @@
 import { mostMisleadingPair } from "./data.js";
 import { cm, fmtShort } from "./fmt.js";
 import { demoStations, lieStation } from "./demo.js";
+import { stationComparison } from "./gps.js";
 
 function findLie(D) {
   const st = lieStation(D);
@@ -21,6 +22,7 @@ export function tourSteps(D) {
   const st = lieStation(D);
   const calm = demoStations(D).calm;
   const lie = findLie(D);
+  const comparison = stationComparison(D, st);
   return [
     {
       title: "Corcoran's levee keeps sinking",
@@ -77,7 +79,7 @@ export function tourSteps(D) {
       state: { gps: true, split: false, sel: st.cell_index, playing: false },
       body: (
         <>
-          <p>GPS station {st.station} was never used to calibrate the radar. Its line on the chart is an independent check.{st.residuals?.net_m != null && ` Over the whole record the radar and GPS differ by ${cm(st.residuals.net_m)}.`}</p>
+          <p>GPS station {st.station} was never used to calibrate the radar. Its line on the chart is an independent check.{comparison?.net_m != null && ` From ${fmtShort(comparison.start)} to ${fmtShort(comparison.end)}, the chart's radar and GPS net changes differ by ${cm(comparison.net_m)}.`}</p>
         </>
       ),
     }] : []),
