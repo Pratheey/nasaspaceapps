@@ -1,11 +1,13 @@
 // What each map view shows at a cell, shared by the map, hover, profile and 3D.
 import { pairDiff } from "./data.js";
 import { hiddenSinking } from "./patterns.js";
+import { fmtDate } from "./fmt.js";
+import { FRINGE_M } from "./colors.js";
 
 export const MODES = [
   { id: "net", name: "Net change", key: "1" },
   { id: "pair", name: "Two dates", key: "2" },
-  { id: "breathe", name: "Breathe", key: "3" },
+  { id: "breathe", name: "Time-lapse", key: "3" },
   { id: "fringe", name: "Radar fringes", key: "4" },
   { id: "labels", name: "What we can say", key: "5" },
   { id: "hidden", name: "Hidden sinking", key: "6" },
@@ -31,6 +33,30 @@ export function cellValue(D, S, i) {
 export function netDomain(D) {
   const a = D.grid.net_change_m.filter((v) => v != null).map(Math.abs).sort((x, y) => x - y);
   return Math.max(0.02, a[Math.floor(a.length * 0.98)] || 0.02);
+}
+
+// One plain sentence saying what the map is showing right now (top-left of the map).
+export function viewCaption(D, S) {
+  const N = D.dates.length;
+  return {
+    net: `How far each spot moved between ${fmtDate(D.dates[0])} and ${fmtDate(D.dates[N - 1])}.`,
+    pair: `The difference between only two dates, ${fmtDate(D.dates[S.k1])} and ${fmtDate(D.dates[S.k2])}. Drag A and B on the timeline to change them.`,
+    breathe: `All ${N} radar passes in order. Press Play, or drag the timeline.`,
+    fringe: `The same motion drawn as radar fringes. One full colour cycle is ${(FRINGE_M * 100).toFixed(1)} cm.`,
+    labels: "What the data supports at each spot: seasonal movement, sinking, both, or not enough evidence.",
+    hidden: "Spots that sank over the whole record, but where some pair of dates at least four months apart shows them rising.",
+    patterns: "Spots grouped by the shape of their year of movement; each colour is one shared pattern.",
+  }[S.mode];
+}
+
+// While a tool is switched on, its instruction replaces the view caption. Cross-section has its own prompt.
+export function toolCaption(S) {
+  if (S.swipe != null) return "Drag the divider to compare the two dates side by side.";
+  if (S.relief) return "Right-drag to turn the view. Height shows the same motion, exaggerated.";
+  if (S.fields) return "Click a field to see its radar polarization and coverage.";
+  if (S.lens) return "Move the cursor over the map to see radar fringes under it.";
+  if (S.profile?.canal) return "Motion along the California Aqueduct is charted below the map.";
+  return null;
 }
 
 export function viewTitle(D, S, fmtShort) {

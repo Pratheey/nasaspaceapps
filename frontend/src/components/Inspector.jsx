@@ -243,7 +243,7 @@ function Leaders({ D, actions }) {
   return (
     <Section title="Where to look first" aside={
       <div className="flex rounded-md border border-hair overflow-hidden text-[12.5px]">
-        {[["sink", "Sinking fastest"], ["breathe", "Breathing most"]].map(([id, t]) => (
+        {[["sink", "Sinking fastest"], ["breathe", "Largest seasonal swing"]].map(([id, t]) => (
           <button key={id} onClick={() => setTab(id)} className={`whitespace-nowrap px-2.5 py-1 ${tab === id ? "bg-accent/15 text-accent-2" : "text-mute hover:text-ink"}`}>{t}</button>
         ))}
       </div>}>
@@ -315,8 +315,11 @@ function Overview({ D, actions }) {
   return (
     <div>
       <h2 className="font-display font-bold tracking-[-0.01em] text-[30px] leading-[1.08]">The valley rises and falls with the seasons. Underneath, parts of it keep sinking.</h2>
-      <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Groundwater pumping lowers the water pressure underground, and the ground settles. Some of that comes back when the water returns each winter, and some doesn't. Compare the wrong two dates and sinking ground can look stable.</p>
       <p className="text-[15px] leading-relaxed text-ink/85 mt-3">Click anywhere on the map, or a GPS station, to see every measurement at that spot and how sure we are.</p>
+      <details className="mt-5 rounded-lg border border-hair-2 bg-deck/60 open:bg-deck group">
+        <summary className="cursor-pointer px-4 py-3 font-display text-[15.5px] font-semibold marker:text-accent">Summary of the whole map</summary>
+        <div className="px-4 pb-4">
+      <p className="text-[15px] leading-relaxed text-ink/85">Groundwater pumping lowers the water pressure underground, and the ground settles. Some of that comes back when the water returns each winter, and some doesn't. Compare the wrong two dates and sinking ground can look stable.</p>
       <div className="grid grid-cols-2 gap-2 mt-5">
         {[
           [1, "Seasonal movement with persistent sinking"], [3, "Persistent sinking, seasonal component uncertain"],
@@ -336,6 +339,8 @@ function Overview({ D, actions }) {
         <canvas ref={ref} width="760" height="440" onClick={click} className="w-full h-auto cursor-pointer" aria-label="Scatter of seasonal size against trend. Click a dot to open that spot." />
         <p className="text-[13px] text-mute mt-1">Only spots where the seasonal cycle is significant. Click a dot to open it.</p>
       </Section>
+        </div>
+      </details>
     </div>
   );
 }

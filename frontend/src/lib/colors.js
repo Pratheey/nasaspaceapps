@@ -1,7 +1,7 @@
-// Still ground stays dark; sinking turns clay to sand, rising turns river blue.
+// Still ground stays dark; more motion is more vivid: sinking burns orange, rising turns bright blue.
 const ZERO = [38, 37, 35];
-const SINK = [ZERO, [92, 58, 42], [158, 94, 60], [214, 142, 98], [244, 210, 176]];
-const RISE = [ZERO, [36, 62, 78], [52, 108, 140], [111, 168, 196], [200, 228, 240]];
+const SINK = [ZERO, [110, 50, 35], [180, 70, 40], [225, 95, 45], [255, 130, 50]];
+const RISE = [ZERO, [30, 65, 95], [35, 110, 165], [45, 150, 215], [80, 190, 255]];
 
 function ramp(stops, t) {
   t = Math.max(0, Math.min(1, t));

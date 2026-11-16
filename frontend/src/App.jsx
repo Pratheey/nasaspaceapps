@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes } from "lucide-react";
+import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes, Sparkles } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
 import ToolsMenu from "./components/ToolsMenu.jsx";
+import ViewMenu from "./components/ViewMenu.jsx";
 import Story, { Mark } from "./story/Story.jsx";
 import MapView from "./components/MapView.jsx";
 import Inspector from "./components/Inspector.jsx";
@@ -9,13 +10,25 @@ import Timeline from "./components/Timeline.jsx";
 import Legend from "./components/Legend.jsx";
 import { ProfilePanel, TourCard, Limits } from "./components/Panels.jsx";
 import { loadData, cellAt, cellBounds, fitAt } from "./lib/data.js";
-import { cellValue, netDomain, MODES } from "./lib/view.js";
+import { cellValue, netDomain, MODES, viewCaption, toolCaption } from "./lib/view.js";
 import { cm } from "./lib/fmt.js";
 import { listen, stopListening, downloadCSV, writeHash, readHash } from "./lib/extras.js";
 import { tourSteps } from "./lib/tour.jsx";
 import CommandBar from "./components/CommandBar.jsx";
 
+const Dance = lazy(() => import("./story/Dance.jsx")); // loaded only when "The dance" is opened
+
 const MODE_ICONS = { net: Layers, pair: CalendarRange, breathe: Activity, fringe: Waves, labels: Tags, hidden: EyeOff, patterns: Shapes };
+const MAIN_MODES = ["net", "pair", "breathe"]; // the rest live under "More views"
+const TOUR_SEEN_KEY = "breathing_ground_tour_seen";
+// First visit = no flag yet and a hash that carries nothing but the default view the app writes itself.
+function isFirstVisit(N) {
+  try {
+    if (localStorage.getItem(TOUR_SEEN_KEY)) return false;
+  } catch { return false; }
+  const h = readHash(), dflt = { mode: "net", a: "0", b: String(N - 1), t: String(N - 1) };
+  return Object.entries(h).every(([k, v]) => dflt[k] === v);
+}
 const PLACES = [
   { name: "Corcoran", ll: [-119.56, 36.098], z: 10.5 },
   { name: "Mendota", ll: [-120.381, 36.754], z: 10.5 },
@@ -36,17 +49,34 @@ export default function App() {
 function Shell({ D }) {
   const [view, setView] = useState(() => (Object.keys(readHash()).length ? "explore" : "story"));
   const [tourOnOpen, setTourOnOpen] = useState(false);
+  const [dance, setDance] = useState(() => new URLSearchParams(location.hash.slice(1)).get("dance") === "1");
+  const [spot, setSpot] = useState(null); // a cell the dance asked the live map to show
   const go = (v, tour = false) => { setTourOnOpen(tour); setView(v); window.scrollTo(0, 0); if (v === "story") history.replaceState(null, "", location.pathname + location.search); };
   useEffect(() => {
     document.documentElement.style.overflow = view === "explore" ? "hidden" : "";
     if (view === "story") document.getElementById(location.hash.slice(1))?.scrollIntoView();
   }, [view]);
-  return view === "story"
-    ? <Story D={D} onExplore={() => go("explore")} />
-    : <div className="h-[100svh] overflow-y-auto lg:overflow-hidden [animation:rise-in_.6s_both]"><Explorer D={D} onStory={() => go("story")} startTour={tourOnOpen} /></div>;
+  const closeDance = () => {
+    setDance(false);
+    const q = new URLSearchParams(location.hash.slice(1));
+    if (q.has("dance")) { q.delete("dance"); history.replaceState(null, "", location.pathname + location.search + (q.size ? "#" + q : "")); }
+  };
+  const openSpot = (i) => {
+    closeDance();
+    if (view === "story") { history.replaceState(null, "", "#cell=" + i); go("explore"); }
+    setSpot({ i, n: Date.now() });
+  };
+  return (
+    <>
+      {view === "story"
+        ? <Story D={D} onExplore={() => go("explore")} onDance={() => setDance(true)} />
+        : <div className="h-[100svh] overflow-y-auto lg:overflow-hidden [animation:rise-in_.6s_both]"><Explorer D={D} onStory={() => go("story")} startTour={tourOnOpen} onDance={() => setDance(true)} spot={spot} /></div>}
+      {dance && <Suspense fallback={null}><Dance D={D} onClose={closeDance} onOpenSpot={openSpot} /></Suspense>}
+    </>
+  );
 }
 
-function Explorer({ D, onStory, startTour }) {
+function Explorer({ D, onStory, startTour, onDance, spot }) {
   const N = D.dates.length;
   const domain = useMemo(() => netDomain(D), [D]);
   const [S, setS] = useState(() => initialState(D));
@@ -61,12 +91,27 @@ function Explorer({ D, onStory, startTour }) {
   const [limits, setLimits] = useState(false);
   const [flash, setFlash] = useState(null);
   const [cmd, setCmd] = useState(false);
-  const [panel, setPanel] = useState(true); // right-hand overview/inspector panel
+  const [panel, setPanel] = useState(() => window.matchMedia("(min-width: 1024px)").matches); // right-hand panel; on small screens it starts closed and a click on a spot opens it
+  const [firstVisit] = useState(() => isFirstVisit(N)); // read before the share-link effect rewrites the hash
+  const [clicked, setClicked] = useState(false); // once a spot has been picked, the "click anywhere" hint stays away
+  useEffect(() => { if (S.sel >= 0) setClicked(true); }, [S.sel]);
   const steps = useMemo(() => tourSteps(D), [D]);
   // Clicking a spot brings the panel back, so its details are never hidden.
   useEffect(() => { if (S.sel >= 0) setPanel(true); }, [S.sel]);
   // The map has to re-measure itself when the panel opens or closes.
-  useEffect(() => { const r = requestAnimationFrame(() => mapRef.current?.resize()); return () => cancelAnimationFrame(r); }, [panel]);
+  // The same when the timeline appears or disappears (it only shows in Time-lapse, Two dates and while playing).
+  const showTimeline = S.mode === "breathe" || S.mode === "pair" || S.playing;
+  useEffect(() => { const r = requestAnimationFrame(() => mapRef.current?.resize()); return () => cancelAnimationFrame(r); }, [panel, showTimeline]);
+  // Switching GPS check on brings the whole frame (and so every station in it) into view, once, unless the walkthrough
+  // is steering or the switch came from clicking a station (which flies to that station instead).
+  const gpsPrev = useRef(S.gps), gpsFlight = useRef(false);
+  useEffect(() => {
+    const was = gpsPrev.current; gpsPrev.current = S.gps;
+    if (!S.gps || was) return;
+    if (gpsFlight.current) { gpsFlight.current = false; return; }
+    if (S.tour < 0) mapRef.current?.fitAll(!!S.relief);
+  }, [S.gps]); // eslint-disable-line
+  const gpsOnForStation = () => { if (!Sref.current.gps) gpsFlight.current = true; set({ gps: true }); };
 
   const stationAt = useCallback((i) => D.stations.find((s) => s.cell_index === i), [D]);
   const placeName = useCallback((i) => { const st = stationAt(i); const b = cellBounds(D, i); return st ? `GPS station ${st.station}` : `${b.lat.toFixed(2)}° N, ${Math.abs(b.lng).toFixed(2)}° W`; }, [D, stationAt]);
@@ -77,6 +122,14 @@ function Explorer({ D, onStory, startTour }) {
     set((s) => ({ sel: i, listenK: null, pin: s.pin === i ? -1 : s.pin }));
     if (fly && i >= 0) { const b = cellBounds(D, i); mapRef.current?.flyTo([b.lng, b.lat], 10); }
   }, [D, set]);
+  // The dance can send us to one cell: select it and fly there.
+  useEffect(() => {
+    if (!spot) return;
+    select(spot.i);
+    const id = setTimeout(() => { const b = cellBounds(D, spot.i); mapRef.current?.flyTo([b.lng, b.lat], 10); }, 450);
+    return () => clearTimeout(id);
+  }, [spot]); // eslint-disable-line
+  const openDance = () => { set({ playing: false }); onDance?.(); };
   const setMode = useCallback((m) => set((s) => ({ mode: m, playing: m === "breathe" ? s.playing : false, swipe: m === "pair" ? s.swipe : null })), [set]);
   const actions = useMemo(() => ({
     select,
@@ -99,7 +152,7 @@ function Explorer({ D, onStory, startTour }) {
     if (s.awaitPin || ((ev?.shiftKey || ev?.altKey) && s.sel >= 0)) { set({ pin: i === s.sel ? -1 : i, awaitPin: false }); return; }
     select(i);
   }, [select, set]);
-  const onStation = useCallback((st) => { set({ gps: true }); select(st.cell_index); }, [select, set]);
+  const onStation = useCallback((st) => { gpsOnForStation(); select(st.cell_index); }, [select, set]); // eslint-disable-line
   const onProfilePoint = useCallback((ll) => set((s) => (s.profile?.a && !s.profile.b ? { profile: { a: s.profile.a, b: ll }, drawing: false } : { profile: { a: ll } })), [set]);
   const onProfileDrag = useCallback((key, ll) => set((s) => ({ profile: { ...s.profile, [key]: ll } })), [set]);
   const valueAt = useCallback((lng, lat) => { const i = cellAt(D, lng, lat); return i < 0 ? null : cellValue(D, S, i); }, [D, S.mode, S.k1, S.k2, S.cursor, S.swipe]); // eslint-disable-line
@@ -143,14 +196,19 @@ function Explorer({ D, onStory, startTour }) {
     const sel = st.state.sel ?? Sref.current.sel;
     // after React has applied the state (and the 3D camera effect has run)
     setTimeout(() => {
-      if (st.camera === "fit") mapRef.current?.fitAll(!!st.state.relief);
+      if (st.camera === "fit") mapRef.current?.fitAll(!!st.state.relief, true);
       const tilted = !!(st.state.relief ?? Sref.current.relief);
       if (st.camera === "sel" && sel >= 0) { const b = cellBounds(D, sel); mapRef.current?.flyTo([b.lng, b.lat], 10, tilted); }
       else if (st.camera?.center) mapRef.current?.flyTo(st.camera.center, st.camera.zoom, tilted);
     }, 60);
   }, [steps, set, D]);
-  const endTour = () => set({ tour: -1, playing: false });
-  useEffect(() => { if (startTour) setTimeout(() => goStep(0), 400); }, []); // eslint-disable-line
+  // Closing or finishing the walkthrough puts the whole data frame back in view.
+  const endTour = () => { set({ tour: -1, playing: false }); setTimeout(() => mapRef.current?.fitAll(!!Sref.current.relief), 60); };
+  useEffect(() => {
+    if (!startTour && !firstVisit) return;
+    if (firstVisit) { try { localStorage.setItem(TOUR_SEEN_KEY, "1"); } catch { /* storage blocked */ } }
+    setTimeout(() => goStep(0), 400);
+  }, []); // eslint-disable-line
 
   /* ---------- command bar ---------- */
   const commandItems = () => {
@@ -160,7 +218,7 @@ function Explorer({ D, onStory, startTour }) {
     fastest.sort((a, b) => a[1] - b[1]);
     return [
       ...PLACES.map((p) => ({ id: "p" + p.name, group: "Places", label: p.name, icon: MapPin, run: () => { if (!p.ll) mapRef.current?.fitAll(); else { mapRef.current?.flyTo(p.ll, p.z); const i = cellAt(D, ...p.ll); if (i >= 0) select(i); } } })),
-      ...D.stations.map((st) => ({ id: "s" + st.station, group: "GPS stations", label: `GPS ${st.station}`, hint: st.role === "reference" ? "reference" : "independent check", icon: Satellite, run: () => { set({ gps: true }); select(st.cell_index, { fly: true }); } })),
+      ...D.stations.map((st) => ({ id: "s" + st.station, group: "GPS stations", label: `GPS ${st.station}`, hint: st.role === "reference" ? "reference" : "independent check", icon: Satellite, run: () => { gpsOnForStation(); select(st.cell_index, { fly: true }); } })),
       ...fastest.slice(0, 3).map(([i, v], n) => ({ id: "f" + i, group: "Sinking fastest", label: placeName(i), hint: cm(v), icon: Activity, run: () => select(i, { fly: true }) })),
       ...MODES.map((m) => ({ id: "m" + m.id, group: "Views", label: m.name, key: m.key, icon: MODE_ICONS[m.id], run: () => setMode(m.id) })),
       { id: "t-play", group: "Tools", label: "Play the record", key: "Space", icon: Play, run: togglePlay },
@@ -171,6 +229,7 @@ function Explorer({ D, onStory, startTour }) {
       ...(D.canal ? [{ id: "t-canal", group: "Tools", label: "California Aqueduct profile", key: "A", icon: Droplets, run: toggleCanal }] : []),
       { id: "t-gps", group: "Tools", label: S.gps ? "Hide GPS check" : "Show GPS check", key: "G", icon: Satellite, run: () => set({ gps: !Sref.current.gps }) },
       { id: "t-fields", group: "Tools", label: "Crop fields: polarization and coverage", key: "F", icon: Sprout, run: () => set({ fields: true, field: null }) },
+      { id: "t-dance", group: "Tools", label: "The dance", icon: Sparkles, run: openDance },
       { id: "t-tour", group: "Tools", label: "Walkthrough", key: "W", icon: Compass, run: () => goStep(0) },
       { id: "t-share", group: "Tools", label: "Copy a link to this view", icon: Share2, run: share },
       { id: "t-limits", group: "Tools", label: "What this map can and can't tell you", icon: Info, run: () => setLimits(true) },
@@ -234,16 +293,18 @@ function Explorer({ D, onStory, startTour }) {
             <p className="text-[12px] text-mute mt-1 truncate max-[1500px]:hidden">Corcoran–Mendota, San Joaquin Valley, seen by NISAR L-band radar</p>
           </div>
         </div>
-        <nav aria-label="Map view" className="flex gap-1 mx-auto max-lg:order-3 max-lg:w-full max-lg:overflow-x-auto">
-          {MODES.map((m) => {
+        <nav aria-label="Map view" className="flex gap-1 mx-auto max-lg:order-3 max-lg:w-full">
+          {MODES.filter((m) => MAIN_MODES.includes(m.id)).map((m) => {
             const Icon = MODE_ICONS[m.id], on = S.mode === m.id;
             return (
               <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
                 className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[14px] transition-colors ${on ? "text-ink bg-deck-2 font-medium" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
-                <Icon size={15} className="shrink-0" /> <span className={on ? "" : "max-2xl:sr-only"}>{m.name}</span>
+                <Icon size={15} className="shrink-0" /> <span className={on ? "" : "max-sm:sr-only lg:max-xl:sr-only"}>{m.name}</span>
               </button>
             );
           })}
+          <ViewMenu views={MODES.filter((m) => !MAIN_MODES.includes(m.id)).map((m) => ({ ...m, icon: MODE_ICONS[m.id] }))}
+            active={MAIN_MODES.includes(S.mode) ? null : S.mode} onPick={setMode} />
         </nav>
         <div className="flex items-center gap-1.5">
           <button onClick={() => set({ gps: !S.gps })} aria-pressed={S.gps}
@@ -267,22 +328,11 @@ function Explorer({ D, onStory, startTour }) {
             {S.fields && <FieldCard field={S.field} onClose={() => set({ field: null })} />}
 
             <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] rounded-lg border border-hair-2 bg-space/95">
-              <button onClick={() => setCmd(true)} title="Search (Ctrl+K)" aria-label="Search places, views and tools"
+              {/* One button for search and "Go to": the command bar lists every place and GPS station first (two clicks). */}
+              <button onClick={() => setCmd(true)} title="Search or go to a place or GPS station (Ctrl+K)" aria-label="Search or go to a place, GPS station, view or tool"
                 className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
-                <Search size={15} className="text-accent" /><kbd className="font-mono text-[11px] text-mute border border-hair-2 rounded px-1 whitespace-nowrap @max-[700px]:hidden">Ctrl K</kbd>
+                <Search size={15} className="text-accent" /><span className="whitespace-nowrap @max-[560px]:sr-only">Go to…</span><kbd className="font-mono text-[11px] text-mute border border-hair-2 rounded px-1 whitespace-nowrap @max-[700px]:hidden">Ctrl K</kbd>
               </button>
-              <label className="relative flex items-center @max-[560px]:hidden">
-                <MapPin size={15} className="absolute left-3 text-accent pointer-events-none" />
-                <select aria-label="Go to a place" value="" onChange={(e) => {
-                  const v = e.target.value;
-                  if (v[0] === "p") { const p = PLACES[+v.slice(1)]; if (!p.ll) mapRef.current?.fitAll(); else { mapRef.current?.flyTo(p.ll, p.z); const i = cellAt(D, ...p.ll); if (i >= 0) select(i); } }
-                  if (v[0] === "s") { const st = D.stations.find((x) => x.station === v.slice(1)); set({ gps: true }); select(st.cell_index, { fly: true }); }
-                }} className="appearance-none bg-transparent text-[14px] text-ink pl-9 pr-4 py-2 cursor-pointer outline-none [&>option]:bg-deck">
-                  <option value="">Go to…</option>
-                  {PLACES.map((p, k) => <option key={p.name} value={`p${k}`}>{p.name}</option>)}
-                  {D.stations.map((st) => <option key={st.station} value={`s${st.station}`}>GPS {st.station}{st.role === "reference" ? " (reference)" : ""}</option>)}
-                </select>
-              </label>
               <ToolsMenu tools={[
                 { icon: Route, label: "Cross-section", hint: "Draw a line, see the ground along it", on: !!S.profile && !S.profile.canal, act: toggleProfile, key: "P" },
                 ...(D.canal ? [{ icon: Droplets, label: "California Aqueduct", hint: "Motion along the canal", on: !!S.profile?.canal, act: toggleCanal, key: "A" }] : []),
@@ -295,10 +345,22 @@ function Explorer({ D, onStory, startTour }) {
               <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2">
                 <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">Walkthrough</span>
               </button>
+              <button onClick={openDance} title="The dance: every cell moving through the 26 passes" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2">
+                <Sparkles size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">The dance</span>
+              </button>
             </div>
 
             {S.drawing && !S.profile?.a && (
               <p className="absolute top-[66px] left-4 z-10 rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
+            )}
+
+            {S.tour < 0 && !(S.drawing && !S.profile?.a) && (
+              <div className={`pointer-events-none absolute top-[66px] left-4 z-10 flex flex-col items-start gap-1 ${S.fields ? "max-w-[calc(100%-26rem)] max-sm:max-w-[calc(100%-9rem)]" : "max-w-[calc(100%-9rem)]"}`}>
+                <p className="rounded-md border border-hair-2 bg-space/90 px-3 py-1.5 text-[13.5px] leading-snug text-ink">{toolCaption(S) || viewCaption(D, S)}</p>
+                {!clicked && S.sel < 0 && !S.drawing && !S.profile && (
+                  <p className="rounded-md bg-space/80 px-3 py-1 text-[12.5px] text-mute">Click anywhere to see how that spot moved</p>
+                )}
+              </div>
             )}
 
             {!panel && (
@@ -332,10 +394,12 @@ function Explorer({ D, onStory, startTour }) {
             <ProfilePanel D={D} S={S} valueAt={valueAt} onClose={closeProfile}
               onProbe={(ll) => mapRef.current?.showProbe(ll)} onPick={(i) => select(i)} />
           )}
-          <Timeline D={D} S={S} trace={S.sel >= 0 ? D.values[S.sel] : null}
-            onScrub={(k) => set({ cursor: k, mode: "breathe", playing: false })}
-            onPair={(key, k) => set((s) => ({ [key]: key === "k1" ? Math.max(0, Math.min(k, s.k2 - 1)) : Math.min(N - 1, Math.max(k, s.k1 + 1)) }))}
-            onPlay={togglePlay} onStep={step} />
+          {showTimeline && (
+            <Timeline D={D} S={S} trace={S.sel >= 0 ? D.values[S.sel] : null}
+              onScrub={(k) => set({ cursor: k, mode: "breathe", playing: false })}
+              onPair={(key, k) => set((s) => ({ [key]: key === "k1" ? Math.max(0, Math.min(k, s.k2 - 1)) : Math.min(N - 1, Math.max(k, s.k1 + 1)) }))}
+              onPlay={togglePlay} onStep={step} />
+          )}
         </div>
 
         {panel && (
