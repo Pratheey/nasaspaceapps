@@ -392,6 +392,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
           )}
           {showTimeline && (
             <Timeline D={D} S={S} trace={S.sel >= 0 ? D.values[S.sel] : null}
+              onScrub={(k) => set({ cursor: k, mode: "breathe", playing: false })}
               onPair={(key, k) => set((s) => ({ mode: "pair", playing: false, [key]: key === "k1" ? Math.max(0, Math.min(k, s.k2 - 1)) : Math.min(N - 1, Math.max(k, s.k1 + 1)) }))}
               onPlay={togglePlay} onStep={step} />
           )}
