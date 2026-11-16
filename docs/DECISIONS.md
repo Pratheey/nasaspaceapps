@@ -290,3 +290,25 @@ at the hour-8 check-in.** Builds on D5.
   the original no-GPS export was a historical smoke check. D7/D9 limits and frozen results stay
   unchanged; this reconciliation does not add a vertical website switch or regenerate data.
 
+## Maintenance follow-up: 2026-11-15 accuracy audit
+
+Steven requested a whole-repository review, then explicitly asked to keep all changes
+local. [The audit record](../analysis/ACCURACY_REVIEW.md) lists the fixes, tests and limits.
+This entry logs engineering corrections, not a new team scientific decision. D11's
+control boxes and calibration remain unchanged. The primary radar grid/series stay frozen.
+The OPERA quality mask correction removes one rejected observation and preserves gaps;
+the GPS bootstrap correction changes fit uncertainties only. GPS chart comparisons now
+describe the actual app cell and shared dates. The corrected hidden-sinking view reuses
+the exported labels: 1,698 of 3,357 cells, superseding D12's rounded-boundary counts.
+
+Second local pass: reconciled with main snapshot `bb7ef14` while preserving the team's
+newer presentation and removal of Swipe Compare. Additional internal fixes cover file
+validation/retries, safe JSON replacement, duplicate vertical intervals, correction
+provenance, shared-date walkthrough GPS comparisons, and irregular radar chart dates.
+See the audit record for the 112-test verification and its limits.
+
+Steven subsequently authorized publishing the tested fixes in a pull request on 2026-11-15,
+and explicitly requested that it remain unmerged.
+The publishing copy also preserves PR #41 from main `b63c1a2`, which keeps the timeline
+visible when a cross-section is open. The original local review copies are preserved.
+
