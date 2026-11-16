@@ -119,8 +119,8 @@ export function Intro({ D, onStart, onTour }) {
         <p className="font-display text-accent-2 text-[15px] tracking-wide flex items-center justify-center gap-2"><Radar size={16} /> NISAR L-band radar over California's San Joaquin Valley</p>
         <h1 className="font-display font-bold text-[clamp(44px,7vw,84px)] leading-[0.95] mt-3 bg-gradient-to-b from-ink to-ink/65 bg-clip-text text-transparent">The Breathing Ground</h1>
         <p className="text-[17px] leading-relaxed text-ink/85 mt-5">
-          Every winter the valley rises a little. Every summer it settles. Underneath that breathing, parts of it keep sinking,
-          and two well-chosen dates can hide it. {D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, checked against GPS.
+          Every winter the valley rises a little. Every summer it settles. Underneath that seasonal cycle, parts of it keep sinking,
+          and comparing only two dates can miss it. {D.dates.length} radar passes from {fmtDate(D.dates[0])} to {fmtDate(D.dates[D.dates.length - 1])}, checked against GPS.
         </p>
         <div className="flex flex-wrap justify-center gap-3 mt-8">
           <button onClick={onTour} className="rounded-lg bg-accent text-space font-semibold px-5 py-2.5 hover:bg-accent-2 shadow-[0_0_30px_rgba(157,176,138,.4)]">Walk me through it</button>

@@ -4,8 +4,6 @@ import { mostMisleadingPair } from "./data.js";
 import { cm, fmtShort } from "./fmt.js";
 import { demoStations, lieStation } from "./demo.js";
 
-const CORCORAN = [-119.56, 36.098];
-
 function findLie(D) {
   const st = lieStation(D);
   const p = st && mostMisleadingPair(D, st.cell_index);
@@ -25,20 +23,20 @@ export function tourSteps(D) {
   const lie = findLie(D);
   return [
     {
-      title: "A town that keeps raising its levee",
+      title: "Corcoran's levee keeps sinking",
       state: { mode: "net", relief: false, playing: false, gps: false },
-      camera: { center: CORCORAN, zoom: 9.3 },
+      camera: "fit", // whole data frame, so Corcoran has the valley around it and nothing sits in a corner
       body: (
         <>
           <p>Corcoran's flood levee was built to 195 feet in 1983. By 2017 it had sunk to 188 feet. It was rebuilt to 192 feet, and by 2023 it was back at 188.</p>
-          <p>The ground under this part of the valley is sinking. The glow on the map is how far it moved in NISAR's first year.</p>
+          <p>The ground under this part of the valley is sinking. The colour on the map shows how far it moved in NISAR's first year.</p>
           <p className="text-[12.5px] text-mute">Levee figures: SJV Water, 2023. Published measurements, not ours.</p>
         </>
       ),
     },
     lie
       ? {
-          title: "Two dates say the ground is fine",
+          title: "Two dates can look stable",
           state: { mode: "pair", k1: lie.p.k1, k2: lie.p.k2, sel: lie.i, relief: false, playing: false },
           camera: "sel",
           body: (
@@ -54,7 +52,7 @@ export function tourSteps(D) {
           body: <p>In this data, no two dates hide the sinking by more than the measurement uncertainty. Drag A and B below the map to try any pair yourself.</p>,
         },
     {
-      title: "The valley breathes",
+      title: "Play all 26 radar passes",
       state: { mode: "breathe", cursor: 0, relief: true, playing: true },
       camera: "fit",
       body: (
@@ -65,7 +63,7 @@ export function tourSteps(D) {
       ),
     },
     ...(st ? [{
-      title: "Separate the breathing from the sinking",
+      title: "Split the seasonal cycle from the trend",
       state: { mode: "net", relief: false, playing: false, split: true, sel: st.cell_index },
       camera: "sel",
       body: (
@@ -80,7 +78,6 @@ export function tourSteps(D) {
       body: (
         <>
           <p>GPS station {st.station} was never used to calibrate the radar. Its line on the chart is an independent check.{st.residuals?.net_m != null && ` Over the whole record the radar and GPS differ by ${cm(st.residuals.net_m)}.`}</p>
-          <p className="text-[19px] font-medium text-ink leading-snug pt-1">We don't tell you the ground is fine. We show you how sure we are.</p>
         </>
       ),
     }] : []),

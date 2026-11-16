@@ -23,7 +23,7 @@ const STEPS = [
   { date: "May 16, 2025", title: "At the launch site", text: "The satellite reaches Satish Dhawan Space Centre on India's southeastern coast.", img: MEDIA.arrives },
   { date: "Jul 18, 2025", title: "Into the fairing", text: "Sealed inside the nose cone that protects it from pressure and heat on the way up.", img: MEDIA.fairing },
   { date: "Jul 30, 2025", title: "Launch", text: "A GSLV rocket lifts NISAR into a near-polar, sun-synchronous orbit.", video: MEDIA.heroVideo },
-  { date: "Aug 15, 2025", title: "The reflector blooms", text: "A 12-metre gold mesh antenna unfurls, the largest NASA has ever deployed in space.", img: MEDIA.reflector },
+  { date: "Aug 15, 2025", title: "Reflector deployed", text: "A 12-metre gold mesh antenna unfurls, the largest NASA has ever deployed in space.", img: MEDIA.reflector },
   { date: "Aug 21–23, 2025", title: "First light", text: "First radar images: Maine's coast and North Dakota farmland.", video: MEDIA.forestRiverVideo },
   { date: "Nov 2025", title: "Science begins", text: "NISAR enters its science phase, imaging nearly all land and ice every 12 days.", video: MEDIA.fleetVideo },
   { date: "Nov 2025 – Oct 2026", title: "Our valley", text: "The passes we used: eleven months over Corcoran and Mendota.", ours: true },

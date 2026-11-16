@@ -84,6 +84,20 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   const probe = useRef(null);
   const lens = useRef(null);
 
+  // Padding that keeps the whole data frame inside the part of the map nothing is drawn over.
+  // The map element already excludes the right-hand panel and the timeline; what overlays it is the toolbar and
+  // caption (top), the zoom buttons (right), the legend (bottom-left, large screens) and the walkthrough card (left).
+  const fitPadding = (tour = false) => {
+    const c = el.current, w = c?.clientWidth || 0, h = c?.clientHeight || 0, lg = window.innerWidth >= 1024;
+    const p = { top: 128, right: 64, bottom: 48, left: 24 };
+    if (lg && tour) p.left = 420;
+    else if (lg && w >= 900) p.left = 340;
+    else if (lg) p.bottom = 200;
+    if (h && p.top + p.bottom > h * 0.7) { const f = (h * 0.7) / (p.top + p.bottom); p.top = Math.round(p.top * f); p.bottom = Math.round(p.bottom * f); }
+    if (w && p.left + p.right > w * 0.7) { const f = (w * 0.7) / (p.left + p.right); p.left = Math.round(p.left * f); p.right = Math.round(p.right * f); }
+    return p;
+  };
+
   // Radar lens: a circle under the cursor that shows the fringe view of whatever is there.
   const drawLens = (pt) => {
     const c = lens.current, m = map.current;
@@ -124,7 +138,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   useImperativeHandle(ref, () => ({
     resize: () => map.current?.resize(),
     flyTo: (ll, zoom, tilted = latest.current.S.relief) => map.current?.flyTo({ center: ll, zoom, pitch: tilted ? 58 : 0, bearing: tilted ? -18 : 0, duration: reduceMotion ? 0 : 1500 }),
-    fitAll: (tilted = false) => { const b = D.bbox; map.current?.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, pitch: tilted ? 58 : 0, bearing: tilted ? -18 : 0, duration: reduceMotion ? 0 : 1400 }); },
+    fitAll: (tilted = false, tour = false) => { const b = D.bbox; map.current?.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: fitPadding(tour), pitch: tilted ? 58 : 0, bearing: tilted ? -18 : 0, duration: reduceMotion ? 0 : 1400 }); },
     showProbe: (ll) => {
       if (!map.current) return;
       if (!ll) { probe.current?.remove(); probe.current = null; return; }
@@ -147,7 +161,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
         attributionControl: { compact: false },
         style: cartoKey ? cartoStyle(cartoKey) : OFFLINE,
         bounds: [[b.west, b.south], [b.east, b.north]],
-        fitBoundsOptions: { padding: 40 },
+        fitBoundsOptions: { padding: fitPadding() },
         maxBounds: [[b.west - 1.6, b.south - 1.3], [b.east + 1.6, b.north + 1.3]],
         dragRotate: false,
         pitchWithRotate: false,
@@ -163,6 +177,8 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     m.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
 
     m.on("load", () => {
+      // Re-measure and fit once more now the layout has settled, unless a shared link picked a cell or the walkthrough is already steering.
+      if (latest.current.S.sel < 0 && latest.current.S.tour < 0) { m.resize(); m.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: fitPadding(), duration: 0 }); }
       const coords = [[b.west, b.north], [b.east, b.north], [b.east, b.south], [b.west, b.south]];
       m.addSource("grid", { type: "image", coordinates: coords });
       m.addLayer({ id: "grid", type: "raster", source: "grid", paint: { "raster-opacity": 0.9, "raster-resampling": "nearest", "raster-fade-duration": 0 } }, "places");
@@ -389,8 +405,8 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
               if (step) { e.preventDefault(); e.stopPropagation(); moveSwipe(S.swipe + step * D.meta.grid.step_deg); }
             }} aria-label="Drag or use arrow keys to compare date A and date B"
             className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize touch-none shadow-[0_0_20px_rgba(157,176,138,.6)] font-display font-bold text-[13px]">A|B</button>
-          <span className="absolute top-[64px] right-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">A: {fmtShort(D.dates[S.k1])}</span>
-          <span className="absolute top-[64px] left-3 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">B: {fmtShort(D.dates[S.k2])}</span>
+          <span className="absolute top-1/2 -translate-y-1/2 right-7 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">A: {fmtShort(D.dates[S.k1])}</span>
+          <span className="absolute top-1/2 -translate-y-1/2 left-7 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">B: {fmtShort(D.dates[S.k2])}</span>
         </div>
       )}
     </div>

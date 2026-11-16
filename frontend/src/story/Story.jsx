@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Lenis from "lenis";
-import { ArrowDown, Map as MapIcon, Radar, Satellite, Waves, CalendarRange, Activity, Route, Box } from "lucide-react";
+import { ArrowDown, Sparkles, Map as MapIcon, Radar, Satellite, Waves, CalendarRange, Activity, Route, Box } from "lucide-react";
 import { NasaImage, Starfield, SatelliteArt, IMAGES } from "./art.jsx";
 import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
@@ -16,7 +16,7 @@ import { fringe, rgb, FRINGE_M } from "../lib/colors.js";
 import { linePath } from "../lib/chart.js";
 
 /* ------------------------------------------------------------------ */
-export default function Story({ D, onExplore }) {
+export default function Story({ D, onExplore, onDance }) {
   useEffect(() => {
     if (reduceMotion) return;
     const lenis = new Lenis({ lerp: 0.09, wheelMultiplier: 0.9 });
@@ -30,7 +30,7 @@ export default function Story({ D, onExplore }) {
   return (
     <div className="bg-space text-ink overflow-x-clip">
       <TopBar D={D} onExplore={onExplore} />
-      <Hero D={D} onExplore={onExplore} />
+      <Hero D={D} onExplore={onExplore} onDance={onDance} />
       <Telemetry items={[["mission", "NASA–ISRO NISAR"], ["launched", "2025-07-30"], ["orbit", "~747 km, sun-synchronous"], ["inclination", "98.4°"], ["reflector", "12 m gold mesh"], ["L-band", "λ 24 cm"], ["revisit", "12 days"], ["fringe", "11.9 cm"], ["study area", "36.45° N 120.0° W"], ["passes", `${D.dates.length}`], ["reference", `GPS ${D.meta.reference_station}`]]} />
       <PoleScene />
       <AquiferScene />
@@ -85,7 +85,7 @@ export function Mark({ size = 30 }) {
 }
 
 /* ------------------------------------------------------------------ */
-function Hero({ D, onExplore }) {
+function Hero({ D, onExplore, onDance }) {
   const y = useScrollY();
   const fade = Math.max(0, 1 - y / 700);
   return (
@@ -118,6 +118,11 @@ function Hero({ D, onExplore }) {
             <button onClick={() => document.querySelector("#pole")?.scrollIntoView({ behavior: "smooth" })} className="inline-flex items-center gap-2 rounded-full border border-hair-2 bg-space/40 backdrop-blur px-6 py-3 hover:border-accent/60 hover:text-accent-2 transition">
               <ArrowDown size={17} /> Read the story
             </button>
+            {onDance && (
+              <button onClick={onDance} className="inline-flex items-center gap-2 rounded-full border border-hair-2 bg-space/40 backdrop-blur px-6 py-3 hover:border-accent/60 hover:text-accent-2 transition">
+                <Sparkles size={17} /> Watch the dance
+              </button>
+            )}
           </div>
         </div>
         <dl className="shrink-0 mt-12 grid grid-cols-2 md:grid-cols-4 gap-px bg-hair rounded-xl overflow-hidden max-w-[880px] border border-hair">
