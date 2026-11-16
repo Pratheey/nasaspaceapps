@@ -4,8 +4,8 @@ import { fmtDate, fmtShort } from "../lib/fmt.js";
 import { linePath } from "../lib/chart.js";
 
 // The orbit track: one mark per NISAR pass, 12 days apart. Gaps are missed passes.
-// In Two dates you drag A and B; elsewhere you scrub through time.
-export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep }) {
+// Dates A and B always sit on the track and can always be dragged; moving either opens Two dates.
+export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
   const ref = useRef(null);
   const drag = useRef(null);
   const N = D.dates.length;
@@ -23,13 +23,13 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
   const down = (e) => {
     ref.current.setPointerCapture(e.pointerId);
     const k = nearest(e);
-    if (S.mode === "pair") { drag.current = Math.abs(k - S.k1) <= Math.abs(k - S.k2) ? "k1" : "k2"; onPair(drag.current, k); }
-    else { drag.current = "cursor"; onScrub(k); }
+    drag.current = Math.abs(k - S.k1) <= Math.abs(k - S.k2) ? "k1" : "k2"; // grab the nearer of A and B
+    onPair(drag.current, k);
   };
   const move = (e) => {
     if (!drag.current || !ref.current.hasPointerCapture(e.pointerId)) return;
     const k = nearest(e);
-    if (drag.current === "cursor") onScrub(k); else onPair(drag.current, k);
+    onPair(drag.current, k);
   };
 
   let tracePath = "";
@@ -56,8 +56,8 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
           {S.mode === "pair"
             ? <>Comparing <span className="text-ink">{fmtDate(D.dates[S.k1])}</span> with <span className="text-ink">{fmtDate(D.dates[S.k2])}</span>, {days} days apart. Drag A or B.</>
             : S.mode === "breathe"
-              ? <><span className="font-mono text-ink">pass {String(S.cursor + 1).padStart(2, "0")}/{N}</span>, <span className="font-mono text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}.</>
-              : <>{N} available radar passes on a 12-day schedule. Press Play to watch the valley move.</>}
+              ? <><span className="font-mono text-ink">pass {String(S.cursor + 1).padStart(2, "0")}/{N}</span>, <span className="font-mono text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}. Drag A or B to compare any two dates.</>
+              : <>{N} radar passes on a 12-day schedule. Press Play to watch the valley move, or drag A or B to compare any two dates.</>}
         </p>
       </div>
       <div ref={ref} onPointerDown={down} onPointerMove={move} onLostPointerCapture={() => (drag.current = null)}
@@ -81,11 +81,11 @@ export default function Timeline({ D, S, trace, onScrub, onPair, onPlay, onStep 
             {fmtShort(D.dates[k]).split(" ")[1]}{D.dates[k].getUTCMonth() === 0 ? ` ${D.dates[k].getUTCFullYear()}` : ""}
           </span>
         ))}
-        {S.mode === "pair" && [["k1", "A"], ["k2", "B"]].map(([key, name]) => (
+        {[["k1", "A"], ["k2", "B"]].map(([key, name]) => (
           <span key={key} role="slider" tabIndex={0} style={{ left: left(S[key]) }}
             aria-label={`Date ${name}`} aria-valuemin={0} aria-valuemax={N - 1} aria-valuenow={S[key]} aria-valuetext={fmtDate(D.dates[S[key]])}
             onKeyDown={(e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); e.stopPropagation(); onPair(key, S[key] + d); } }}
-            className="absolute top-[2px] -translate-x-1/2 bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(157,176,138,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-accent">
+            className={`absolute top-[2px] -translate-x-1/2 ${S.mode === "pair" ? "" : "opacity-70 hover:opacity-100"} bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(157,176,138,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-accent`}>
             {name}
           </span>
         ))}
