@@ -84,3 +84,41 @@ body {
 .sat-moving { animation: sat-drift 11s ease-in-out infinite; transform-origin: 50% 40%; }
 .sat-moving .sat-beam { animation: beam-pulse 3.2s ease-in-out infinite; }
 @media (prefers-reduced-motion: reduce) { .sat-moving, .sat-moving .sat-beam { animation: none; } }
+
+/* Historical subsidence: a matte cutaway using the site’s charcoal and sage palette. */
+.pole-scene { background: var(--color-space); color: var(--color-ink); }
+.pole-stage { min-height: 100svh; display: grid; grid-template-columns: .9fr 1.1fr; align-items: center; align-content: center; gap: 6%; padding: 110px max(6vw,24px) 40px;  }
+.pole-copy { max-width: 540px; }
+.pole-eyebrow { font: 13px var(--font-sans); letter-spacing: .02em; color: var(--color-mute); display:flex; align-items:center; gap:10px; }
+.pole-copy h2 { font: 600 clamp(36px,4.5vw,72px)/1.06 var(--font-display); letter-spacing:-.025em; margin:24px 0; }
+.pole-copy h2 span { color:var(--color-mute); }
+.pole-description { font-size:16px; line-height:1.8; color:#bdbbb3; max-width:470px; }
+.pole-reading { display:flex; align-items:center; gap:18px; margin-top:30px; }
+.pole-value { font:400 clamp(62px,7vw,110px)/1.15 var(--font-display); letter-spacing:-.04em; color:var(--color-accent-2); }
+.pole-unit { font-size:26px; color:var(--color-ink); }
+.pole-unit span { display:block; font-size:12px; color:var(--color-mute); margin-top:4px; }
+.pole-source { font-size:11px; line-height:1.7; color:var(--color-mute); margin-top:28px; }
+.pole-visual { min-width:0; }
+.pole-visual svg { width:100%; max-height:65svh; }
+@media(max-width:767px) { .pole-stage { grid-template-columns:1fr; gap:24px; padding:100px 24px 24px; } .pole-copy h2 { font-size:36px; margin:14px 0; } .pole-description { font-size:14px; line-height:1.6; } .pole-reading { margin-top:12px; } .pole-value { font-size:60px; } .pole-source { margin-top:14px; } .pole-visual svg { max-height:36svh; } .pole-period,.pole-instruction { display:none; } }
+@media(max-height:740px) and (min-width:768px) { .pole-stage { padding-top:90px; } .pole-copy h2 { font-size:42px; margin:15px 0; } .pole-reading { margin-top:12px; } .pole-source { margin-top:16px; } }
+
+
+.aquifer-scene { position:relative; height:260svh; }
+.aquifer-stage { position:sticky; top:0; min-height:100svh; display:grid; grid-template-columns:.8fr 1.3fr; align-items:center; align-content:center; gap:6%; max-width:1500px; margin:auto; padding:100px max(4vw,24px) 32px; }
+.aquifer-copy h2 { font:600 clamp(36px,4.3vw,66px)/1.06 var(--font-display); letter-spacing:-.02em; margin:22px 0; }
+.aquifer-copy h2 span { color:var(--color-mute); }
+.aquifer-copy > p { font-size:17px; line-height:1.8; color:#bdbbb3; margin-top:18px; max-width:470px; }
+.aquifer-model { min-width:0; }
+.aquifer-state { display:flex; justify-content:space-between; gap:16px; font-size:12px; color:var(--color-mute); padding-bottom:14px; border-bottom:1px solid var(--color-hair); }
+.aquifer-state span:last-child { color:var(--color-accent-2); }
+.aquifer-model > svg { width:100%; height:auto; display:block; }
+.aquifer-pressure { display:block; margin-top:22px; font-size:12px; color:var(--color-mute); }
+.aquifer-pressure input { display:block; appearance:none; width:100%; height:4px; background:#46483d; border-radius:2px; margin:16px 0 12px; cursor:pointer; }
+.aquifer-pressure input::-webkit-slider-thumb { appearance:none; width:16px; height:16px; border-radius:50%; background:var(--color-accent-2); border:3px solid var(--color-space); box-shadow:0 0 0 1px var(--color-accent); }
+.aquifer-pressure input::-moz-range-thumb { width:12px; height:12px; border-radius:50%; background:var(--color-accent-2); border:2px solid var(--color-space); }
+.aquifer-pressure-ends { display:flex; justify-content:space-between; font-size:11px; }
+.aquifer-caption { font-size:15px; line-height:1.6; color:var(--color-ink); min-height:3.2em; }
+.aquifer-note { font-size:11px; color:var(--color-mute); margin-top:16px; }
+@media(max-width:767px) { .aquifer-stage { grid-template-columns:1fr; gap:24px; padding:86px 24px 22px; } .aquifer-copy h2 { font-size:34px; margin:12px 0; } .aquifer-copy > p { font-size:14px; line-height:1.6; margin-top:12px; } .aquifer-copy > p:last-child { display:none; } .aquifer-model > svg { max-height:38svh; } .aquifer-pressure { margin-top:12px; } .aquifer-caption { font-size:13px; } }
+@media(max-height:650px) and (min-width:768px) { .aquifer-stage { padding-top:78px; gap:4%; } .aquifer-copy h2 { font-size:34px; margin:12px 0; } .aquifer-copy > p { font-size:14px; line-height:1.5; } .aquifer-model > svg { max-height:43svh; } .aquifer-pressure { margin-top:8px; } .aquifer-caption { font-size:12px; } }

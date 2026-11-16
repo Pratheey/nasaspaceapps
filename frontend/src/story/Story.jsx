@@ -91,10 +91,9 @@ function Hero({ D, onExplore, onDance }) {
   return (
     <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
       <div className="absolute inset-0" style={{ transform: `translate3d(0, ${y * 0.35}px, 0) scale(${1.08 + y * 0.0002})` }}>
-        <NasaVideo srcs={MEDIA.heroVideo} className="absolute inset-0 w-full h-full object-cover object-[60%_50%]"
-          fallback={<NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
-            className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
-            fallback={<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="absolute right-[1%] top-[18%] w-[44%] max-w-[640px] opacity-95 max-lg:hidden" moving /></div>} />} />
+        <NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
+          className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
+          fallback={<div className="absolute inset-0 bg-[radial-gradient(ellipse_at_70%_120%,#1d3a5c_0%,#0F1420_60%)]"><SatelliteArt className="absolute right-[1%] top-[18%] w-[44%] max-w-[640px] opacity-95 max-lg:hidden" moving /></div>} />
       </div>
       <Starfield className="absolute inset-0 w-full h-full opacity-60 mix-blend-screen" />
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#161514_0%,rgba(22,21,20,.86)_34%,rgba(22,21,20,.25)_70%,rgba(22,21,20,.1)_100%)]" />
@@ -143,52 +142,38 @@ function Hero({ D, onExplore, onDance }) {
 // A pole near Mendota, with signs where the ground stood in 1925, 1955 and 1977.
 function PoleScene() {
   const [ref, p] = useProgress();
-  const t = ease(seg(p, 0.12, 0.72));
-  const year = Math.round(1925 + t * 52);
+  const t = reduceMotion ? 1 : ease(seg(p, 0.12, 0.72));
   const metres = (t * 9).toFixed(1);
-  const H = 520, top = 70, drop = 360; // pixels for 9 m
-  const ground = top + t * drop;
-  const signs = [[1925, 0], [1955, 0.55], [1977, 1]];
+  const ground = 120 + t * 270;
+  const plane = (y) => `70,${y} 350,${y - 65} 540,${y + 15} 260,${y + 80}`;
   return (
-    <section id="pole" ref={ref} className="relative h-[260vh]">
-      <div className="sticky top-0 h-[100svh] overflow-hidden grid md:grid-cols-2 items-center gap-10 px-6 md:px-14 max-w-[1400px] mx-auto">
-        <div className="max-w-[560px]">
-          <Chapter n={1} title="The pole" />
-          <h2 className="font-mono font-medium tracking-[-0.04em] text-[clamp(64px,9vw,150px)] leading-[0.9] mt-5">
-            {year < 1977 ? <>{year}</> : <>9.0<span className="text-[0.4em] text-ink/50 ml-2">m</span></>}
-          </h2>
-          <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
-            Southwest of Mendota, pumping groundwater for irrigation lowered the land surface by about 9 metres between 1925 and 1977.
-            Surveyors marked where the ground used to be on a utility pole.
-          </p>
-          <p className={`text-[18px] leading-relaxed text-ink/80 mt-4 transition-opacity duration-700 ${p > 0.75 ? "opacity-100" : "opacity-0"}`}>
-            Surface water from new canals slowed it down. In dry years the pumps came back, and so did the sinking.
-          </p>
-          <p className="text-[12.5px] text-mute mt-6">Figures: USGS. Published measurements, not ours.</p>
+    <section id="pole" ref={ref} className="pole-scene relative h-[260vh]">
+      <div className="pole-stage sticky top-0">
+        <div className="pole-copy">
+          <p className="pole-eyebrow">Mendota, California · 1925–1977</p>
+          <h2>The land moved.<br /><span>The marks stayed.</span></h2>
+          <p className="pole-description">Groundwater pumping lowered the land near Mendota by about nine metres between 1925 and 1977. Marks on a utility pole reveal where the surface used to be.</p>
+          <div className="pole-reading"><span className="pole-value">−{metres}</span><span className="pole-unit">m<span>surface change</span></span></div>
+          <p className="pole-source">Source: USGS. Animation illustrates the change between historical endpoints.</p>
         </div>
-        <div className="relative h-[540px] max-md:h-[420px]">
-          <svg viewBox={`0 0 420 ${H}`} className="h-full w-auto mx-auto" role="img" aria-label={`Pole with signs for 1925, 1955 and 1977; the ground has dropped ${metres} metres`}>
+        <div className="pole-visual">
+          <svg viewBox="0 0 640 580" role="img" aria-label={`Illustration of land subsidence near Mendota: ${metres} metres below the 1925 reference, ending at approximately 9 metres in 1977.`}>
             <defs>
-              <linearGradient id="earth" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#5a3b24" /><stop offset="1" stopColor="#1a120c" /></linearGradient>
-              <linearGradient id="poleg" x1="0" x2="1"><stop offset="0" stopColor="#3b2e22" /><stop offset="0.5" stopColor="#6b5640" /><stop offset="1" stopColor="#2d241b" /></linearGradient>
+              <linearGradient id="pole-metal"><stop stopColor="#56584e"/><stop offset=".45" stopColor="#b4b4a4"/><stop offset=".6" stopColor="#858678"/><stop offset="1" stopColor="#46483f"/></linearGradient>
+              <linearGradient id="pole-surface" x2="1" y2="1"><stop stopColor="#69765b"/><stop offset="1" stopColor="#424d39"/></linearGradient>
+              <linearGradient id="pole-side" x2="0" y2="1"><stop stopColor="#3c4135"/><stop offset="1" stopColor="#252820"/></linearGradient>
             </defs>
-            <rect x="196" y="20" width="22" height={H} fill="url(#poleg)" />
-            <rect x="150" y="34" width="114" height="8" fill="#3b2e22" />
-            {signs.map(([yr, f]) => {
-              const sy = top + f * drop - 30;
-              const lit = t >= f - 0.001;
-              return (
-                <g key={yr} style={{ opacity: lit ? 1 : 0.25, transition: "opacity .5s" }}>
-                  <rect x="222" y={sy} width="84" height="30" rx="2" fill={lit ? "#6FA8FF" : "#2A3346"} />
-                  <text x="264" y={sy + 21} textAnchor="middle" fontFamily="Saira Semi Condensed" fontWeight="700" fontSize="19" fill="#161514">{yr}</text>
-                </g>
-              );
-            })}
-            <rect x="0" y={ground} width="420" height={H - ground} fill="url(#earth)" />
-            <line x1="0" x2="420" y1={ground} y2={ground} stroke="#D08B5B" strokeWidth="2.5" />
-            <line x1="40" x2="40" y1={top} y2={ground} stroke="#C3D0B3" strokeDasharray="4 4" />
-            <text x="48" y={(top + ground) / 2} fontFamily="Saira Semi Condensed" fontWeight="600" fontSize="22" fill="#C3D0B3">{metres} m</text>
-          <text x={412} y={H - 6} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
+            <polygon points={plane(120)} fill="#c3d0b3" fillOpacity=".025" stroke="#aaa99b" strokeOpacity=".55" strokeDasharray="4 6"/>
+            <text x="75" y="76" fill="#bdbbb1" fontSize="13">1925 · original surface</text>
+            <rect x="298" y="58" width="12" height="440" rx="3" fill="url(#pole-metal)"/>
+            <line x1="277" x2="337" y1="84" y2="84" stroke="#c3c2b3" strokeWidth="4"/>
+            <polygon points={`70,${ground} 260,${ground+80} 260,${ground+135} 70,${ground+55}`} fill="url(#pole-side)" stroke="#606550"/>
+            <polygon points={`260,${ground+80} 540,${ground+15} 540,${ground+70} 260,${ground+135}`} fill="#30362b" stroke="#606550"/>
+            <polygon points={plane(ground)} fill="url(#pole-surface)" stroke="#a9b996" strokeWidth="1.5"/>
+            <path d={`M70 ${ground}L260 ${ground+80} 540 ${ground+15}`} fill="none" stroke="#b9c9a5" strokeWidth="1.5"/>
+            <line x1="44" x2="44" y1="120" y2={ground} stroke="#a9b996"/>
+            <path d={`M37 120h14M37 ${ground}h14`} stroke="#a9b996"/>
+            <text x="280" y={ground+112} fill="#d3d8c8" fontSize="13">{t > .99 ? "1977 · lowered surface" : "Land surface"}</text>
           </svg>
         </div>
       </div>
@@ -196,23 +181,18 @@ function PoleScene() {
   );
 }
 
-/* ------------------------------------------------------------------ */
-/* ------------------------------------------------------------------ */
 function AquiferScene() {
-  const [ref, seen] = useInView(0.2);
+  const [ref, progress] = useProgress();
   return (
-    <section ref={ref} className="relative py-[14vh] px-6 md:px-14 max-w-[1400px] mx-auto">
-      <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
-        <div>
+    <section ref={ref} className="aquifer-scene">
+      <div className="aquifer-stage">
+        <div className="aquifer-copy">
           <Chapter n={2} title="The aquifer" />
-          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">How pumping lowers the ground</h2>
-          <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
-            Beneath the farms is an <Term t="aquifer" />: sand and gravel full of water, interleaved with clay. Water pressure helps hold up
-            the ground above. Pump in summer and the pressure drops. Recharge in winter and it comes back.
-          </p>
-          <p className="text-[18px] leading-relaxed text-ink/80 mt-4">Try it. Then keep scrolling to see what the radar actually measured.</p>
+          <h2>Water falls.<br /><span>The ground follows.</span></h2>
+          <p>Pumping lowers the groundwater level and water pressure. The sand and clay above carry more weight and compress, so the land settles.</p>
+          <p>Watch the water move down first. The land moves less. When water returns, only part of that sinking reverses.</p>
         </div>
-        <AquiferExplainer />
+        <AquiferExplainer progress={progress} />
       </div>
     </section>
   );

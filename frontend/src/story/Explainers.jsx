@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Pause, Play, RotateCcw } from "lucide-react";
 import { fringe, rgb, FRINGE_M } from "../lib/colors.js";
-import { reduceMotion } from "./hooks.js";
+import { reduceMotion, useSmooth, seg } from "./hooks.js";
 
 /* ---------------- glossary ---------------- */
 export const GLOSSARY = {
@@ -95,73 +95,126 @@ export function InsarExplainer() {
 /* ---------------- the aquifer breathes ---------------- */
 // Concept diagram, not our data. Pumping lowers water pressure; the clay squeezes and the
 // surface drops. Recharge lets part of it spring back; part stays down.
-export function AquiferExplainer() {
-  const [pressure, setPressure] = useState(0.8); // 0 = drawn down, 1 = full
-  const [lost, setLost] = useState(0); // accumulated non-recovering compaction (concept)
-  const [playing, setPlaying] = useState(false);
-  const tRef = useRef(0);
+// A small damped response to level changes; it sleeps once the water settles.
+function useWaterRipple(level) {
+  const motion = useRef({ previous: level, amplitude: 0, velocity: 0, phase: 0 });
+  const [ripple, setRipple] = useState({ amplitude: 0, phase: 0 });
   useEffect(() => {
-    if (!playing) return; // the reader pressed Play, so it runs even with reduced motion
+    const m = motion.current;
+    const delta = level - m.previous;
+    m.previous = level;
+    if (reduceMotion) return;
+    m.velocity = Math.max(-16, Math.min(16, m.velocity + delta * 0.7));
     let raf, last = performance.now();
-    const step = (now) => {
-      const dt = (now - last) / 1000; last = now;
-      tRef.current += dt;
-      const p = 0.5 + 0.45 * Math.sin(tRef.current * 1.6);
-      setPressure(p);
-      setLost((l) => Math.min(1, l + dt * 0.03 * (p < 0.4 ? 2 : 1)));
-      raf = requestAnimationFrame(step);
+    const frame = (now) => {
+      const dt = Math.min((now - last) / 1000, 0.035); last = now;
+      m.velocity += (-65 * m.amplitude - 7 * m.velocity) * dt;
+      m.amplitude = Math.max(-2, Math.min(2, m.amplitude + m.velocity * dt));
+      m.phase += dt * 3;
+      if (Math.abs(m.amplitude) < .005 && Math.abs(m.velocity) < .02) {
+        m.amplitude = 0; m.velocity = 0;
+        setRipple({ amplitude: 0, phase: m.phase });
+        return;
+      }
+      setRipple({ amplitude: m.amplitude, phase: m.phase });
+      raf = requestAnimationFrame(frame);
     };
-    raf = requestAnimationFrame(step);
+    raf = requestAnimationFrame(frame);
     return () => cancelAnimationFrame(raf);
-  }, [playing]);
-  const squeeze = (1 - pressure) * 16 + lost * 26; // px of clay compaction
-  const W = 640, H = 330, surf = 70 + squeeze;
-  const clays = [[150, 26], [215, 22], [272, 18]];
-  let shift = 0;
+  }, [level]);
+  return ripple;
+}
+
+export function AquiferExplainer({ progress = 0 }) {
+  const [manual, setManual] = useState(null);
+  // A slider adjustment stays put until the visitor resumes scrolling the scene.
+  const scrubbing = manual !== null && Math.abs(progress - manual.at) < 0.015;
+  const pumping = seg(progress, 0.08, 0.65);
+  const recharge = seg(progress, 0.73, 0.97);
+  const level = scrubbing ? manual.level : 1 - pumping + recharge * 0.8;
+  const drawdown = useSmooth(1 - level, reduceMotion ? 1000 : 12);
+  const residual = scrubbing ? 0 : recharge * 9;
+  const surface = 112 + Math.pow(drawdown, 1.5) * 34 + residual;
+  const water = 186 + drawdown * 158;
+  const ripple = useWaterRipple(water);
+  const waterEdge = Array.from({ length: 41 }, (_, i) => {
+    const u = i / 40;
+    const y = water + ripple.amplitude * Math.sin(u * Math.PI) * Math.sin(u * Math.PI * 5 + ripple.phase);
+    return `${i ? "L" : "M"}${36 + u * 518} ${y}`;
+  }).join(" ");
+  // The broad cutaway stays readable; a left face and shallow top supply depth.
+  const project = (x, y) => [105 + .82 * x, y - 15 + .12 * x];
+  const surfaceAnchor = project(554, surface);
+  const waterAnchor = project(554, water);
+  const recovery = !scrubbing && progress > 0.73;
+  const phase = scrubbing ? "Explore groundwater level" : recovery ? "Recharge · partial recovery" : progress < 0.08 ? "Scroll to see what pumping changes" : "Pumping · groundwater falls";
   return (
-    <div className="rounded-2xl border border-hair-2 bg-deck/70 p-6">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label="Concept diagram: an aquifer with clay layers that squeeze as water pressure falls">
+    <div className="aquifer-model">
+      <div className="aquifer-state"><span>Below the surface</span><span>{phase}</span></div>
+      <svg viewBox="0 0 720 490" role="img" aria-label={`Conceptual aquifer: ${drawdown > .5 ? "groundwater is low and the land has settled by a smaller amount" : "groundwater is high and the land is near its original level"}. Scroll or use the groundwater slider to compare.`}>
         <defs>
-          <pattern id="sand" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#3b3226" /><circle cx="2" cy="2" r="1" fill="#5a4c38" /><circle cx="6" cy="6" r="1" fill="#5a4c38" /></pattern>
-          <linearGradient id="water" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#5FC9E0" stopOpacity="0.45" /><stop offset="1" stopColor="#2E8BA8" stopOpacity="0.2" /></linearGradient>
+          <linearGradient id="aq-soil" x2="0" y2="1"><stop stopColor="#44483c"/><stop offset="1" stopColor="#292d26"/></linearGradient>
+          <linearGradient id="aq-top" x2="1" y2="1"><stop stopColor="#69765b"/><stop offset="1" stopColor="#424d39"/></linearGradient>
+          <linearGradient id="aq-water" x2="0" y2="1"><stop stopColor="#557f80" stopOpacity=".85"/><stop offset="1" stopColor="#345859" stopOpacity=".65"/></linearGradient>
+          <pattern id="aq-grains" width="23" height="19" patternUnits="userSpaceOnUse"><circle cx="4" cy="5" r=".8" fill="#ddd9c5" opacity=".14"/><circle cx="17" cy="14" r="1.2" fill="#ddd9c5" opacity=".09"/></pattern>
+          <clipPath id="aq-section"><path d={`M36 ${surface}H554V422H36Z`}/></clipPath>
         </defs>
-        <line x1="0" x2={W} y1="70" y2="70" stroke="rgba(230,234,242,.35)" strokeDasharray="5 5" />
-        <text x="8" y="62" fontSize="12.5" fill="#8D97AB">original surface</text>
-        <rect x="0" y={surf} width={W} height={H - surf} fill="url(#sand)" />
-        <rect x="0" y={surf + 30 + (1 - pressure) * 50} width={W} height={H} fill="url(#water)" />
-        {clays.map(([y, h], k) => {
-          const hh = h * (1 - (1 - pressure) * 0.35 - lost * 0.45 * (k + 1) / 2);
-          const yy = y + squeeze - shift;
-          shift += h - hh;
-          return <rect key={k} x="0" y={yy} width={W} height={hh} fill="#6b5a7a" opacity="0.9" />;
+        <g transform="matrix(.82 .12 0 1 105 -15)">
+        <path d={`M36 ${surface}l-90 -40V382l90 40Z`} fill="#33382d" stroke="#656c56" strokeWidth=".8"/>
+        <path d={`M36 ${water}l-90 -40V382l90 40Z`} fill="#456767" opacity=".7"/>
+        {[0,1,2].map(i => {
+          const y = 231 + i*67 + (surface-112)*(3-i)/4;
+          const h = 17 - drawdown*7 - residual*.2;
+          return <path key={i} d={`M36 ${y}l-90 -40v${h}l90 40Z`} fill="#938c77" opacity=".45"/>;
         })}
-        <rect x="0" y={surf - 6} width={W} height="6" fill="#4b6b3a" />
-        {[120, 300, 480].map((cx) => <g key={cx}><rect x={cx} y={surf - 26} width="3" height="20" fill="#5a7a46" /><circle cx={cx + 1.5} cy={surf - 30} r="8" fill="#5a7a46" /></g>)}
-        <g transform="translate(560 0)">
-          <rect x="0" y={surf - 40} width="14" height="40" fill="#8D97AB" />
-          <line x1="7" x2="7" y1={surf} y2={H - 10} stroke="#8D97AB" strokeWidth="3" />
-          <text x="7" y={surf - 48} textAnchor="middle" fontSize="12" fill="#8D97AB">well</text>
+        <path d={`M36 ${water}l-90 -40`} stroke="#86aaa5" strokeWidth="1.4"/>
+        <g clipPath="url(#aq-section)">
+          <rect x="36" y={surface} width="518" height={422-surface} fill="url(#aq-soil)"/>
+          <path d={`${waterEdge}L554 422H36Z`} fill="url(#aq-water)"/>
+          <rect x="36" y={surface} width="518" height={422-surface} fill="url(#aq-grains)"/>
+          {[0,1,2].map(i => {
+            const y = 231 + i*67 + (surface-112)*(3-i)/4;
+            const thickness = 17 - drawdown*7 - residual*.2;
+            return <path key={i} d={`M36 ${y}C180 ${y-7} 365 ${y+8} 554 ${y-2}v${thickness}C365 ${y+8+thickness} 180 ${y-7+thickness} 36 ${y+thickness}Z`} fill="#aaa18b" opacity=".5"/>;
+          })}
+          <path d={waterEdge} fill="none" stroke="#9dc9c6" strokeWidth="1.8"/>
         </g>
-        <line x1="40" x2="40" y1="70" y2={surf} stroke="#F0705A" strokeWidth="2" />
-        <text x="48" y={(70 + surf) / 2 + 5} fontSize="13" fill="#F0705A">{squeeze > 1 ? "surface dropped" : ""}</text>
-        <text x={W - 10} y="24" textAnchor="end" fontSize="14" fill="#E6EAF2">{pressure > 0.6 ? "Wet season: water recharged" : pressure < 0.4 ? "Dry season: pumping" : ""}</text>
-        <text x={W - 10} y={H - 10} textAnchor="end" fontSize="12" fill="#8D97AB">Concept diagram, not measured data. Purple: clay layers.</text>
-        <text x={W - 8} y={14} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
+        <path d={`M36 ${surface}l-90 -40H464l90 40Z`} fill="url(#aq-top)" stroke="#9eaf87" strokeWidth="1"/>
+        <path d="M36 112l-90 -40H464l90 40H36" stroke="#a9a69a" strokeDasharray="4 6" opacity=".55" fill="none"/>
+        <path d={`M36 ${surface}H554`} stroke="#afbd9b" strokeWidth="2"/>
+        <g transform={`translate(150 ${surface-10})`}>
+          <path d="M-10 2l-50 -23h66l50 23Z" fill="#161a13" opacity=".2"/>
+          <path d="M0 0l-38 -17v-28l38 17Z" fill="#8c8c7b"/>
+          <path d="M0 0v-28l27 -21 27 21V0Z" fill="#c3bdab"/>
+          <path d="M-5 -27l-38 -17 32 -24 38 19Z" fill="#777c68" stroke="#afb49b" strokeWidth="1"/>
+          <path d="M27 -49l-38 -19 32 24 38 17Z" fill="#9aa18a"/>
+          <path d="M-5 -27l32 -22 32 22" fill="none" stroke="#e0dac8" strokeWidth="2"/>
+          <rect x="22" y="-21" width="11" height="21" fill="#5c6051"/>
+          <path d="M-28 -31l10 4v10l-10 -4Z" fill="#b0b7a7"/>
+          <rect x="38" y="-19" width="9" height="9" fill="#8f9a87"/>
+        </g>
+        <g transform={`translate(463 ${surface})`}>
+          <path d="M0 0v-35h22v-12" stroke="#c3bfad" strokeWidth="5" fill="none" strokeLinejoin="round"/>
+
+        </g>
+        <path d={`M463 ${surface+4}V395`} stroke="#c3bfad" strokeWidth="4"/>
+        <path d={`M463 ${water+4}V395`} stroke="#8cb4b1" strokeWidth="2"/>
+        </g>
+        <text x="63" y="49" fill="#aaa79b" fontSize="12">Original land level</text>
+        <text x={project(463,surface)[0]} y={project(463,surface)[1]-62} fill="#aaa79b" textAnchor="middle" fontSize="12">Pumping well</text>
+        <path d={`M${surfaceAnchor[0]} ${surfaceAnchor[1]}h20`} stroke="#b8c6a4"/>
+        <text x={surfaceAnchor[0]+30} y={surfaceAnchor[1]+5} fontSize="15" fill="#d3ddc2">Land surface</text>
+        <path d={`M${waterAnchor[0]} ${waterAnchor[1]}h20`} stroke="#9dc9c6"/>
+        <text x={waterAnchor[0]+30} y={waterAnchor[1]-4} fontSize="15" fill="#abd0cd">Groundwater</text>
+        <text x={waterAnchor[0]+30} y={waterAnchor[1]+15} fontSize="15" fill="#abd0cd">level</text>
+        {drawdown > .05 && <>
+          <path d={`M${surfaceAnchor[0]+10} ${project(554,112)[1]}V${surfaceAnchor[1]}m-4 -5l4 5 4 -5`} fill="none" stroke="#b8c6a4" strokeWidth="1.5"/>
+          <path d={`M${waterAnchor[0]+10} ${project(554,186)[1]}V${waterAnchor[1]}m-4 -5l4 5 4 -5`} fill="none" stroke="#9dc9c6" strokeWidth="1.5"/>
+        </>}
       </svg>
-      <div className="flex flex-wrap items-center gap-3 mt-4">
-        <button onClick={() => setPlaying(!playing)} className="inline-flex items-center gap-1.5 rounded-full bg-accent text-space font-semibold text-sm px-4 py-2 hover:bg-accent-2">
-          {playing ? <Pause size={15} /> : <Play size={15} />} {playing ? "Pause the seasons" : "Play the seasons"}
-        </button>
-        <button onClick={() => { setLost(0); setPressure(0.8); tRef.current = 0; }} className="inline-flex items-center gap-1.5 rounded-full border border-hair-2 text-sm px-4 py-2 hover:border-accent/60"><RotateCcw size={14} /> Reset</button>
-      </div>
-      <label className="block mt-4">
-        <span className="text-[14px] text-mute">Groundwater pressure: pumping (left) to recharged (right)</span>
-        <input type="range" min="0" max="1" step="0.01" value={pressure} onChange={(e) => { setPlaying(false); setPressure(+e.target.value); }} className="w-full mt-2 accent-[#9DB08A]" />
-      </label>
-      <p className="text-[14px] text-ink/80 mt-3 leading-relaxed">
-        When pumps lower the water pressure, the grains and clay carry more of the weight above them and squeeze together. Some of that springs
-        back when water returns. In the clay, some doesn't. Play the seasons to see the surface rise and fall while it slowly goes down.
-      </p>
+      <p className="aquifer-caption">{recovery ? "Water returns. The land rises a little, but some compaction remains." : "Groundwater drops farther. The land above settles by a smaller amount."}</p>
+      <label className="aquifer-pressure"><span>Try it yourself</span><input aria-label="Groundwater level" type="range" min="0" max="1" step="0.01" value={level} onChange={(e) => setManual({ level: +e.target.value, at: progress })}/><span className="aquifer-pressure-ends"><span>Lower groundwater</span><span>Higher groundwater</span></span></label>
+      <p className="aquifer-note">Concept illustration · AI-assisted · motion exaggerated, not to scale. {scrubbing ? "Keep scrolling to resume." : "Scroll to continue."}</p>
     </div>
   );
 }
