@@ -345,7 +345,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
               <button onClick={() => goStep(0)} title="Walkthrough (W)" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2">
                 <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">Walkthrough</span>
               </button>
-              <button onClick={openDance} title="The dance: every cell moving through the 26 passes" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2">
+              <button onClick={openDance} title="The dance: every cell moving through the 26 passes" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] font-semibold text-[#FF9A52] bg-[#FF8232]/12 hover:bg-[#FF8232]/22 hover:text-[#FFB27A] rounded-r-[inherit]">
                 <Sparkles size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">The dance</span>
               </button>
             </div>
