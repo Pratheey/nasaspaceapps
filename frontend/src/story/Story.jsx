@@ -182,17 +182,16 @@ function PoleScene() {
 }
 
 function AquiferScene() {
-  const [ref, progress] = useProgress();
   return (
-    <section ref={ref} className="aquifer-scene">
+    <section className="aquifer-scene">
       <div className="aquifer-stage">
         <div className="aquifer-copy">
           <Chapter n={2} title="The aquifer" />
           <h2>Water falls.<br /><span>The ground follows.</span></h2>
           <p>Pumping lowers the groundwater level and water pressure. The sand and clay above carry more weight and compress, so the land settles.</p>
-          <p>Watch the water move down first. The land moves less. When water returns, only part of that sinking reverses.</p>
+          <p>Drag the slider to lower the water. The land moves less. When water returns, only part of that sinking reverses.</p>
         </div>
-        <AquiferExplainer progress={progress} />
+        <AquiferExplainer />
       </div>
     </section>
   );
@@ -237,13 +236,13 @@ function MeasureScene() {
       <div className={`grid lg:grid-cols-[1fr_1.2fr] gap-14 items-center transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
         <div>
           <Chapter n={9} title="The physics" />
-          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">Physical principle</h2>
+          <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">A longer journey.
+            A shifted wave.</h2>
           <p className="text-[18px] leading-relaxed text-ink/80 mt-6">
-            When the ground sinks, the radar pulse has a little farther to travel, there and back, so the wave comes home slightly later in
-            its cycle. That shift in phase can be measured to a small fraction of a wavelength, which is how a 24 cm radar sees movements far smaller than its own wavelength.
-            Drag the slider.
+            NISAR compares radar echoes from repeated passes. If the ground moves away, the signal travels farther to reach it—and farther to return.
+            Drag the slider to see the added distance and how it shifts the returning wave. That shift is called phase.
           </p>
-          <p className="text-[15px] text-mute mt-5">Each full <Term t="fringe" /> of color is 11.9 cm of motion.</p>
+          <p className="text-[15px] text-mute mt-5">Each full <Term t="fringe" /> of color is about 11.9 cm of motion along the radar’s viewing direction.</p>
         </div>
         <InsarExplainer />
       </div>

@@ -24,7 +24,7 @@ const STEPS = [
   { date: "Jul 18, 2025", title: "Into the fairing", text: "Sealed inside the nose cone that protects it from pressure and heat on the way up.", img: MEDIA.fairing },
   { date: "Jul 30, 2025", title: "Launch", text: "A GSLV rocket lifts NISAR into a near-polar, sun-synchronous orbit.", video: MEDIA.heroVideo },
   { date: "Aug 15, 2025", title: "Reflector deployed", text: "A 12-metre gold mesh antenna unfurls, the largest NASA has ever deployed in space.", img: MEDIA.reflector },
-  { date: "Aug 21–23, 2025", title: "First light", text: "First radar images: Maine's coast and North Dakota farmland.", video: MEDIA.forestRiverVideo },
+  { date: "Aug 21–23, 2025", title: "First light", text: "First radar images: Maine's coast and North Dakota farmland. Shown here: Forest River, North Dakota.", img: MEDIA.northDakota },
   { date: "Nov 2025", title: "Science begins", text: "NISAR enters its science phase, imaging nearly all land and ice every 12 days.", video: MEDIA.fleetVideo },
   { date: "Nov 2025 – Oct 2026", title: "Our valley", text: "The passes we used: eleven months over Corcoran and Mendota.", ours: true },
 ];
@@ -46,9 +46,7 @@ export function MissionTimeline() {
             <article key={s.title} className={`shrink-0 w-[min(78vw,460px)] rounded-2xl overflow-hidden border transition-colors duration-500 ${k === active ? "border-accent/70 bg-deck" : "border-hair bg-deck/50"}`}>
               <div className="relative aspect-[16/10] bg-space overflow-hidden">
                 {s.ours ? (
-                  <div className="absolute inset-0 grid place-items-center bg-[radial-gradient(ellipse_at_50%_120%,rgba(208,139,91,.35),#161514_70%)]">
-                    <span className="font-display font-bold text-[15px] text-sink">SAN JOAQUIN VALLEY</span>
-                  </div>
+                  <img src="./media/san-joaquin-valley.svg" alt="Map of California’s San Joaquin Valley with Mendota and Corcoran marked" className="absolute inset-0 w-full h-full object-contain" />
                 ) : s.video ? (
                   <NasaVideo srcs={s.video} className="absolute inset-0 w-full h-full object-cover" fallback={<SatelliteArt className="absolute inset-0 m-auto w-[70%] h-full" />} />
                 ) : (
@@ -69,7 +67,7 @@ export function MissionTimeline() {
         <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-8 flex items-center gap-3">
           {STEPS.map((s, k) => <span key={k} className={`h-[3px] flex-1 rounded-full transition-colors ${k <= active ? "bg-accent shadow-[0_0_8px_#9DB08A]" : "bg-hair-2"}`} />)}
         </div>
-        <p className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-3 text-[11.5px] text-mute">Photos and animations: NASA/JPL-Caltech, NASA Scientific Visualization Studio.</p>
+        <p className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-3 text-[11.5px] text-mute">Photos and animations: NASA/JPL-Caltech, NASA Scientific Visualization Studio. Valley map: © OpenStreetMap contributors.</p>
       </div>
     </section>
   );
@@ -127,32 +125,34 @@ export function WatchNasa() {
 /* ---------------- "what NISAR has seen" ---------------- */
 export function SeenWall() {
   const [ref, seen] = useInView(0.15);
-  const [gone, setGone] = useState({});
   const tiles = [
-    { id: "fr", v: MEDIA.forestRiverVideo, t: "North Dakota, first light", s: "Aug 23, 2025: farmland and wetlands along the Forest River.", cls: "md:col-span-2 md:row-span-2" },
-    { id: "me", v: MEDIA.maineVideo, t: "Mount Desert Island, Maine", s: "Aug 21, 2025: forest in green, built-up ground in magenta." },
-    { id: "fleet", v: MEDIA.fleetVideo, t: "NISAR among NASA's fleet", s: "Its orbit and radar swath in orange, other Earth satellites in cyan." },
-    { id: "amazon", i: MEDIA.amazonFlood, t: "Flooded forest, Peru", s: "Airborne L-band radar from 2013: the kind of image NISAR makes of wetlands." },
-    { id: "ant", i: MEDIA.antarctica, t: "Over Antarctica", s: "Artist's concept. NISAR also tracks ice sheets and glaciers." },
-    { id: "india", i: MEDIA.india, t: "Over northeastern India", s: "Artist's concept of NISAR's orbit." },
-  ].filter((x) => !gone[x.id]);
+    { id: "fr", image: MEDIA.northDakota, title: "Forest River, North Dakota", date: "23 August 2025", description: "Fields, forests and wetlands reveal different radar responses. Circular plots mark center-pivot irrigation.", alt: "NISAR radar image of farmland along the Forest River, with annotated wetlands, crop fields and circular irrigation plots.", source: "https://svs.gsfc.nasa.gov/31360/" },
+    { id: "me", image: MEDIA.mountDesert, title: "Mount Desert Island, Maine", date: "21 August 2025", description: "Green highlights forest. Magenta marks hard surfaces such as buildings and bare ground, including Bar Harbor.", alt: "NISAR radar image of Mount Desert Island and Bar Harbor, showing green forests, magenta built-up areas and dark waterways.", source: "https://www.jpl.nasa.gov/images/pia26616-nasa-isro-radar-satellite-captures-first-image-of-mount-desert-island/" },
+    { id: "fleet", image: MEDIA.fleetStill, title: "NISAR among NASA’s fleet", date: "Orbit visualization", description: "A view of NISAR’s path around Earth and the strip of ground scanned by its radar.", alt: "NASA visualization of NISAR’s orbit and radar coverage around Earth.", source: "https://svs.gsfc.nasa.gov/5615/", credit: "NASA Scientific Visualization Studio" },
+    { id: "ant", image: MEDIA.antarctica, title: "Over Antarctica", date: "Artist’s concept", description: "NISAR above the Antarctic ice sheet. The mission observes changes in glaciers and ice sheets as well as land.", alt: "Artist’s concept of the NISAR satellite above Antarctica, with its large radar reflector deployed.", source: "https://photojournal.jpl.nasa.gov/catalog/PIA26493" },
+    { id: "india", image: MEDIA.india, title: "Over northeastern India", date: "Artist’s concept", description: "The joint NASA–ISRO satellite above northeastern India, showing its radar reflector and solar panels.", alt: "Artist’s concept of NISAR in orbit over northeastern India.", source: "https://photojournal.jpl.nasa.gov/catalog/PIA26496" },
+  ];
   return (
     <section ref={ref} className="relative py-[12vh] px-6 md:px-14 max-w-[1400px] mx-auto">
       <Chapter n={8} title="First light" />
       <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">First NISAR images</h2>
-      <div className={`grid md:grid-cols-4 auto-rows-[230px] gap-4 mt-10 transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
-        {tiles.map((x) => (
-          <figure key={x.id} className={`group relative overflow-hidden rounded-2xl border border-hair-2 bg-deck ${x.cls || ""}`}>
-            {x.v
-              ? <NasaVideo srcs={x.v} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.05] transition-transform duration-[1600ms]" fallback={<SatelliteArt className="absolute inset-0 m-auto w-[70%] h-full opacity-60" />} />
-              : <MaybeImage srcs={x.i} alt={x.t} onFail={() => setGone((g) => ({ ...g, [x.id]: true }))} className="absolute inset-0 w-full h-full object-cover group-hover:scale-[1.06] transition-transform duration-[1600ms]" />}
-            <div className="absolute inset-0 bg-gradient-to-t from-space/95 via-space/10 to-transparent" />
-            <figcaption className="absolute inset-x-0 bottom-0 p-4">
-              <p className="font-display text-[18px] font-semibold">{x.t}</p>
-              <p className="text-[13px] text-ink/70 mt-0.5 max-h-0 group-hover:max-h-20 overflow-hidden transition-all duration-500">{x.s}</p>
+      <p className="text-mute text-[15px] mt-4 max-w-[680px]">Radar views of Earth’s surface. These colors describe land cover and radar response, not ground motion.</p>
+      <div className={`grid md:grid-cols-2 gap-6 mt-10 transition-all duration-1000 ${seen ? "opacity-100" : "opacity-0 translate-y-8"}`}>
+        {tiles.map((tile) => (
+          <div key={tile.id} className="contents">
+          {tile.id === "fleet" && <div className="md:col-span-2 mt-6"><h3 className="font-display text-[28px] font-semibold">The mission in context</h3><p className="text-mute text-[14px] mt-2">Orbit visualizations and artist’s concepts of the satellite.</p></div>}
+          <figure className="overflow-hidden rounded-2xl border border-hair-2 bg-deck">
+            <a href={tile.image[0]} target="_blank" rel="noreferrer" aria-label={`View full image: ${tile.title}`} className="block bg-black focus-visible:outline-2 focus-visible:outline-accent focus-visible:outline-offset-[-2px]">
+              <MaybeImage srcs={tile.image} alt={tile.alt} className="w-full aspect-[1.85] object-contain" />
+            </a>
+            <figcaption className="p-5">
+              <p className="text-[12px] text-mute">{tile.date}</p>
+              <h3 className="font-display text-[23px] font-semibold mt-1">{tile.title}</h3>
+              <p className="text-[14px] leading-relaxed text-ink/75 mt-2">{tile.description}</p>
+              <a href={tile.source} target="_blank" rel="noreferrer" className="inline-block text-[12px] text-accent-2 underline underline-offset-4 mt-4">{tile.credit || "NASA/JPL-Caltech"} · Image source ↗</a>
             </figcaption>
-            <span className="absolute top-3 right-3 font-mono text-[10.5px] text-ink/55">{x.v ? "NASA SVS" : "NASA/JPL-Caltech"}</span>
           </figure>
+          </div>
         ))}
       </div>
     </section>

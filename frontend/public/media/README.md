@@ -14,3 +14,5 @@ All are NASA public domain; credits are shown on the page. Keep files over 5 MB 
 | nisar-mountdesert.mp4 | svs.gsfc.nasa.gov/31360 (nisar-mountdesert-1080p.mp4) |
 | nisar-explainer.mp4 | svs.gsfc.nasa.gov/14377 (NISAR_EIC_16x9_FINAL.mp4) |
 | PIA26615, PIA26112, PIA26493, PIA26496, PIA26611, PIA26500, PIA25568, PIA26613, PIA26285 (.jpg) | photojournal.jpl.nasa.gov/catalog/<ID> (Full-Res JPEG) |
+
+`san-joaquin-valley.svg`: OpenStreetMap map tiles (tile.openstreetmap.org), zoom 7, with Mendota and Corcoran location markers. © OpenStreetMap contributors, https://www.openstreetmap.org/copyright.
