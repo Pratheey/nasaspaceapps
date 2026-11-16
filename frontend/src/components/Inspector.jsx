@@ -6,6 +6,8 @@ import PairMatrix from "./PairMatrix.jsx";
 import { cellBounds, fitAt, pairDiff, mostMisleadingPair } from "../lib/data.js";
 import { cm, mm, pm, fmtShort, MONTH_NAMES } from "../lib/fmt.js";
 import { LABEL_COLORS, rgb } from "../lib/colors.js";
+import { stationComparison } from "../lib/gps.js";
+import { linePath } from "../lib/chart.js";
 
 const LABEL_TEXT = { 0: "text-mute", 1: "text-sink", 2: "text-rise", 3: "text-violet" };
 
@@ -63,7 +65,8 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
   const st = stationAt(i);
   const sig = G.seasonal_significant[i] === true;
   const v = D.values[i] || [];
-  const gps = S.gps && st?.gps ? { dates: st.gps.dates.map((s) => new Date(s + "T00:00:00Z")), los: st.gps.los_m } : null;
+  const comparison = stationComparison(D, st);
+  const gps = S.gps ? comparison?.gps : null;
   const compare = S.pin >= 0 && S.pin !== i ? { values: D.values[S.pin] || [], label: placeName(S.pin) } : null;
   const d12 = pairDiff(D, i, S.k1, S.k2);
   const days = Math.round((D.dates[S.k2] - D.dates[S.k1]) / 864e5);
@@ -150,6 +153,7 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           pair={S.mode === "pair" ? [S.k1, S.k2] : null} cursor={cursor} seasonalSig={sig}
           onPickDate={(k) => actions.scrubTo(k)} />
         <ChartKey split={S.split} gps={gps} seasonalSig={sig} compare={compare} />
+        {gps && comparison.start && <p className="text-[13px] text-mute mt-2">GPS is aligned to the radar on {fmtShort(comparison.start)}, their first shared date. Only changes after that date can be compared.</p>}
         <div className="flex flex-wrap gap-1 mt-2 -ml-2">
           {v.some((value) => value != null) && <Tool icon={S.listenK != null ? VolumeX : Volume2} onClick={actions.toggleListen}>{S.listenK != null ? "Stop" : "Listen to this spot"}</Tool>}
           {compare
@@ -191,16 +195,16 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
           {!S.gps && <button onClick={() => set({ gps: true })} className="text-[13.5px] text-accent-2 hover:underline mb-2">Show GPS on the chart</button>}
           {st.role === "reference"
             ? <p className="text-[14.5px]">{st.station} is the reference station. All radar values are tied to it, so it can't check itself.</p>
-            : st.residuals && (
+            : comparison && (
               <>
                 <table className="w-full text-[14px]">
                   <tbody className="divide-y divide-hair">
-                    <tr><th scope="row" className="text-left font-normal text-mute py-1.5">Radar minus GPS, first to last date</th><td className="text-right font-semibold">{cm(st.residuals.net_m)}</td></tr>
-                    <tr><th scope="row" className="text-left font-normal text-mute py-1.5">Typical disagreement per pair</th><td className="text-right font-semibold">{cm(st.residuals.pairs_rms_m).replace(/^[+−]/, "")}</td></tr>
-                    <tr><th scope="row" className="text-left font-normal text-mute py-1.5">Pairs compared</th><td className="text-right font-semibold">{st.residuals.n_pairs}</td></tr>
+                    <tr><th scope="row" className="text-left font-normal text-mute py-1.5">Radar minus GPS change, shared start to final pass</th><td className="text-right font-semibold whitespace-nowrap">{cm(comparison.net_m)}</td></tr>
+                    <tr><th scope="row" className="text-left font-normal text-mute py-1.5">Typical disagreement per pair</th><td className="text-right font-semibold whitespace-nowrap">{cm(comparison.pairs_rms_m).replace(/^[+−]/, "")}</td></tr>
+                    <tr><th scope="row" className="text-left font-normal text-mute py-1.5">Pairs compared</th><td className="text-right font-semibold">{comparison.n_pairs}</td></tr>
                   </tbody>
                 </table>
-                <p className="text-[13px] text-mute mt-2">{st.station} was never used to calibrate the radar.{st.residuals.unwrap_flagged_pairs?.length ? ` ${st.residuals.unwrap_flagged_pairs.length} pair(s) flagged for unwrapping errors.` : ""}</p>
+                <p className="text-[13px] text-mute mt-2">This 1 km cell and the GPS samples shown on the chart{comparison.start ? `, ${fmtShort(comparison.start)} to ${fmtShort(comparison.end)}` : ""}. Missing endpoints give no net comparison. {st.station} was never used to calibrate the radar.{st.residuals?.unwrap_flagged_pairs?.length ? ` ${st.residuals.unwrap_flagged_pairs.length} flagged pair(s) excluded from the pair RMS.` : ""} The map's overall uncertainty comes from a separate native-pixel check using seven-day GPS medians.</p>
               </>
             )}
         </Section>
@@ -367,7 +371,8 @@ function HistoryCard({ station }) {
   const h = H?.stations?.[station];
   if (!h) return null;
   const W = 380, Ht = 120, t = h.dates.map((d) => new Date(d + "T00:00:00Z").getTime());
-  const v = h.los_m.map((x) => x * 100), lo = Math.min(...v, 0), hi = Math.max(...v, 0);
+  const v = h.los_m.map((x) => x == null ? null : x * 100), valid = v.filter(Number.isFinite);
+  const lo = Math.min(...valid, 0), hi = Math.max(...valid, 0);
   const X = (k) => 34 + ((t[k] - t[0]) / (t[t.length - 1] - t[0])) * (W - 44), Y = (y) => 10 + ((hi - y) / (hi - lo || 1)) * (Ht - 30);
   const years = []; for (let y = new Date(t[0]).getUTCFullYear() + 1; y <= new Date(t[t.length - 1]).getUTCFullYear(); y += 2) years.push(y);
   const nisar0 = Date.UTC(2025, 10, 24);
@@ -376,13 +381,14 @@ function HistoryCard({ station }) {
       <svg viewBox={`0 0 ${W} ${Ht}`} className="w-full h-auto chart" role="img" aria-label={`Sentinel-1 history at ${station}, ${h.dates[0]} to ${h.dates[h.dates.length - 1]}`}>
         <line x1="34" x2={W - 10} y1={Y(0)} y2={Y(0)} className="grid" />
         {nisar0 < t[t.length - 1] && <rect x={X(0) + ((nisar0 - t[0]) / (t[t.length - 1] - t[0])) * (W - 44)} y="8" width={W - 10 - (X(0) + ((nisar0 - t[0]) / (t[t.length - 1] - t[0])) * (W - 44))} height={Ht - 26} fill="rgba(157,176,138,.12)" />}
-        <polyline points={v.map((y, k) => `${X(k)},${Y(y)}`).join(" ")} fill="none" stroke="#9E9A92" strokeWidth="1.4" />
+        <path d={linePath(v.map((y, k) => y == null ? null : [X(k), Y(y)]))} fill="none" stroke="#9E9A92" strokeWidth="1.4" />
         <text x="30" y={Y(hi) + 4} textAnchor="end">{hi.toFixed(0)}</text><text x="30" y={Y(lo) + 4} textAnchor="end">{lo.toFixed(0)}</text>
         {years.map((y) => { const x = 34 + ((Date.UTC(y, 0, 1) - t[0]) / (t[t.length - 1] - t[0])) * (W - 44); return <text key={y} x={x} y={Ht - 6} textAnchor="middle">{y}</text>; })}
       </svg>
       <p className="text-[12.5px] text-mute leading-snug mt-1">
         cm, Sentinel-1 (C-band, OPERA DISP-S1) line of sight relative to {H.reference_station}, which moves too. Shaded: the NISAR window.
         Context only: a different satellite and viewing angle, so it is never compared value for value with NISAR.
+        Quality-rejected or unconnected observations remain gaps.
       </p>
     </Section>
   );

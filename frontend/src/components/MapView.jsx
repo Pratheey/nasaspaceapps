@@ -4,7 +4,7 @@ import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "re
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { cellAt, cellBounds } from "../lib/data.js";
-import { diverging, fringe, LABEL_COLORS, rgb } from "../lib/colors.js";
+import { diverging, fringe, LABEL_COLORS, rgb, FRINGE_M } from "../lib/colors.js";
 import { cellValue } from "../lib/view.js";
 
 maplibregl.setWorkerUrl(workerUrl);
@@ -131,7 +131,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     x.strokeStyle = "#C3D0B3"; x.lineWidth = 2; x.shadowColor = "#9DB08A"; x.shadowBlur = 18;
     x.beginPath(); x.arc(pt.x, pt.y, r, 0, 6.283); x.stroke(); x.shadowBlur = 0;
     x.font = "500 11px 'IBM Plex Mono', monospace"; x.fillStyle = "#C3D0B3"; x.textAlign = "center";
-    x.fillText("radar fringes, 11.9 cm per color cycle", pt.x, pt.y + r + 16);
+    x.fillText(`radar fringes, ${(FRINGE_M * 100).toFixed(1)} cm per color cycle`, pt.x, pt.y + r + 16);
   };
 
   useImperativeHandle(ref, () => ({
