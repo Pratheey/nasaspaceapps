@@ -8,6 +8,8 @@ from __future__ import annotations
 
 import datetime as dt
 import json
+import os
+import tempfile
 from pathlib import Path
 
 import numpy as np
@@ -96,23 +98,43 @@ def build_meta(*, is_synthetic, grid_meta, dates, pairs, sigma_net_m, sigma_sour
     return meta
 
 
-def write_json(path: Path, obj) -> int:
-    text = json.dumps(obj, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
-    path.write_text(text, encoding="utf-8")
+def _serialize(obj) -> str:
+    return json.dumps(obj, separators=(",", ":"), ensure_ascii=False, allow_nan=False)
+
+
+def _write_text(path: Path, text: str) -> int:
+    # A failed write must not truncate an existing scientific export.
+    temporary = None
+    try:
+        with tempfile.NamedTemporaryFile(mode="w", encoding="utf-8", dir=path.parent,
+                                         prefix=f".{path.name}.", suffix=".tmp", delete=False) as fh:
+            temporary = Path(fh.name)
+            fh.write(text)
+        temporary.chmod(path.stat().st_mode & 0o777 if path.exists() else 0o644)
+        os.replace(temporary, path)
+    finally:
+        if temporary is not None:
+            temporary.unlink(missing_ok=True)
     size = len(text.encode("utf-8"))
     if size > MAX_BYTES:
         print(f"WARNING: {path.name} is {size / 1e6:.1f} MB, over the 5 MB limit")
     return size
 
 
+def write_json(path: Path, obj) -> int:
+    return _write_text(Path(path), _serialize(obj))
+
+
 def write_all(out_dir, meta, grid, series, stations=None) -> dict:
+    # Validate every object before modifying any existing output. In particular, a
+    # NaN in a later file must not leave metadata from a different run on disk.
+    objects = {"meta.json": meta, "grid.json": grid, "series.json": series}
+    if stations is not None:
+        objects["stations.json"] = stations
+    texts = {name: _serialize(obj) for name, obj in objects.items()}
     out = Path(out_dir)
     out.mkdir(parents=True, exist_ok=True)
-    sizes = {"meta.json": write_json(out / "meta.json", meta),
-             "grid.json": write_json(out / "grid.json", grid),
-             "series.json": write_json(out / "series.json", series)}
-    if stations is not None:
-        sizes["stations.json"] = write_json(out / "stations.json", stations)
-    else:
+    sizes = {name: _write_text(out / name, text) for name, text in texts.items()}
+    if stations is None:
         (out / "stations.json").unlink(missing_ok=True)
     return sizes

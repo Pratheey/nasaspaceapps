@@ -179,7 +179,12 @@ The optional vertical and canal outputs follow v1.2 of `contracts/app_data.md`.
 date-by-date wobble at the reference P304 and a tilt of about 0.34 mm per km toward the east (2–3 cm across
 the map). Toward the east edge, sinking is understated, not overstated. Correcting it would use the
 held-out stations for calibration, so it stays as measured and the limits panel says so. No NISAR-only
-trend is quoted anywhere.
+trend is used as a headline; the explorer shows fitted trends with their uncertainty and short-record caveat.
 
 What each other lane needs to send is in `REQUESTS.md`. Numbers shown in the app: `NUMBERS.md`.
 Other lanes' numbers checked by this lane: `SECOND_CHECK.md`.
+
+## Local accuracy review
+
+See [ACCURACY_REVIEW.md](ACCURACY_REVIEW.md) for the unpublished 2026-11-15 bugfix audit,
+its source-data checks, and the exact limits of validation.
