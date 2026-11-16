@@ -23,7 +23,9 @@ export default function Story({ D, onExplore, onDance }) {
     let raf;
     const loop = (t) => { lenis.raf(t); raf = requestAnimationFrame(loop); };
     raf = requestAnimationFrame(loop);
-    return () => { cancelAnimationFrame(raf); lenis.destroy(); };
+    const syncLayout = (event) => { lenis.resize(); lenis.scrollTo(event.detail, { immediate: true, force: true }); };
+    window.addEventListener("story-layout-scroll", syncLayout);
+    return () => { window.removeEventListener("story-layout-scroll", syncLayout); cancelAnimationFrame(raf); lenis.destroy(); };
   }, []);
   const demo = useMemo(() => ({ ...demoStations(D), lie: lieStation(D) }), [D]);
 

@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useLayoutEffect, useRef, useState } from "react";
 import { Play, Pause, Volume2, VolumeX, Maximize2 } from "lucide-react";
 import { useProgress, useInView, reduceMotion } from "./hooks.js";
 import { MEDIA, NasaVideo, MaybeImage } from "./Space.jsx";
@@ -30,13 +30,87 @@ const STEPS = [
 ];
 
 export function MissionTimeline() {
-  const [ref, p] = useProgress();
+  const [ref, scrollProgress] = useProgress();
+  const [completed, setCompleted] = useState(false);
+  const [manualProgress, setManualProgress] = useState(1);
   const track = useRef(null);
-  const tw = track.current ? track.current.scrollWidth - window.innerWidth + 120 : 0;
+  const scrubMotion = useRef({ frame: 0, value: 1, drag: null });
+  const setScrubPosition = (value) => {
+    const bounded = Math.max(0, Math.min(1, value));
+    scrubMotion.current.value = bounded;
+    setManualProgress(bounded);
+  };
+  useLayoutEffect(() => () => cancelAnimationFrame(scrubMotion.current.frame), []);
+  const beginScrub = (event) => {
+    if (event.button !== 0) return;
+    event.preventDefault();
+    event.currentTarget.dataset.pointerFocus = "true";
+    event.currentTarget.focus({ preventScroll: true });
+    const motion = scrubMotion.current;
+    cancelAnimationFrame(motion.frame);
+    const rect = event.currentTarget.getBoundingClientRect();
+    const thumbWidth = Math.min(rect.width, Math.max(48, Math.min(160, window.innerWidth * .12)));
+    const travel = Math.max(1, rect.width - thumbWidth);
+    const localX = event.clientX - rect.left;
+    const thumbLeft = motion.value * travel;
+    if (localX >= thumbLeft && localX <= thumbLeft + thumbWidth) {
+      motion.drag = { pointerId: event.pointerId, startX: event.clientX, startValue: motion.value, travel };
+      event.currentTarget.setPointerCapture(event.pointerId);
+      return;
+    }
+    const target = Math.max(0, Math.min(1, (localX - thumbWidth / 2) / travel));
+    if (reduceMotion) { setScrubPosition(target); return; }
+    const from = motion.value;
+    let start;
+    const animate = (now) => {
+      start ??= now;
+      const t = Math.min(1, Math.max(0, (now - start) / 650));
+      // Smooth acceleration and deceleration, with no overshoot.
+      const eased = t * t * (3 - 2 * t);
+      setScrubPosition(from + (target - from) * eased);
+      if (t < 1) motion.frame = requestAnimationFrame(animate);
+    };
+    motion.frame = requestAnimationFrame(animate);
+  };
+  const dragScrub = (event) => {
+    const drag = scrubMotion.current.drag;
+    if (drag?.pointerId === event.pointerId) setScrubPosition(drag.startValue + (event.clientX - drag.startX) / drag.travel);
+  };
+  const endScrub = (event) => {
+    if (scrubMotion.current.drag?.pointerId !== event.pointerId) return;
+    scrubMotion.current.drag = null;
+    if (event.currentTarget.hasPointerCapture(event.pointerId)) event.currentTarget.releasePointerCapture(event.pointerId);
+  };
+  const previousBottom = useRef(null);
+  const [tw, setTw] = useState(0);
+  const p = completed ? manualProgress : scrollProgress;
+  useLayoutEffect(() => {
+    const measure = () => setTw(Math.max(0, track.current.scrollWidth - window.innerWidth + 120));
+    const observer = new ResizeObserver(measure);
+    observer.observe(track.current);
+    window.addEventListener("resize", measure);
+    measure();
+    return () => { observer.disconnect(); window.removeEventListener("resize", measure); };
+  }, []);
+  useLayoutEffect(() => {
+    if (!completed && scrollProgress >= 1) {
+      previousBottom.current = ref.current.getBoundingClientRect().bottom;
+      setCompleted(true);
+    }
+  }, [scrollProgress, completed, ref]);
+  useLayoutEffect(() => {
+    if (!completed || previousBottom.current === null) return;
+    // Keep the following content in the same screen position as the pinning space is removed.
+    const delta = ref.current.getBoundingClientRect().bottom - previousBottom.current;
+    previousBottom.current = null;
+    const top = Math.max(0, window.scrollY + delta);
+    window.scrollTo({ top, behavior: "instant" });
+    window.dispatchEvent(new CustomEvent("story-layout-scroll", { detail: top }));
+  }, [completed, ref]);
   const active = Math.min(STEPS.length - 1, Math.floor(p * STEPS.length));
   return (
-    <section ref={ref} className="relative h-[460vh]">
-      <div className="sticky top-0 h-[100svh] overflow-hidden flex flex-col justify-center">
+    <section ref={ref} className={completed ? "relative" : "relative h-[460vh]"} style={{ overflowAnchor: "none" }}>
+      <div className={`${completed ? "relative" : "sticky top-0"} h-[100svh] overflow-hidden flex flex-col justify-center`}>
         <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto">
           <Chapter n={5} title="Mission log" />
           <h2 className="font-display font-bold tracking-[-0.015em] leading-[1.02] text-[clamp(36px,4.6vw,68px)] mt-4">NISAR mission timeline</h2>
@@ -64,8 +138,13 @@ export function MissionTimeline() {
             </article>
           ))}
         </div>
-        <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-8 flex items-center gap-3">
-          {STEPS.map((s, k) => <span key={k} className={`h-[3px] flex-1 rounded-full transition-colors ${k <= active ? "bg-accent shadow-[0_0_8px_#9DB08A]" : "bg-hair-2"}`} />)}
+        <div className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-8">
+          <div className={`mission-scrubber ${completed ? "is-ready" : ""}`}>
+            <div className="mission-progress" aria-hidden="true">
+              {STEPS.map((s, k) => <span key={k} style={{ background: k <= active ? "var(--color-accent)" : "var(--color-hair-2)" }} />)}
+            </div>
+            <input className="mission-scrollbar" id="mission-timeline-position" aria-label="Mission timeline position" type="range" min="0" max="1" step="0.001" value={manualProgress} disabled={!completed} aria-valuetext={STEPS[active].title} onKeyDown={event => { delete event.currentTarget.dataset.pointerFocus; }} onBlur={event => { delete event.currentTarget.dataset.pointerFocus; }} onPointerDown={beginScrub} onPointerMove={dragScrub} onPointerUp={endScrub} onPointerCancel={endScrub} onLostPointerCapture={() => { scrubMotion.current.drag = null; }} onChange={event => { cancelAnimationFrame(scrubMotion.current.frame); setScrubPosition(Number(event.target.value)); }} />
+          </div>
         </div>
         <p className="px-6 md:px-14 max-w-[1400px] w-full mx-auto mt-3 text-[11.5px] text-mute">Photos and animations: NASA/JPL-Caltech, NASA Scientific Visualization Studio. Valley map: © OpenStreetMap contributors.</p>
       </div>
