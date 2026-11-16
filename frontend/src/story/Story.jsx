@@ -310,6 +310,7 @@ function BreatheScene({ D, demo }) {
               <span key={s.st.station} className="inline-flex items-center gap-2"><span className="w-5 h-[3px] rounded" style={{ background: s.color }} />GPS station {s.st.station}</span>
             ))}
           </div>
+          <p className="text-[13px] text-mute mt-2 leading-snug">Dots: one NISAR pass each, at the 1 km map cell around the station. Solid line: the measured record. Dashed, as you scroll on: the fitted trend.</p>
           <p className="mt-6 font-mono text-[40px] font-medium leading-none tracking-tight">{fmtShort(D.dates[Math.min(N - 1, shown)])}</p>
           <p className="font-mono text-[12.5px] text-mute mt-1">pass {String(Math.min(N, shown + 1)).padStart(2, "0")}/{N}{D.synthetic ? ". Synthetic data." : "."}</p>
         </div>
@@ -330,6 +331,9 @@ function BreatheScene({ D, demo }) {
             );
           })}
           {split > 0.05 && <text x={W - P.r} y={P.t - 8} textAnchor="end" style={{ opacity: split }}>dashed: the trend underneath the seasons</text>}
+          <text x={P.l - 44} y={P.t - 12} textAnchor="start">ground motion since {fmtShort(D.dates[0])}, cm (radar line of sight)</text>
+          <text x={X(0)} y={H - 12} textAnchor="start">{fmtShort(D.dates[0])}</text>
+          <text x={X(N - 1)} y={H - 12} textAnchor="end">{fmtShort(D.dates[N - 1])}</text>
         </svg>
       </div>
     </section>
@@ -384,10 +388,15 @@ function LieScene({ D, st }) {
           <p className="text-[15px] mt-4 min-h-[3em] text-ink/85">{misleading ? "These two dates hide the sinking." : "Try dates a few months apart, one in a dry month and one after winter."}</p>
           {lie && <button onClick={() => { setA(lie.k1); setB(lie.k2); }} className="mt-1 text-[14px] text-accent-2 underline underline-offset-4 decoration-accent/40 hover:decoration-accent">Show the most misleading pair</button>}
         </div>
+        <div>
         <svg ref={svg} viewBox={`0 0 ${W} ${H}`} className="w-full h-auto chart touch-none select-none"
           onPointerDown={(e) => { svg.current.setPointerCapture(e.pointerId); const k = pick(e); drag.current = Math.abs(k - a) <= Math.abs(k - b) ? "a" : "b"; (drag.current === "a" ? setA : setB)(drag.current === "a" ? Math.min(k, b - 1) : Math.max(k, a + 1)); }}
           onPointerMove={(e) => { if (!drag.current) return; const k = pick(e); drag.current === "a" ? setA(Math.min(k, b - 1)) : setB(Math.max(k, a + 1)); }}
           onLostPointerCapture={() => (drag.current = null)} role="img" aria-label="Record at one station with two draggable dates">
+          {[-8, -6, -4, -2, 0, 2, 4].filter((t) => t > lo && t < hi).map((t) => (
+            <g key={t}><line x1={P.l} x2={W - P.r} y1={Y(t)} y2={Y(t)} className={t === 0 ? "zero" : "grid"} /><text x={P.l - 8} y={Y(t) + 4} textAnchor="end">{t > 0 ? "+" : t < 0 ? "−" : ""}{Math.abs(t)}</text></g>
+          ))}
+          <text transform={`translate(12 ${(P.t + H - P.b) / 2}) rotate(-90)`} textAnchor="middle">cm since the first pass</text>
           <rect x={X(a)} y={P.t} width={X(b) - X(a)} height={H - P.t - P.b} fill="#9DB08A" opacity="0.07" />
           <path d={linePath(v.map((x, k) => x == null ? null : [X(k), Y(x * 100)]))} fill="none" stroke="#D08B5B" strokeWidth="2" opacity="0.8" />
           {v.map((x, k) => x != null && <circle key={k} cx={X(k)} cy={Y(x * 100)} r={k === a || k === b ? 6 : 3} fill={k === a || k === b ? "#9DB08A" : "#161514"} stroke={k === a || k === b ? "#C3D0B3" : "#D08B5B"} strokeWidth="1.5" />)}
@@ -400,6 +409,8 @@ function LieScene({ D, st }) {
             </g>
           ))}
         </svg>
+        <p className="text-[13px] text-mute mt-2">Each dot is one NISAR pass at GPS station {st.station} (its 1 km map cell). A and B are the two dates being compared; drag them.</p>
+        </div>
       </div>
     </section>
   );

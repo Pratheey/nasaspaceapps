@@ -3,7 +3,6 @@ import { ArrowLeft, Download, GitCompareArrows, Satellite, Volume2, VolumeX, Spa
 import Chart, { ChartKey } from "./Chart.jsx";
 import Gauge from "./Gauge.jsx";
 import PairMatrix from "./PairMatrix.jsx";
-import SeasonClock from "./SeasonClock.jsx";
 import { cellBounds, fitAt, pairDiff, mostMisleadingPair } from "../lib/data.js";
 import { cm, mm, pm, fmtShort, MONTH_NAMES } from "../lib/fmt.js";
 import { LABEL_COLORS, rgb } from "../lib/colors.js";
@@ -150,9 +149,6 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         </div>
         {S.awaitPin && <p className="mt-2 text-[13.5px] rounded-md border border-accent/40 bg-accent/10 px-3 py-2">Now click another spot on the map to compare it with this one.</p>}
         <p className="text-[13px] text-mute mt-3">Click the chart to jump the map to that date.</p>
-      </Section>
-      <Section title="The year as a circle">
-        <SeasonClock D={D} i={i} />
       </Section>
       </>}
 
@@ -332,6 +328,9 @@ function Overview({ D, actions }) {
           </div>
         ))}
       </div>
+      <p className="text-[12.5px] text-mute mt-2 leading-snug">
+        <span className="text-ink/85">Insufficient evidence</span> means we can't tell, not that the ground is stable: the radar lost the ground on at least one pass (ploughed, flooded or growing fields), or the change stayed within the uncertainty (±{(2 * D.meta.sigma_net_m * 100).toFixed(0)} cm) with no clear yearly cycle.
+      </p>
       <Leaders D={D} actions={actions} />
       <Section title="Seasonal size against trend">
         <canvas ref={ref} width="760" height="440" onClick={click} className="w-full h-auto cursor-pointer" aria-label="Scatter of seasonal size against trend. Click a dot to open that spot." />
