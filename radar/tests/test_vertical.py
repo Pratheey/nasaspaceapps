@@ -8,7 +8,23 @@ import pandas as pd
 import pytest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[2]))
-from radar.vertical import gps_at, grid, stack_outputs, validate_stack_metadata
+from radar.vertical import gps_at, grid, stack_outputs, validate_stack_metadata, station_intervals
+
+
+def test_duplicate_station_pair_cannot_stand_in_for_a_missing_pair():
+    table = pd.DataFrame({"pair": [1, 1], "station": ["P302", "P302"], "valid": [1, 1],
+                          "los_disp_m": [0.01, 0.01], "ref_tie_m": [0., 0.],
+                          "los_east": [0.6, 0.6], "los_up": [0.8, 0.8]})
+    with pytest.raises(ValueError, match="Duplicate"):
+        station_intervals(table, ["P302"], [0, 2])
+
+
+def test_station_interval_keeps_missing_pairs_missing():
+    table = pd.DataFrame({"pair": [1, 3], "station": ["P302", "P302"], "valid": [1, 1],
+                          "los_disp_m": [0.01, 0.03], "ref_tie_m": [0., 0.],
+                          "los_east": [0.6, 0.6], "los_up": [0.8, 0.8]})
+    los, _, _ = station_intervals(table, ["P302"], [0, 3])
+    assert np.isnan(los[0, 0])
 
 
 def test_gps_epoch_with_an_entirely_blank_flag_column():
