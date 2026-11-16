@@ -297,9 +297,10 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
           {MODES.filter((m) => MAIN_MODES.includes(m.id)).map((m) => {
             const Icon = MODE_ICONS[m.id], on = S.mode === m.id;
             return (
-              <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} title={`${m.name} (${m.key})`}
-                className={`relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[14px] transition-colors ${on ? "text-ink bg-deck-2 font-medium" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
+              <button key={m.id} onClick={() => setMode(m.id)} aria-pressed={on} aria-label={`${m.name}. ${m.tip}`}
+                className={`group relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-2.5 py-1.5 text-[14px] transition-colors ${on ? "text-ink bg-deck-2 font-medium" : "text-mute hover:text-ink hover:bg-deck-2"}`}>
                 <Icon size={15} className="shrink-0" /> <span className={on ? "" : "max-sm:sr-only lg:max-xl:sr-only"}>{m.name}</span>
+                <span role="tooltip" className="pointer-events-none absolute top-full z-40 mt-2 w-max max-w-max max-w-[240px] rounded-md border border-hair-2 bg-deck px-3 py-2 text-left text-[12.5px] font-normal leading-snug text-ink/90 whitespace-normal opacity-0 shadow-[0_10px_30px_rgba(0,0,0,.5)] transition-opacity delay-200 group-hover:opacity-100 group-focus-visible:opacity-100 left-0">{m.tip}</span>
               </button>
             );
           })}
@@ -308,14 +309,16 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
         </nav>
         <div className="flex items-center gap-1.5">
           <button onClick={() => set({ gps: !S.gps })} aria-pressed={S.gps}
-            className={`inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-[14px] border ${S.gps ? "border-accent/60 text-accent-2 bg-accent/10" : "border-hair text-ink/85 hover:border-hair-2"}`}>
+            className={`group relative inline-flex items-center gap-1.5 whitespace-nowrap rounded-md px-3 py-2 text-[14px] border ${S.gps ? "border-accent/60 text-accent-2 bg-accent/10" : "border-hair text-ink/85 hover:border-hair-2"}`}>
             <Satellite size={15} /> GPS check
+            <span role="tooltip" className="pointer-events-none absolute top-full z-40 mt-2 w-max max-w-[240px] rounded-md border border-hair-2 bg-deck px-3 py-2 text-left text-[12.5px] font-normal leading-snug text-ink/90 whitespace-normal opacity-0 shadow-[0_10px_30px_rgba(0,0,0,.5)] transition-opacity delay-200 group-hover:opacity-100 group-focus-visible:opacity-100 right-0">GPS stations and how well the radar matches them.</span>
           </button>
           <button onClick={onStory} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
             <Home size={15} /> <span className="lg:max-xl:sr-only">Home</span>
           </button>
-          <button onClick={() => setLimits(true)} className="inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
+          <button onClick={() => setLimits(true)} className="group relative inline-flex items-center gap-1.5 rounded-md px-3 py-2 text-[14px] text-ink/85 hover:text-ink hover:bg-deck-2">
             <Info size={15} /> <span className="lg:max-xl:sr-only">Limits</span>
+            <span role="tooltip" className="pointer-events-none absolute top-full z-40 mt-2 w-max max-w-[240px] rounded-md border border-hair-2 bg-deck px-3 py-2 text-left text-[12.5px] font-normal leading-snug text-ink/90 whitespace-normal opacity-0 shadow-[0_10px_30px_rgba(0,0,0,.5)] transition-opacity delay-200 group-hover:opacity-100 group-focus-visible:opacity-100 right-0">What the map cannot tell you.</span>
           </button>
         </div>
       </header>

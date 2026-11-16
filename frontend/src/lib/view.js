@@ -5,13 +5,13 @@ import { fmtDate } from "./fmt.js";
 import { FRINGE_M } from "./colors.js";
 
 export const MODES = [
-  { id: "net", name: "Net change", key: "1" },
-  { id: "pair", name: "Two dates", key: "2" },
-  { id: "breathe", name: "Time-lapse", key: "3" },
-  { id: "fringe", name: "Radar fringes", key: "4" },
-  { id: "labels", name: "What we can say", key: "5" },
-  { id: "hidden", name: "Hidden sinking", key: "6" },
-  { id: "patterns", name: "Motion patterns", key: "7" },
+  { id: "net", name: "Net change", key: "1", tip: "Movement from the first pass to the last." },
+  { id: "pair", name: "Two dates", key: "2", tip: "The difference between any two dates." },
+  { id: "breathe", name: "Time-lapse", key: "3", tip: "Every pass, played in order." },
+  { id: "fringe", name: "Radar fringes", key: "4", tip: "Movement drawn as radar colour bands." },
+  { id: "labels", name: "What we can say", key: "5", tip: "Seasonal, sinking, both, or not enough evidence." },
+  { id: "hidden", name: "Hidden sinking", key: "6", tip: "Sinking that two dates can miss." },
+  { id: "patterns", name: "Motion patterns", key: "7", tip: "Spots that move in the same pattern." },
 ];
 
 export function cellValue(D, S, i) {
