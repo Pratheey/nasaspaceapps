@@ -55,7 +55,7 @@ dates, a globe with NISAR's orbit, how radar measures a centimetre, radar fringe
 why it matters. Glossary terms pop up on hover. Smooth scrolling with Lenis.
 
 ## Extra explorer tools
-Swipe (date A left, date B right), "Where to look first" leaderboards,
+"Where to look first" leaderboards,
 cross-section, 3D, compare, listen, CSV, share links.
 
 ## Design

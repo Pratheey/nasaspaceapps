@@ -16,12 +16,7 @@ export const MODES = [
 
 export function cellValue(D, S, i) {
   switch (S.mode) {
-    case "pair": {
-      if (S.swipe == null) return pairDiff(D, i, S.k1, S.k2);
-      const g = D.meta.grid;
-      const lon = g.lon_min + (i % g.ncols + 0.5) * g.step_deg;
-      return D.values[i]?.[lon < S.swipe ? S.k1 : S.k2] ?? null;
-    }
+    case "pair": return pairDiff(D, i, S.k1, S.k2);
     case "breathe": return D.values[i]?.[S.cursor] ?? null;
     case "labels": return D.grid.net_change_m[i];
     case "hidden": return hiddenSinking(D).value[i];
@@ -51,9 +46,6 @@ export function viewCaption(D, S) {
 
 // While a tool is switched on, its instruction replaces the view caption. Cross-section has its own prompt.
 export function toolCaption(S, D) {
-  if (S.swipe != null) return D
-    ? `Left of the line: the ground on ${fmtDate(D.dates[S.k1])} (A). Right of it: the ground on ${fmtDate(D.dates[S.k2])} (B). Drag the round handle to move the line.`
-    : "Left of the line is date A, right of it is date B. Drag the round handle to move the line.";
   if (S.relief) return "Right-drag to turn the view. Height shows the same motion, exaggerated.";
   if (S.fields) return "Click a field to see its radar polarization and coverage.";
   if (S.lens) return "Move the cursor over the map to see radar fringes under it.";
