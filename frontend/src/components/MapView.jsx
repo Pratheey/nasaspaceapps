@@ -122,6 +122,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   };
 
   useImperativeHandle(ref, () => ({
+    resize: () => map.current?.resize(),
     flyTo: (ll, zoom, tilted = latest.current.S.relief) => map.current?.flyTo({ center: ll, zoom, pitch: tilted ? 58 : 0, bearing: tilted ? -18 : 0, duration: reduceMotion ? 0 : 1500 }),
     fitAll: (tilted = false) => { const b = D.bbox; map.current?.fitBounds([[b.west, b.south], [b.east, b.north]], { padding: 40, pitch: tilted ? 58 : 0, bearing: tilted ? -18 : 0, duration: reduceMotion ? 0 : 1400 }); },
     showProbe: (ll) => {
