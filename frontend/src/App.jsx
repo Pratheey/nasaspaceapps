@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes, Sparkles } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes, AudioLines } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
 import ToolsMenu from "./components/ToolsMenu.jsx";
 import ViewMenu from "./components/ViewMenu.jsx";
@@ -229,7 +229,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
       ...(D.canal ? [{ id: "t-canal", group: "Tools", label: "California Aqueduct profile", key: "A", icon: Droplets, run: toggleCanal }] : []),
       { id: "t-gps", group: "Tools", label: S.gps ? "Hide GPS check" : "Show GPS check", key: "G", icon: Satellite, run: () => set({ gps: !Sref.current.gps }) },
       { id: "t-fields", group: "Tools", label: "Crop fields: polarization and coverage", key: "F", icon: Sprout, run: () => set({ fields: true, field: null }) },
-      { id: "t-dance", group: "Tools", label: "The dance", icon: Sparkles, run: openDance },
+      { id: "t-dance", group: "Tools", label: "The dance", icon: AudioLines, run: openDance },
       { id: "t-tour", group: "Tools", label: "Walkthrough", key: "W", icon: Compass, run: () => goStep(0) },
       { id: "t-share", group: "Tools", label: "Copy a link to this view", icon: Share2, run: share },
       { id: "t-limits", group: "Tools", label: "What this map can and can't tell you", icon: Info, run: () => setLimits(true) },
@@ -346,7 +346,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
                 <Compass size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">Walkthrough</span>
               </button>
               <button onClick={openDance} title="The dance: every cell moving through the 26 passes" className="inline-flex items-center gap-1.5 border-l border-hair-2 px-3 py-2 text-[14px] font-semibold text-[#FF9A52] bg-[#FF8232]/12 hover:bg-[#FF8232]/22 hover:text-[#FFB27A] rounded-r-[inherit]">
-                <Sparkles size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">The dance</span>
+                <AudioLines size={15} className="shrink-0" /> <span className="whitespace-nowrap @max-[640px]:sr-only">The dance</span>
               </button>
             </div>
 

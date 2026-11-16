@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import Lenis from "lenis";
-import { ArrowDown, Sparkles, Map as MapIcon, Radar, Satellite, Waves, CalendarRange, Activity, Route, Box } from "lucide-react";
+import { ArrowDown, AudioLines, Map as MapIcon, Radar, Satellite, Waves, CalendarRange, Activity, Route, Box } from "lucide-react";
 import { NasaImage, Starfield, SatelliteArt, IMAGES } from "./art.jsx";
 import { PreviewTag } from "../components/Panels.jsx";
 import { InsarExplainer, AquiferExplainer, Term } from "./Explainers.jsx";
@@ -120,7 +120,7 @@ function Hero({ D, onExplore, onDance }) {
             </button>
             {onDance && (
               <button onClick={onDance} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FF8232] to-[#E15F2D] text-[#161514] font-semibold px-6 py-3 shadow-[0_0_34px_rgba(255,130,50,.45)] hover:shadow-[0_0_46px_rgba(255,130,50,.7)] hover:brightness-110 transition">
-                <Sparkles size={17} /> Watch the dance
+                <AudioLines size={17} /> Watch the dance
               </button>
             )}
           </div>
