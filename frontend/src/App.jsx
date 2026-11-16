@@ -318,8 +318,9 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
       </header>
 
       <main className={`flex-1 min-h-0 grid ${panel ? "grid-cols-[minmax(0,1fr)_clamp(360px,32vw,440px)]" : "grid-cols-[minmax(0,1fr)]"} max-lg:flex max-lg:flex-col`}>
-        <div className="min-h-0 flex flex-col">
-          <div className="@container relative flex-1 min-h-[420px] overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]">
+        <div className="min-h-0 flex flex-col lg:overflow-y-auto">
+          {/* The map gives up height while a cross-section is open, so the timeline (A and B) is never squeezed out. */}
+          <div className={`@container relative flex-1 ${S.profile ? "min-h-[200px]" : "min-h-[420px]"} overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]`}>
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
               onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onField={(f) => set({ field: f })} />
             {S.fields && <FieldCard field={S.field} onClose={() => set({ field: null })} />}

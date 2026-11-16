@@ -44,7 +44,7 @@ export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
   const days = Math.round((D.dates[S.k2] - D.dates[S.k1]) / 864e5);
 
   return (
-    <section aria-label="Radar passes" className="border-t border-hair bg-deck/80 backdrop-blur px-3 pt-2 pb-1">
+    <section aria-label="Radar passes" className="shrink-0 border-t border-hair bg-deck/80 backdrop-blur px-3 pt-2 pb-1">
       <div className="flex items-center gap-2 px-2">
         <button disabled={S.mode === "pair"} onClick={() => onStep(-1)} className="p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2 disabled:opacity-40" aria-label="Previous pass"><StepBack size={16} /></button>
         <button onClick={onPlay} aria-pressed={S.playing}
