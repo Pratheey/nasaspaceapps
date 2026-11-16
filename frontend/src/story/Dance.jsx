@@ -103,7 +103,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
     if (d > 0) e.clock = cur >= N - 1 ? NET_CLOCK : (cur + 1) * PASS_SEC;
     else e.clock = c > PLAY_END ? PLAY_END : Math.max(0, cur - 1) * PASS_SEC;
   };
-  A.current = { setPlaying, toggleSound, toggleHidden, stepPass, onClose, setSel };
+  A.current = { setPlaying, toggleSound, toggleHidden, stepPass, onClose, setSel, hidden, showControls: () => setHidden(false) };
 
   useEffect(() => { if (!note) return; const t = setTimeout(() => setNote(false), 2000); return () => clearTimeout(t); }, [note]);
 
@@ -316,7 +316,10 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       e.ptrs.delete(ev.pointerId);
       if (e.ptrs.size === 0) e.down = false;
       touch();
-      if (wasClick) { const [x, y] = local(ev); A.current.setSel(pick(x, y)); }
+      if (wasClick) {
+        if (A.current.hidden) A.current.showControls(); // a tap (not a drag) brings the controls back: phones have no H key
+        else { const [x, y] = local(ev); A.current.setSel(pick(x, y)); }
+      }
     };
     const onLeave = () => { e.mIn = false; e.hoverDirty = true; };
     const onWheel = (ev) => { ev.preventDefault(); e.zoom = clamp(e.zoom * Math.exp(-ev.deltaY * 0.0012), ZOOM_MIN, ZOOM_MAX); touch(); };
@@ -613,7 +616,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
               <button type="button" onClick={toggleSound} aria-pressed={soundOn} title="Sound (S)" className={`${btn} ${soundOn ? "border-accent/60 text-accent-2" : ""}`}>
                 {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />} Sound
               </button>
-              <button type="button" onClick={toggleHidden} title="Hide controls (H)" className={btn}><EyeOff size={15} /> Hide controls</button>
+              <button type="button" onClick={toggleHidden} title="Hide controls (H). Tap the screen or press H to bring them back." className={btn}><EyeOff size={15} /> Hide controls</button>
               <button ref={closeRef} type="button" onClick={onClose} title="Close (Esc)" className={btn}><X size={15} /> Close</button>
             </div>
             <div className="text-right mt-2" aria-hidden="true">
@@ -672,7 +675,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       </div>
 
       <div onPointerEnter={() => hidden && setHidden(false)} className={`absolute top-0 inset-x-0 h-10 ${hidden ? "" : "pointer-events-none"}`} aria-hidden="true" />
-      <p role="status" className={`pointer-events-none absolute top-6 left-1/2 -translate-x-1/2 rounded-md bg-space/80 border border-hair-2 px-3 py-1.5 text-[13px] text-ink/85 transition-opacity duration-500 ${hidden && note ? "opacity-100" : "opacity-0"}`}>Press H to show controls</p>
+      <p role="status" className={`pointer-events-none absolute top-6 left-1/2 -translate-x-1/2 rounded-md bg-space/80 border border-hair-2 px-3 py-1.5 text-[13px] text-ink/85 transition-opacity duration-500 ${hidden && note ? "opacity-100" : "opacity-0"}`}>Tap the screen or press H to show controls</p>
     </div>
   );
 }
