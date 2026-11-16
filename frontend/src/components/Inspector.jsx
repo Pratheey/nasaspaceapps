@@ -95,10 +95,20 @@ function Spot({ D, S, set, actions, stationAt, placeName }) {
         <Gauge dates={D.dates} values={v} cursor={cursor ?? D.dates.length - 1} />
         <dl className="divide-y divide-hair">
           <div className="pb-3">
-            <dt className="text-[13px] text-mute">Change, first to last date</dt>
+            <dt className="text-[13px] text-mute">Change over the whole record
+              <span className="block text-[12px]">{fmtShort(D.dates[0])} to {fmtShort(D.dates[D.dates.length - 1])}{S.mode === "pair" ? ". Does not change when you move A and B." : ""}</span>
+            </dt>
             <dd className="font-display font-bold text-[42px] leading-none mt-1 tracking-tight" style={{ color: G.net_change_m[i] < 0 ? "#D08B5B" : "#ECE9E2" }}>{cm(net)}</dd>
             <dd className="text-[12.5px] text-mute mt-1">{pm(G.net_change_sigma_m[i])}</dd>
           </div>
+          {S.mode === "pair" && (
+            <div className="py-3">
+              <dt className="text-[13px] text-accent-2">Between A and B
+                <span className="block text-[12px] text-mute">{fmtShort(D.dates[S.k1])} to {fmtShort(D.dates[S.k2])}, {days} days. Changes as you drag A and B.</span>
+              </dt>
+              <dd className="font-display font-bold text-[28px] leading-none mt-1 tracking-tight text-accent-2">{d12 == null ? "no measurement" : cm(d12)}</dd>
+            </div>
+          )}
           <div className="py-3">
             <dt className="text-[13px] text-mute">Seasonal movement</dt>
             {sig ? (

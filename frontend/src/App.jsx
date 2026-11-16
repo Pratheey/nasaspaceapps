@@ -100,7 +100,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
   useEffect(() => { if (S.sel >= 0) setPanel(true); }, [S.sel]);
   // The map has to re-measure itself when the panel opens or closes.
   // The same when the timeline appears or disappears (it only shows in Time-lapse, Two dates and while playing).
-  const showTimeline = S.mode === "breathe" || S.mode === "pair" || S.playing;
+  const showTimeline = true; // always on screen: it is how people find Play and the dates
   useEffect(() => { const r = requestAnimationFrame(() => mapRef.current?.resize()); return () => cancelAnimationFrame(r); }, [panel, showTimeline]);
   // Switching GPS check on brings the whole frame (and so every station in it) into view, once, unless the walkthrough
   // is steering or the switch came from clicking a station (which flies to that station instead).
@@ -330,7 +330,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
               onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} onField={(f) => set({ field: f })} />
             {S.fields && <FieldCard field={S.field} onClose={() => set({ field: null })} />}
 
-            <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] rounded-lg border border-hair-2 bg-space/95">
+            <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-20 flex max-w-[calc(100%-5.5rem)] rounded-lg border border-hair-2 bg-space/95">
               {/* One button for search and "Go to": the command bar lists every place and GPS station first (two clicks). */}
               <button onClick={() => setCmd(true)} title="Search or go to a place or GPS station (Ctrl+K)" aria-label="Search or go to a place, GPS station, view or tool"
                 className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
@@ -353,13 +353,12 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
               </button>
             </div>
 
-            {S.drawing && !S.profile?.a && (
-              <p className="absolute top-[66px] left-4 z-10 rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
-            )}
-
-            {S.tour < 0 && !(S.drawing && !S.profile?.a) && (
+            {S.tour < 0 && (
               <div className={`pointer-events-none absolute top-[66px] left-4 z-10 flex flex-col items-start gap-1 ${S.fields ? "max-w-[calc(100%-26rem)] max-sm:max-w-[calc(100%-9rem)]" : "max-w-[calc(100%-9rem)]"}`}>
-                <p className="rounded-md border border-hair-2 bg-space/90 px-3 py-1.5 text-[13.5px] leading-snug text-ink">{toolCaption(S) || viewCaption(D, S)}</p>
+                {S.drawing && !S.profile?.a && (
+                  <p className="rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
+                )}
+                <p className="rounded-md border border-hair-2 bg-space/90 px-3 py-1.5 text-[13.5px] leading-snug text-ink">{toolCaption(S, D) || viewCaption(D, S)}</p>
                 {!clicked && S.sel < 0 && !S.drawing && !S.profile && (
                   <p className="rounded-md bg-space/80 px-3 py-1 text-[12.5px] text-mute">Click anywhere to see how that spot moved</p>
                 )}
