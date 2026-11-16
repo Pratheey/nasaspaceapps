@@ -42,6 +42,7 @@ const PAD_GAIN = 0.05, DRONE_GAIN = 0.03, SOLO_GAIN = 0.035, TICK_GAIN = 0.06;
 const PAD_BASE_HZ = 130.8, DRONE_BASE_HZ = 110, SOLO_BASE_HZ = 392, TICK_HZ = 1320;
 const DPR_CAP = 1.5;             // device-pixel-ratio cap for both canvases
 const LITE_FRAME_MS = 30;        // frames slower than this (under ~33 fps) switch off glow and streaks switch off glow and streaks
+const REF_SPACING_PX = 6;         // cell spacing on screen at which the look was tuned (a laptop-sized window)
 const BG = "#161514";
 
 const ease = (f) => 0.5 - 0.5 * Math.cos(Math.PI * f);
@@ -170,9 +171,9 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       "void main(){float d=length(gl_PointCoord-0.5)*2.0;if(d>1.0)discard;" +
       "if(uMode>0.5){float a=vCol.a*smoothstep(1.0,0.7,d);gl_FragColor=vec4(vCol.rgb*a,a);return;}" +
       "float a;if(uLite>0.5){a=vCol.a*uCore*smoothstep(1.0,0.55,d);}else{float core=smoothstep(0.38,0.26,d);float halo=(1.0-d)*(1.0-d);a=vCol.a*(uCore*core+uHalo*halo);}" +
-      "gl_FragColor=vec4(vCol.rgb*a,0.0);}";
+      "gl_FragColor=vec4(vCol.rgb*a,a);}"; // alpha is written too: a premultiplied canvas with colour but zero alpha draws nothing in Safari
     const VS_LN = "attribute vec2 aPos;attribute vec4 aCol;uniform vec2 uRes;varying vec4 vCol;void main(){vec2 c=aPos/uRes*2.0-1.0;gl_Position=vec4(c.x,-c.y,0.0,1.0);vCol=aCol;}";
-    const FS_LN = "precision mediump float;varying vec4 vCol;void main(){gl_FragColor=vec4(vCol.rgb*vCol.a,0.0);}";
+    const FS_LN = "precision mediump float;varying vec4 vCol;void main(){gl_FragColor=vec4(vCol.rgb*vCol.a,vCol.a);}";
     let gl = null, G = null, glLost = false;
     const buildGL = () => {
       const g = glc.getContext("webgl", { alpha: true, premultipliedAlpha: true, antialias: false, depth: false, stencil: false }) || glc.getContext("experimental-webgl", { alpha: true, premultipliedAlpha: true, antialias: false });
@@ -251,6 +252,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
 
     // frame state shared with the projection helper
     let cyw = 1, syw = 0, sinEl = 1, cosEl = 0, pk = 4, cx = 0, cy = 0;
+    const cellKm = Math.sqrt((P.fieldW * P.fieldH) / Math.max(1, P.n));
     const projFloor = (x, y) => {
       const x1 = x * cyw - y * syw, y1 = x * syw + y * cyw, sc = CAM_DIST_KM / (CAM_DIST_KM + y1 * cosEl);
       pr[0] = cx + x1 * sc * pk; pr[1] = cy - y1 * sinEl * sc * pk;
@@ -426,7 +428,14 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       let kp0 = Math.floor(tp), fp;
       if (kp0 >= N1) { kp0 = N - 2; fp = 1; } else fp = tp - kp0;
       const glOn = !!G && !glLost;
-      const lineGain = Math.min(2, e.dpr), sizeMul = e.lite ? 1.6 : 3;
+      const sizeMul = e.lite ? 1.6 : 3;
+      // Density compensation: on a small screen (or zoomed out) the cells sit closer than the sprites are wide,
+      // and additive light piles up to white. Shrink the dots a little and dim them by how much they overlap.
+      const spacing = pk * cellKm, dens = spacing / REF_SPACING_PX;
+      const sizeK = clamp(dens, 0.6, 1.2);
+      const overlap = Math.pow((DOT_PX * sizeMul * sizeK) / spacing, 2), overlapRef = Math.pow((DOT_PX * 3) / REF_SPACING_PX, 2);
+      const brightK = clamp(overlapRef / overlap, 0.3, 1);
+      const lineGain = Math.min(1.3, e.dpr) * clamp(dens, 0.25, 1);
 
       const sel = e.sel, kLift = kmPerM;
       let nDraw = 0, nDustD = 0, nLn = 0, selPos = e.selPos;
@@ -477,8 +486,8 @@ function DanceInner({ D, onClose, onOpenSpot }) {
         if (al < 0.01) continue;
         const bin = Math.round((clamp(vc / domain, -1, 1) * 0.5 + 0.5) * (NBINS - 1));
         sxA[i] = sx; syA[i] = sy; alive[i] = 1;
-        const size = DOT_PX * clamp(sc, 0.8, 1.35) * (1 + 0.3 * g), o = nDraw * 7;
-        pts[o] = sx; pts[o + 1] = sy; pts[o + 2] = glOn ? size * sizeMul : size; pts[o + 3] = binRGB[bin * 3]; pts[o + 4] = binRGB[bin * 3 + 1]; pts[o + 5] = binRGB[bin * 3 + 2]; pts[o + 6] = al;
+        const size = DOT_PX * sizeK * clamp(sc, 0.8, 1.35) * (1 + 0.3 * g), o = nDraw * 7;
+        pts[o] = sx; pts[o + 1] = sy; pts[o + 2] = glOn ? size * sizeMul : size; pts[o + 3] = binRGB[bin * 3]; pts[o + 4] = binRGB[bin * 3 + 1]; pts[o + 5] = binRGB[bin * 3 + 2]; pts[o + 6] = glOn ? al * brightK : al;
         dB[nDraw++] = bin;
         if (!glOn) continue;
         // stem: floor to dot
