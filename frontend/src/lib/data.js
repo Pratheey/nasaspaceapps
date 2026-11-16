@@ -8,7 +8,25 @@ const GRID_FIELDS = [
   "fit_c_m", "fit_a_m", "fit_b_m", "n_valid_dates",
 ];
 const isoDate = (s) => typeof s === "string" && /^\d{4}-\d{2}-\d{2}$/.test(s)
-  && Number.isFinite(Date.parse(s + "T00:00:00Z"));
+  && Number.isFinite(Date.parse(s + "T00:00:00Z"))
+  && new Date(s + "T00:00:00Z").toISOString().slice(0, 10) === s;
+const measurement = (v) => v === null || Number.isFinite(v);
+const validGridValue = (field, v, nDates) => {
+  if (field === "label") return Number.isInteger(v) && v >= 0 && v <= 3;
+  if (field === "seasonal_significant") return v === null || typeof v === "boolean";
+  if (field === "n_valid_dates") return Number.isInteger(v) && v >= 0 && v <= nDates;
+  if (field === "peak_month") return v === null || Number.isInteger(v) && v >= 1 && v <= 12;
+  if (field.includes("sigma") || field === "amp_m") return v === null || Number.isFinite(v) && v >= 0;
+  return measurement(v);
+};
+
+function validCanal(canal, synthetic) {
+  const distances = canal?.distance_km;
+  return canal?.is_synthetic === synthetic && Array.isArray(distances) && distances.length >= 2
+    && distances.every((v, k) => Number.isFinite(v) && v >= 0 && (!k || v > distances[k - 1]))
+    && ["lon", "lat"].every((field) => Array.isArray(canal[field]) && canal[field].length === distances.length
+      && canal[field].every((v) => Number.isFinite(v) && Math.abs(v) <= (field === "lat" ? 90 : 180)));
+}
 
 async function tryLoad(base) {
   const names = ["meta", "grid", "series", "stations"];
@@ -26,21 +44,37 @@ async function tryLoad(base) {
   const n = g?.nrows * g?.ncols;
   const nDates = meta?.dates?.length;
   const ready = [meta, grid, series, stations].every((file) => file != null)
+    && typeof meta.is_synthetic === "boolean"
+    && meta.units === "m" && meta.fit?.period_yr === 1
+    && [0, 1, 2, 3].every((label) => typeof meta.labels?.[label] === "string")
+    && (meta.notes == null || Array.isArray(meta.notes) && meta.notes.every((note) => typeof note === "string"))
     && Number.isInteger(g?.nrows) && Number.isInteger(g?.ncols)
     && g.nrows > 0 && g.ncols > 0 && Number.isFinite(g.step_deg) && g.step_deg > 0
     && Number.isFinite(g.lat_max) && Number.isFinite(g.lon_min)
     && Array.isArray(meta.dates) && nDates >= 2
     && meta.dates.every((date, k) => isoDate(date) && (k === 0 || date > meta.dates[k - 1]))
     && isoDate(meta.fit?.t0)
-    && GRID_FIELDS.every((field) => Array.isArray(grid[field]) && grid[field].length === n)
+    && GRID_FIELDS.every((field) => Array.isArray(grid[field]) && grid[field].length === n
+      && grid[field].every((v) => validGridValue(field, v, nDates)))
     && Array.isArray(series.values_m) && series.values_m.length === n
-    && series.values_m.every((row) => Array.isArray(row) && row.length === nDates)
+    && series.values_m.every((row, i) => Array.isArray(row) && row.length === nDates && row.every(measurement)
+      && row.filter(Number.isFinite).length === grid.n_valid_dates[i]
+      && row[nDates - 1] === grid.net_change_m[i])
     && Array.isArray(stations.stations)
+    && new Set(stations.stations.map((st) => st?.station)).size === stations.stations.length
     && stations.stations.every((st) => typeof st?.station === "string"
-      && Number.isFinite(st.lon) && Number.isFinite(st.lat)
+      && ["reference", "held_out"].includes(st.role)
+      && Number.isFinite(st.lon) && Math.abs(st.lon) <= 180 && Number.isFinite(st.lat) && Math.abs(st.lat) <= 90
       && Number.isInteger(st.cell_index) && st.cell_index >= 0 && st.cell_index < n
-      && (st.gps == null || (Array.isArray(st.gps.dates) && st.gps.dates.every(isoDate)
-        && Array.isArray(st.gps.los_m) && st.gps.los_m.length === st.gps.dates.length)))
+      && (st.gps == null || (Array.isArray(st.gps.dates)
+        && st.gps.dates.every((date, k) => isoDate(date) && (!k || date > st.gps.dates[k - 1]))
+        && Array.isArray(st.gps.los_m) && st.gps.los_m.length === st.gps.dates.length
+        && st.gps.los_m.every(measurement)))
+      && (st.residuals == null || measurement(st.residuals.net_m)
+        && (st.residuals.pairs_rms_m === null || Number.isFinite(st.residuals.pairs_rms_m) && st.residuals.pairs_rms_m >= 0)
+        && Number.isInteger(st.residuals.n_pairs) && st.residuals.n_pairs >= 0 && st.residuals.n_pairs < nDates
+        && Array.isArray(st.residuals.unwrap_flagged_pairs)
+        && st.residuals.unwrap_flagged_pairs.every((pair) => Number.isInteger(pair) && pair > 0 && pair < nDates)))
     && [grid, series, stations].every((file) => file.is_synthetic === meta.is_synthetic);
   if (ready) return { data: { meta, grid, series, stations } };
   return { reason: files.every((file) => file.missing) ? "missing" : "incomplete" };
@@ -57,7 +91,10 @@ export async function loadData() {
   if (canalFile) {
     try {
       const r = await fetch(`./data/${canalFile}`);
-      if (r.ok && (r.headers.get("content-type") || "").includes("json")) canal = await r.json();
+      if (r.ok && (r.headers.get("content-type") || "").includes("json")) {
+        const candidate = await r.json();
+        if (validCanal(candidate, data.meta.is_synthetic)) canal = candidate;
+      }
     } catch { canal = null; }
   }
 
@@ -90,6 +127,7 @@ export async function loadData() {
 }
 
 export function cellAt(D, lng, lat) {
+  if (!Number.isFinite(lng) || !Number.isFinite(lat)) return -1;
   const g = D.meta.grid;
   const col = Math.floor((lng - g.lon_min) / g.step_deg);
   const row = Math.floor((g.lat_max - lat) / g.step_deg);

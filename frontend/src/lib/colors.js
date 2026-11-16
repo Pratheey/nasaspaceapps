@@ -22,7 +22,7 @@ export const LABEL_COLORS = {
 };
 
 // Radar fringes: one full color cycle per half wavelength of NISAR's L-band radar.
-export const FRINGE_M = 0.1192; // 23.84 cm / 2
+export const FRINGE_M = (299792458 / 1239000000) / 2; // Track 034 frequency A: data/README.md
 export function fringe(v) {
   const ph = (((v / FRINGE_M) % 1) + 1) % 1;
   return hsl(ph * 360, 0.78, 0.58);
