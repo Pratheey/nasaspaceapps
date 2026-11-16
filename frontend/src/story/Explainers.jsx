@@ -32,62 +32,42 @@ export function Term({ t, children }) {
 // Drag the ground down. The round trip gets longer by twice the motion; the wave's phase
 // shifts; the fringe color follows. One full color cycle = half a wavelength of motion.
 export function InsarExplainer() {
-  const [d, setD] = useState(3); // cm of motion away from the satellite
-  const lam = 23.84;
-  const phase = ((2 * d) / lam) * 360;
-  const W = 640, H = 340, sat = [90, 52], g0 = 250, gy = g0 + d * 2.4;
-  const tgt = [470, gy];
-  const len = Math.hypot(tgt[0] - sat[0], tgt[1] - sat[1]);
-  const ang = Math.atan2(tgt[1] - sat[1], tgt[0] - sat[0]);
-  const waves = 7, pts = [];
-  for (let k = 0; k <= 200; k++) {
-    const s = (k / 200) * len;
-    const off = Math.sin((s / len) * waves * 2 * Math.PI + (phase * Math.PI) / 180) * 9;
-    pts.push(`${(sat[0] + Math.cos(ang) * s - Math.sin(ang) * off).toFixed(1)},${(sat[1] + Math.sin(ang) * s + Math.cos(ang) * off).toFixed(1)}`);
-  }
+  const [distance, setDistance] = useState(3);
+  // Direct manipulation: keep the geometry and readouts in sync with the thumb.
+  const d = distance;
+  const phase = 4 * Math.PI * d / 23.84;
+  const ground = 205 + d * 4;
+  const wave = (shift) => Array.from({ length: 241 }, (_, i) => `${i ? "L" : "M"}${24 + i * 2.3},${55 - 17 * Math.sin(i / 240 * Math.PI * 6 - shift)}`).join(" ");
   return (
-    <div className="rounded-2xl border border-hair-2 bg-deck/70 p-6">
-      <svg viewBox={`0 0 ${W} ${H}`} className="w-full h-auto" role="img" aria-label={`The ground has moved ${d} cm; the radar phase shifts ${Math.round(phase)} degrees`}>
-        <defs><linearGradient id="soil2" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stopColor="#4a3424" /><stop offset="1" stopColor="#151018" /></linearGradient></defs>
-        {/* NISAR in miniature: the reflector faces the ground, the radar beam leaves its centre */}
-        <g transform={`translate(${sat[0]} ${sat[1]})`}>
-          <line x1="0" y1="0" x2="-30" y2="-26" stroke="#C9D2E4" strokeWidth="2" />
-          <g transform="translate(-30 -26)">
-            <rect x="-12" y="-10" width="24" height="20" rx="2" fill="#2A3346" stroke="#8D97AB" />
-            <rect x="-12" y="-10" width="24" height="5" fill="#E2B04A" opacity="0.85" />
-            <rect x="-62" y="-6" width="50" height="12" fill="#2E4A7A" stroke="#5FC9E0" strokeOpacity="0.5" />
-            {[1, 2, 3, 4].map((i) => <line key={i} x1={-62 + i * 10} x2={-62 + i * 10} y1="-6" y2="6" stroke="#5FC9E0" strokeOpacity="0.4" />)}
-          </g>
-          <g transform={`rotate(${(ang * 180) / Math.PI - 90})`}>
-            <ellipse rx="30" ry="9" fill="#E2B04A" fillOpacity="0.8" stroke="#F5CF7A" />
-            <ellipse rx="15" ry="4.5" fill="none" stroke="#FBE3A8" strokeOpacity="0.5" />
-          </g>
-        </g>
-        <line x1="0" x2={W} y1={g0} y2={g0} stroke="rgba(230,234,242,.35)" strokeDasharray="5 5" />
-        <text x={W - 6} y={g0 - 8} textAnchor="end" fontSize="13" fill="#8D97AB">ground on the first pass</text>
-        <rect x="0" y={gy} width={W} height={H - gy} fill="url(#soil2)" />
-        <line x1="0" x2={W} y1={gy} y2={gy} stroke="#F0705A" strokeWidth="2.5" />
-        <polyline points={pts.join(" ")} fill="none" stroke="#6FA8FF" strokeWidth="2.2" style={{ filter: "drop-shadow(0 0 6px #6FA8FF)" }} />
-        <circle cx={tgt[0]} cy={tgt[1]} r="6" fill="#A9CBFF" />
-        {d > 0 && <><line x1={tgt[0] + 40} x2={tgt[0] + 40} y1={g0} y2={gy} stroke="#F0705A" /><text x={tgt[0] + 48} y={(g0 + gy) / 2 + 5} fontSize="14" fill="#F0705A">{d.toFixed(1)} cm</text></>}
-        <g transform={`translate(${W - 92} 40)`}>
-          <circle r="34" fill="none" stroke="rgba(170,190,230,.25)" strokeWidth="8" />
-          <circle r="34" fill="none" stroke={rgb(fringe(-d / 100))} strokeWidth="8" strokeDasharray={`${((phase % 360) / 360) * 213.6} 213.6`} transform="rotate(-90)" />
-          <text y="5" textAnchor="middle" fontSize="13" fill="#E6EAF2">{Math.round(phase % 360)}°</text>
-        </g>
-        <text x={W - 8} y={14} textAnchor="end" fontSize="9" fill="#ffffff" fillOpacity="0.35" style={{ fontFamily: "Public Sans, sans-serif" }}>AI-assisted</text>
+    <div className="rounded-2xl border border-hair-2 bg-deck/70 p-5 md:p-6">
+      <svg viewBox="0 0 600 310" className="w-full h-auto" role="img" aria-label={`First and second radar passes. The ground moves ${d.toFixed(1)} centimetres away along the radar viewing direction, adding ${(2*d).toFixed(1)} centimetres to the return journey.`}>
+        <defs><marker id="radar-direction" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse"><path d="M0 0L10 5L0 10Z" fill="#a8b99a"/></marker></defs>
+        {[0, 1].map(pass => {
+          const x = pass * 300, y = pass ? ground : 205;
+          return <g key={pass} transform={`translate(${x} 0)`}>
+            <text x="150" y="22" textAnchor="middle" fill="#eae8df" fontSize="16" fontWeight="600">{pass ? "2 · After the ground moves" : "1 · First measurement"}</text>
+            <g transform="translate(150 65)"><rect x="-16" y="-12" width="32" height="24" rx="3" fill="#b4b9a7"/><path d="M-61 -8h40v16h-40Zm82 0h40v16H21Z" fill="#54676b" stroke="#8ea5a6"/><path d="M-12 17Q0 31 12 17" fill="none" stroke="#c8b580" strokeWidth="4"/></g>
+            <path d={`M127 100V${y-5}`} stroke="#a8b99a" strokeWidth="2" markerEnd="url(#radar-direction)"/>
+            <path d={`M173 ${y-5}V100`} stroke="#a8b99a" strokeWidth="2" markerEnd="url(#radar-direction)"/>
+            <text x="110" y="151" textAnchor="end" fill="#aaa79b" fontSize="12">Send</text><text x="190" y="151" fill="#aaa79b" fontSize="12">Return</text>
+            {pass === 1 && <><path d="M25 205H275" stroke="#aaa79b" strokeDasharray="4 5"/><text x="27" y="197" fill="#aaa79b" fontSize="11">Original ground</text><path d={`M127 205V${y}M173 205V${y}`} stroke="#d5ab7e" strokeWidth="5"/></>}
+            <path d={`M25 ${y}H275v25H25Z`} fill="#414b37"/><path d={`M25 ${y}H275`} stroke="#a8b99a" strokeWidth="2"/>
+            <text x="150" y="296" textAnchor="middle" fill={pass ? "#dfbd96" : "#aaa79b"} fontSize="13">{pass ? `Extra travel: ${(2*d).toFixed(1)} cm total` : "Reference journey"}</text>
+          </g>;
+        })}
       </svg>
-      <label className="block mt-4">
-        <span className="text-[14px] text-mute">Move the ground away from the satellite</span>
-        <input type="range" min="0" max="24" step="0.1" value={d} onChange={(e) => setD(+e.target.value)} className="w-full mt-2 accent-[#9DB08A]" />
-      </label>
-      <div className="grid grid-cols-3 gap-px bg-hair rounded-lg overflow-hidden mt-4 text-center">
-        {[["Ground moved", `${d.toFixed(1)} cm`], ["Extra round trip", `${(2 * d).toFixed(1)} cm`], ["Fringes", (d / (FRINGE_M * 100)).toFixed(2)]].map(([k, v]) => (
-          <div key={k} className="bg-space px-3 py-2.5"><p className="text-[12px] text-mute">{k}</p><p className="font-display text-[20px] font-semibold">{v}</p></div>
-        ))}
+      <div className="aquifer-pressure mt-4"><label htmlFor="radar-distance" className="flex justify-between gap-3"><span>Move the ground away</span><strong className="text-accent-2">{distance.toFixed(1)} cm</strong></label><input id="radar-distance" type="range" min="0" max="12" step="0.1" value={distance} onChange={e => setDistance(+e.target.value)}/><span className="aquifer-pressure-ends"><span>No movement</span><span>12 cm away</span></span></div>
+      <div className="mt-6 pt-4 border-t border-hair">
+        <p className="text-[15px] font-semibold">The returning wave shifts</p>
+        <div className="flex flex-wrap gap-4 mt-2 text-[12px] text-mute"><span>Dashed: first pass</span><span className="text-accent-2">Solid: second pass</span></div>
+        <svg viewBox="0 0 600 95" className="w-full" role="img" aria-label="Comparison of returning radar waves: moving the slider shifts the second wave relative to the first.">
+          <path d="M24 55H576" stroke="#47483f"/>
+          <path d={wave(0)} fill="none" stroke="#aaa79b" strokeWidth="2" strokeDasharray="5 5"/>
+          <path d={wave(phase)} fill="none" stroke="#bdcda8" strokeWidth="3"/>
+        </svg>
+        <p className="text-[13px] leading-relaxed text-ink/75">{distance < .05 ? "No movement: the two waves line up." : `${distance.toFixed(1)} cm farther away adds ${(2*distance).toFixed(1)} cm to the journey—out and back. That changes where the returning wave is in its cycle.`}</p>
       </div>
-      <div className="h-3 rounded mt-4" style={{ background: `linear-gradient(90deg, ${Array.from({ length: 25 }, (_, k) => rgb(fringe(-(k / 24) * (d / 100)))).join(",")})` }} aria-hidden="true" />
-      <p className="text-[12.5px] text-mute mt-1.5">The color strip is a line of ground from still (left) to your motion (right), drawn the way an interferogram draws it.</p>
+      <p className="text-[11px] text-mute mt-4">Concept illustration · AI-assisted · distances exaggerated. Movement is along the radar’s viewing direction.</p>
     </div>
   );
 }
@@ -107,7 +87,7 @@ function useWaterRipple(level) {
     m.velocity = Math.max(-16, Math.min(16, m.velocity + delta * 0.7));
     let raf, last = performance.now();
     const frame = (now) => {
-      const dt = Math.min((now - last) / 1000, 0.035); last = now;
+      const dt = Math.max(0, Math.min((now - last) / 1000, 0.035)); last = now;
       m.velocity += (-65 * m.amplitude - 7 * m.velocity) * dt;
       m.amplitude = Math.max(-2, Math.min(2, m.amplitude + m.velocity * dt));
       m.phase += dt * 3;
@@ -125,16 +105,51 @@ function useWaterRipple(level) {
   return ripple;
 }
 
-export function AquiferExplainer({ progress = 0 }) {
-  const [manual, setManual] = useState(null);
-  // A slider adjustment stays put until the visitor resumes scrolling the scene.
-  const scrubbing = manual !== null && Math.abs(progress - manual.at) < 0.015;
-  const pumping = seg(progress, 0.08, 0.65);
-  const recharge = seg(progress, 0.73, 0.97);
-  const level = scrubbing ? manual.level : 1 - pumping + recharge * 0.8;
-  const drawdown = useSmooth(1 - level, reduceMotion ? 1000 : 12);
-  const residual = scrubbing ? 0 : recharge * 9;
-  const surface = 112 + Math.pow(drawdown, 1.5) * 34 + residual;
+export function AquiferExplainer() {
+  const [level, setLevel] = useState(1);
+  const [maxDrawdown, setMaxDrawdown] = useState(0);
+  const [playing, setPlaying] = useState(false);
+  const playbackPhase = useRef(0);
+  const diagramRef = useRef(null);
+  const started = useRef(false);
+  const [visible, setVisible] = useState(false);
+  const [pageVisible, setPageVisible] = useState(() => !document.hidden);
+  useEffect(() => {
+    const observer = new IntersectionObserver(([entry]) => {
+      const inView = entry.isIntersecting && entry.intersectionRatio > 0;
+      setVisible(inView);
+      if (inView && !started.current) {
+        started.current = true;
+        // Initial level and phase are already at high groundwater.
+        setPlaying(true);
+      }
+    }, { threshold: [0, .01] });
+    observer.observe(diagramRef.current);
+    const onVisibility = () => setPageVisible(!document.hidden);
+    document.addEventListener("visibilitychange", onVisibility);
+    return () => {
+      observer.disconnect();
+      document.removeEventListener("visibilitychange", onVisibility);
+    };
+  }, []);
+  useEffect(() => {
+    if (!playing || !visible || !pageVisible) return;
+    let raf, last;
+    const tick = (now) => {
+      const dt = last === undefined ? 0 : Math.max(0, Math.min(.05, (now - last) / 1000));
+      last = now;
+      playbackPhase.current = (playbackPhase.current + dt * Math.PI / 5) % (2 * Math.PI);
+      const next = (1 + Math.cos(playbackPhase.current)) / 2;
+      setLevel(next);
+      setMaxDrawdown(previous => Math.max(previous, 1 - next));
+      raf = requestAnimationFrame(tick);
+    };
+    raf = requestAnimationFrame(tick);
+    return () => cancelAnimationFrame(raf);
+  }, [playing, visible, pageVisible]);
+  const drawdown = Math.max(0, Math.min(1, useSmooth(1 - level, reduceMotion ? 1000 : 12)));
+  const residual = maxDrawdown * 9;
+  const surface = 112 + Math.pow(drawdown, 1.5) * 25 + residual;
   const water = 186 + drawdown * 158;
   const ripple = useWaterRipple(water);
   const waterEdge = Array.from({ length: 41 }, (_, i) => {
@@ -143,15 +158,15 @@ export function AquiferExplainer({ progress = 0 }) {
     return `${i ? "L" : "M"}${36 + u * 518} ${y}`;
   }).join(" ");
   // The broad cutaway stays readable; a left face and shallow top supply depth.
-  const project = (x, y) => [105 + .82 * x, y - 15 + .12 * x];
+  const project = (x, y) => [80 + .9 * x, y + 20];
   const surfaceAnchor = project(554, surface);
   const waterAnchor = project(554, water);
-  const recovery = !scrubbing && progress > 0.73;
-  const phase = scrubbing ? "Explore groundwater level" : recovery ? "Recharge · partial recovery" : progress < 0.08 ? "Scroll to see what pumping changes" : "Pumping · groundwater falls";
+  const recovery = maxDrawdown > 0 && 1 - level < maxDrawdown - .02;
+  const phase = recovery ? "Recharge · partial recovery" : level < .98 ? "Pumping · groundwater falls" : "Drag the slider to explore";
   return (
     <div className="aquifer-model">
       <div className="aquifer-state"><span>Below the surface</span><span>{phase}</span></div>
-      <svg viewBox="0 0 720 490" role="img" aria-label={`Conceptual aquifer: ${drawdown > .5 ? "groundwater is low and the land has settled by a smaller amount" : "groundwater is high and the land is near its original level"}. Scroll or use the groundwater slider to compare.`}>
+      <svg ref={diagramRef} viewBox="0 0 720 490" role="img" aria-label={`Conceptual aquifer: ${drawdown > .5 ? "groundwater is low and the land has settled by a smaller amount" : "groundwater is high and the land is near its original level"}. Use the groundwater slider to compare.`}>
         <defs>
           <linearGradient id="aq-soil" x2="0" y2="1"><stop stopColor="#44483c"/><stop offset="1" stopColor="#292d26"/></linearGradient>
           <linearGradient id="aq-top" x2="1" y2="1"><stop stopColor="#69765b"/><stop offset="1" stopColor="#424d39"/></linearGradient>
@@ -159,7 +174,7 @@ export function AquiferExplainer({ progress = 0 }) {
           <pattern id="aq-grains" width="23" height="19" patternUnits="userSpaceOnUse"><circle cx="4" cy="5" r=".8" fill="#ddd9c5" opacity=".14"/><circle cx="17" cy="14" r="1.2" fill="#ddd9c5" opacity=".09"/></pattern>
           <clipPath id="aq-section"><path d={`M36 ${surface}H554V422H36Z`}/></clipPath>
         </defs>
-        <g transform="matrix(.82 .12 0 1 105 -15)">
+        <g transform="matrix(.9 0 0 1 80 20)">
         <path d={`M36 ${surface}l-90 -40V382l90 40Z`} fill="#33382d" stroke="#656c56" strokeWidth=".8"/>
         <path d={`M36 ${water}l-90 -40V382l90 40Z`} fill="#456767" opacity=".7"/>
         {[0,1,2].map(i => {
@@ -200,7 +215,7 @@ export function AquiferExplainer({ progress = 0 }) {
         <path d={`M463 ${surface+4}V395`} stroke="#c3bfad" strokeWidth="4"/>
         <path d={`M463 ${water+4}V395`} stroke="#8cb4b1" strokeWidth="2"/>
         </g>
-        <text x="63" y="49" fill="#aaa79b" fontSize="12">Original land level</text>
+        <text x="35" y="79" fill="#aaa79b" fontSize="12">Original land level</text>
         <text x={project(463,surface)[0]} y={project(463,surface)[1]-62} fill="#aaa79b" textAnchor="middle" fontSize="12">Pumping well</text>
         <path d={`M${surfaceAnchor[0]} ${surfaceAnchor[1]}h20`} stroke="#b8c6a4"/>
         <text x={surfaceAnchor[0]+30} y={surfaceAnchor[1]+5} fontSize="15" fill="#d3ddc2">Land surface</text>
@@ -213,8 +228,8 @@ export function AquiferExplainer({ progress = 0 }) {
         </>}
       </svg>
       <p className="aquifer-caption">{recovery ? "Water returns. The land rises a little, but some compaction remains." : "Groundwater drops farther. The land above settles by a smaller amount."}</p>
-      <label className="aquifer-pressure"><span>Try it yourself</span><input aria-label="Groundwater level" type="range" min="0" max="1" step="0.01" value={level} onChange={(e) => setManual({ level: +e.target.value, at: progress })}/><span className="aquifer-pressure-ends"><span>Lower groundwater</span><span>Higher groundwater</span></span></label>
-      <p className="aquifer-note">Concept illustration · AI-assisted · motion exaggerated, not to scale. {scrubbing ? "Keep scrolling to resume." : "Scroll to continue."}</p>
+      <div className="aquifer-pressure"><div className="aquifer-control-heading"><button type="button" className="aquifer-play" onClick={() => setPlaying(value => !value)} aria-label={playing ? "Pause groundwater animation" : "Play groundwater animation"}>{playing ? <Pause size={13} /> : <Play size={13} />}<span>{playing ? "Pause" : "Play animation"}</span></button><label htmlFor="aquifer-level">or drag the slider</label></div><input id="aquifer-level" aria-label="Groundwater level" type="range" min="0" max="1" step="0.01" value={level} onChange={(e) => { const next = +e.target.value; setPlaying(false); playbackPhase.current = Math.acos(2 * next - 1); setLevel(next); setMaxDrawdown(previous => Math.max(previous, 1 - next)); }}/><span className="aquifer-pressure-ends"><span>Lower groundwater</span><span>Higher groundwater</span></span></div>
+      <p className="aquifer-note">Concept illustration · AI-assisted · motion exaggerated, not to scale. Drag the slider to compare water levels.</p>
     </div>
   );
 }

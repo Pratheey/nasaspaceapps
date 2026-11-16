@@ -104,8 +104,8 @@ body {
 @media(max-height:740px) and (min-width:768px) { .pole-stage { padding-top:90px; } .pole-copy h2 { font-size:42px; margin:15px 0; } .pole-reading { margin-top:12px; } .pole-source { margin-top:16px; } }
 
 
-.aquifer-scene { position:relative; height:260svh; }
-.aquifer-stage { position:sticky; top:0; min-height:100svh; display:grid; grid-template-columns:.8fr 1.3fr; align-items:center; align-content:center; gap:6%; max-width:1500px; margin:auto; padding:100px max(4vw,24px) 32px; }
+.aquifer-scene { position:relative; }
+.aquifer-stage { position:relative; min-height:100svh; display:grid; grid-template-columns:.8fr 1.3fr; align-items:center; align-content:center; gap:6%; max-width:1500px; margin:auto; padding:100px max(4vw,24px) 32px; }
 .aquifer-copy h2 { font:600 clamp(36px,4.3vw,66px)/1.06 var(--font-display); letter-spacing:-.02em; margin:22px 0; }
 .aquifer-copy h2 span { color:var(--color-mute); }
 .aquifer-copy > p { font-size:17px; line-height:1.8; color:#bdbbb3; margin-top:18px; max-width:470px; }
@@ -122,3 +122,8 @@ body {
 .aquifer-note { font-size:11px; color:var(--color-mute); margin-top:16px; }
 @media(max-width:767px) { .aquifer-stage { grid-template-columns:1fr; gap:24px; padding:86px 24px 22px; } .aquifer-copy h2 { font-size:34px; margin:12px 0; } .aquifer-copy > p { font-size:14px; line-height:1.6; margin-top:12px; } .aquifer-copy > p:last-child { display:none; } .aquifer-model > svg { max-height:38svh; } .aquifer-pressure { margin-top:12px; } .aquifer-caption { font-size:13px; } }
 @media(max-height:650px) and (min-width:768px) { .aquifer-stage { padding-top:78px; gap:4%; } .aquifer-copy h2 { font-size:34px; margin:12px 0; } .aquifer-copy > p { font-size:14px; line-height:1.5; } .aquifer-model > svg { max-height:43svh; } .aquifer-pressure { margin-top:8px; } .aquifer-caption { font-size:12px; } }
+
+.aquifer-control-heading { display:flex; align-items:center; justify-content:flex-start; flex-wrap:wrap; gap:12px; }
+.aquifer-play { display:inline-flex; align-items:center; justify-content:center; gap:8px; min-height:42px; padding:10px 18px; border:1px solid var(--color-accent); border-radius:999px; color:var(--color-space); background:var(--color-accent); font:inherit; font-size:14px; font-weight:600; cursor:pointer; transition:background .2s, border-color .2s; }
+.aquifer-play:hover { background:var(--color-accent-2); border-color:var(--color-accent-2); }
+.aquifer-play:focus-visible { outline:2px solid var(--color-accent); outline-offset:3px; }

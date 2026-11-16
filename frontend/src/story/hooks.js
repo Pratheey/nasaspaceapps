@@ -64,7 +64,8 @@ export function useSmooth(target, rate = 9) {
   useEffect(() => {
     let raf = 0, last = performance.now();
     const step = (now) => {
-      const dt = Math.min(0.05, (now - last) / 1000); last = now;
+      // A queued frame timestamp can precede effect setup in the same frame.
+      const dt = Math.max(0, Math.min(0.05, (now - last) / 1000)); last = now;
       const d = goal.current - cur.current;
       if (Math.abs(d) < 0.0005) { cur.current = goal.current; setV(goal.current); raf = 0; return; }
       cur.current += d * (1 - Math.exp(-rate * dt));

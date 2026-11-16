@@ -16,6 +16,7 @@ export const MEDIA = {
   explainer: ["./media/nisar-explainer.mp4", SVS + "a010000/a014300/a014377/NISAR_EIC_16x9_FINAL.mp4"],
   explainerPoster: SVS + "a010000/a014300/a014377/NISAR_EIC_16x9_FINAL.00050_print.jpg",
   northDakota: PJ("PIA26615"),
+  mountDesert: PJ("PIA26616"),
   amazonFlood: PJ("PIA26112"),
   antarctica: PJ("PIA26493"),
   india: PJ("PIA26496"),
