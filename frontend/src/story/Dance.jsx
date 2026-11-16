@@ -234,7 +234,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       }
       if (nPts) {
         gl.useProgram(G.pp); gl.uniform2f(G.pu.res, e.W, e.H); gl.uniform1f(G.pu.dpr, e.dpr); gl.uniform1f(G.pu.mode, 0);
-        gl.uniform1f(G.pu.lite, e.lite ? 1 : 0); gl.uniform1f(G.pu.core, DOT_ALPHA); gl.uniform1f(G.pu.halo, HALO_ALPHA * 1.4);
+        gl.uniform1f(G.pu.lite, e.lite || e.dense ? 1 : 0); gl.uniform1f(G.pu.core, DOT_ALPHA); gl.uniform1f(G.pu.halo, HALO_ALPHA * 1.4);
         gl.bindBuffer(gl.ARRAY_BUFFER, G.bPts); gl.bufferSubData(gl.ARRAY_BUFFER, 0, pts.subarray(0, nPts * 7));
         attr(G.pa.pos, 2, 7, 0); attr(G.pa.size, 1, 7, 2); attr(G.pa.col, 4, 7, 3);
         gl.drawArrays(gl.POINTS, 0, nPts);
@@ -265,7 +265,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       for (const c of [canvas, glc]) { c.width = Math.round(e.W * dpr); c.height = Math.round(e.H * dpr); c.style.width = e.W + "px"; c.style.height = e.H + "px"; }
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
       sizeGL();
-      e.pxKm = Math.min((e.W * 0.62) / FIT_W_KM, (e.H * 0.84) / FIT_H_KM);
+      e.pxKm = Math.min((e.W * (e.W < 640 ? 0.94 : 0.62)) / FIT_W_KM, (e.H * 0.84) / FIT_H_KM); // a narrow screen gives the field nearly its full width
       const g = ctx.createRadialGradient(e.W / 2, e.H * 0.5, 0, e.W / 2, e.H * 0.5, Math.max(e.W, e.H) * 0.62);
       g.addColorStop(0, "rgba(52,49,44,0.55)"); g.addColorStop(1, "rgba(22,21,20,0)");
       e.bgGrad = g;
@@ -425,19 +425,23 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       if (k0 >= N1) { k0 = N - 2; f = 1; } else f = t - k0;
       const f2 = f * f, f3 = f2 * f;
       const k1 = k0 + 1;
-      const trailOn = !e.calm && !e.lite && e.speed > 0.02 && !inEnd;
-      const stemsOn = !e.lite;
+      // How closely the cells sit on screen decides how much light piles up. Below about 70% of the tuned spacing
+      // (phones, or zoomed far out) switch to small core-only dots with no stems or streaks, or the field turns to haze.
+      const spacing = pk * cellKm, dens = spacing / REF_SPACING_PX;
+      const dense = dens < 0.7;
+      e.dense = dense;
+      const trailOn = !e.calm && !e.lite && !dense && e.speed > 0.02 && !inEnd;
+      const stemsOn = !e.lite && !dense;
       const tp = Math.max(0, t - TRAIL_PASSES * e.speed);
       let kp0 = Math.floor(tp), fp;
       if (kp0 >= N1) { kp0 = N - 2; fp = 1; } else fp = tp - kp0;
       const glOn = !!G && !glLost;
-      const sizeMul = e.lite ? 1.6 : 3;
-      // Density compensation: on a small screen (or zoomed out) the cells sit closer than the sprites are wide,
-      // and additive light piles up to white. Shrink the dots a little and dim them by how much they overlap.
-      const spacing = pk * cellKm, dens = spacing / REF_SPACING_PX;
-      const sizeK = clamp(dens, 0.6, 1.2);
+      const sizeMul = e.lite || dense ? 1.6 : 3;
+      // Shrink the dots a little and dim them by how much they overlap; still ground recedes so moving ground stands out.
+      const sizeK = clamp(dens, 0.55, 1.2);
       const overlap = Math.pow((DOT_PX * sizeMul * sizeK) / spacing, 2), overlapRef = Math.pow((DOT_PX * 3) / REF_SPACING_PX, 2);
-      const brightK = clamp(overlapRef / overlap, 0.3, 1);
+      const brightK = clamp((overlapRef / overlap) * (dense ? 1.9 : 1), 0.2, 1);
+      const quiet = clamp(1.3 - dens, 0, 0.6);
       const lineGain = Math.min(1.3, e.dpr) * clamp(dens, 0.25, 1);
 
       const sel = e.sel, kLift = kmPerM;
@@ -490,7 +494,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
         const bin = Math.round((clamp(vc / domain, -1, 1) * 0.5 + 0.5) * (NBINS - 1));
         sxA[i] = sx; syA[i] = sy; alive[i] = 1;
         const size = DOT_PX * sizeK * clamp(sc, 0.8, 1.35) * (1 + 0.3 * g), o = nDraw * 7;
-        pts[o] = sx; pts[o + 1] = sy; pts[o + 2] = glOn ? size * sizeMul : size; pts[o + 3] = binRGB[bin * 3]; pts[o + 4] = binRGB[bin * 3 + 1]; pts[o + 5] = binRGB[bin * 3 + 2]; pts[o + 6] = glOn ? al * brightK : al;
+        pts[o] = sx; pts[o + 1] = sy; pts[o + 2] = glOn ? size * sizeMul : size; pts[o + 3] = binRGB[bin * 3]; pts[o + 4] = binRGB[bin * 3 + 1]; pts[o + 5] = binRGB[bin * 3 + 2]; pts[o + 6] = glOn ? al * brightK * (1 - quiet * (1 - Math.min(1, Math.abs(vc) / domain))) : al;
         dB[nDraw++] = bin;
         if (!glOn) continue;
         // stem: floor to dot
@@ -603,25 +607,25 @@ function DanceInner({ D, onClose, onOpenSpot }) {
 
       <div className="pointer-events-none absolute inset-0 flex flex-col justify-between p-5 md:p-7">
         <div className={`flex items-start justify-between gap-4 ${ui}`}>
-          <div className="max-w-[420px]">
+          <div className="max-w-[420px] min-w-0">
             <h2 className="font-display font-bold text-[clamp(30px,3.4vw,46px)] leading-none tracking-[-0.01em]">The dance</h2>
-            <p className="text-[14.5px] leading-snug text-ink/75 mt-3">Each point is one square kilometre of the San Joaquin Valley. Its height is how far the ground moved, measured by NISAR on {N} passes.</p>
-            <div className="mt-5 w-[220px]" aria-label="Colour key">
+            <p className="text-[14.5px] leading-snug text-ink/75 mt-3 max-sm:text-[12.5px]">Each point is one square kilometre of the San Joaquin Valley. Its height is how far the ground moved, measured by NISAR on {N} passes.</p>
+            <div className="mt-5 w-[220px] max-sm:w-[150px] max-sm:mt-3" aria-label="Colour key">
               <div className="h-2 rounded-full" style={{ background: legendGradient() }} />
               <div className="flex justify-between text-[11.5px] text-mute mt-1"><span>Sinking</span><span>Still</span><span>Rising</span></div>
             </div>
           </div>
-          <div className="flex flex-col items-end gap-3">
-            <div className="flex flex-wrap justify-end gap-1.5">
+          <div className="flex flex-col items-end gap-3 shrink-0 max-sm:max-w-[46vw]">
+            <div className="flex flex-nowrap justify-end gap-1.5">
               <button type="button" onClick={toggleSound} aria-pressed={soundOn} title="Sound (S)" className={`${btn} ${soundOn ? "border-accent/60 text-accent-2" : ""}`}>
-                {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />} Sound
+                {soundOn ? <Volume2 size={15} /> : <VolumeX size={15} />} <span className="max-sm:sr-only">Sound</span>
               </button>
-              <button type="button" onClick={toggleHidden} title="Hide controls (H). Tap the screen or press H to bring them back." className={btn}><EyeOff size={15} /> Hide controls</button>
-              <button ref={closeRef} type="button" onClick={onClose} title="Close (Esc)" className={btn}><X size={15} /> Close</button>
+              <button type="button" onClick={toggleHidden} title="Hide controls (H). Tap the screen or press H to bring them back." className={btn}><EyeOff size={15} /> <span className="max-sm:sr-only">Hide controls</span></button>
+              <button ref={closeRef} type="button" onClick={onClose} title="Close (Esc)" className={btn}><X size={15} /> <span className="max-sm:sr-only">Close</span></button>
             </div>
             <div className="text-right mt-2" aria-hidden="true">
               <p className="font-mono text-[13px] text-mute">{inEndCaption ? "Net change" : `Pass ${readK + 1} of ${N}`}</p>
-              <p className="font-display font-semibold text-[clamp(22px,2.4vw,32px)] leading-tight">{inEndCaption ? `${fmtDate(D.dates[0])} to ${fmtDate(D.dates[N - 1])}` : fmtDate(D.dates[readK])}</p>
+              <p className="font-display font-semibold text-[clamp(22px,2.4vw,32px)] max-sm:text-[16px] leading-tight">{inEndCaption ? `${fmtDate(D.dates[0])} to ${fmtDate(D.dates[N - 1])}` : fmtDate(D.dates[readK])}</p>
             </div>
           </div>
         </div>
