@@ -430,7 +430,8 @@ function initialState(D) {
   if (!S.relief && h.lens === "1") S.lens = true;
   if (h.fields === "1") { S.fields = true; if (h.field) S.field = { field_id: h.field }; }
   if (h.split === "1") S.split = true;
-  if (h.prof) {
+  if (h.canal === "1" && D.canal) S.profile = { canal: true };
+  else if (h.prof) {
     const parts = h.prof.split(",");
     const q = parts.map(Number);
     if (q.length === 4 && parts.every((part) => part.trim() !== "")
