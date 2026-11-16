@@ -207,7 +207,10 @@ def main() -> int:
             for i, m in enumerate(metas):
                 v[i] = str(m[key])
         for name in ("iono_applied", "tropo_applied", "set_applied", "anomalies_masked"):
-            nc.createVariable(name, "u1", ("pair",))[:] = [int(m[name]) for m in metas]
+            # Flags describe the selected displacement, not the unused fully corrected layer.
+            applied = [0 if args.iono_only and name in ("tropo_applied", "set_applied")
+                       else int(m[name]) for m in metas]
+            nc.createVariable(name, "u1", ("pair",))[:] = applied
         v_tie = nc.createVariable("ref_tie_m", "f8", ("pair",))
         v_tie[:] = tie
         v_tie.long_name = "LOS motion of the reference station over the pair, added to every pixel"
