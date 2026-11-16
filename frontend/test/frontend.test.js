@@ -83,22 +83,19 @@ test("share link round-trips the first date, cell zero and active map tools", (t
   t.after(() => { delete globalThis.history; });
   writeHash({
     mode: "pair", k1: 0, k2: 1, cursor: 0, sel: 0, pin: -1, gps: true,
-    lens: true, fields: true, field: { field_id: "field=1" }, split: true, swipe: -119.99,
+    lens: true, fields: true, field: { field_id: "field=1" }, split: true,
   });
   assert.deepEqual(readHash(hash), {
-    mode: "pair", a: "0", b: "1", t: "0", cell: "0", gps: "1", lens: "1", fields: "1", field: "field=1", split: "1", swipe: "-119.99",
+    mode: "pair", a: "0", b: "1", t: "0", cell: "0", gps: "1", lens: "1", fields: "1", field: "field=1", split: "1",
   });
   assert.deepEqual(readHash("#team"), {});
   assert.equal(readHash("#mode=breathe&prof=%").mode, "breathe");
 });
 
-test("swipe readouts match the visible date on each side of the divider", () => {
+test("Two dates readout is the change from date A to date B", () => {
   const files = fixture(false);
   const D = { meta: files["meta.json"], values: files["series.json"].values_m };
-  const pair = { mode: "pair", k1: 0, k2: 1 };
-  assert.equal(cellValue(D, pair, 0), -0.02);
-  assert.equal(cellValue(D, { ...pair, swipe: -119.99 }, 0), 0);
-  assert.equal(cellValue(D, { ...pair, swipe: -119.99 }, 1), null);
+  assert.equal(cellValue(D, { mode: "pair", k1: 0, k2: 1 }, 0), -0.02);
 });
 
 test("chart paths break at unmeasured dates", () => {

@@ -23,7 +23,7 @@ GPS agrees. Where the evidence is too thin, it says so.
 - **Inspector:** every measurement at a spot, fitted curve with uncertainty, GPS comparison with residuals,
   the source of every number, and ten years of Sentinel-1 history at each GPS station (context only).
 - **Polarization and coverage:** NISAR HH/HV over 30 crop fields, and usable coverage vs Sentinel-1.
-- **Tools:** cross-sections, the California Aqueduct profile, swipe, 3D, walkthrough.
+- **Tools:** cross-sections, the California Aqueduct profile, 3D, walkthrough.
 - **Limits panel:** what the fit does and does not mean.
 
 ## Team

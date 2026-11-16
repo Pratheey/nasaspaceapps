@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { X, ChevronLeft, ChevronRight, Radar, Route } from "lucide-react";
 import { sampleLine, sampleCanal, distKm } from "../lib/profile.js";
 import { cm, fmtDate } from "../lib/fmt.js";
@@ -6,12 +6,24 @@ import { cellAt } from "../lib/data.js";
 import { AGREEMENT, isDraft } from "../lib/demo.js";
 
 /* ---------------- cross-section ---------------- */
-const PW = 900, PH = 150, PP = { l: 54, r: 14, t: 12, b: 26 };
+const PH = 190, PP = { l: 54, r: 14, t: 12, b: 26 };
 export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
   const P = S.profile;
   const smp = useMemo(() => (P?.canal ? (D.canal ? sampleCanal(D.canal, valueAt) : null)
     : P?.b ? sampleLine(P.a, P.b, D.meta.grid.step_deg, valueAt) : null), [P, valueAt, D]);
   const [readFrac, setReadFrac] = useState(null);
+  // The chart is drawn at its real pixel size, so text and lines are never stretched.
+  const box = useRef(null);
+  const [PW, setPW] = useState(900);
+  const open = !!P;
+  useEffect(() => {
+    const el = box.current;
+    if (!el) return;
+    const fit = () => setPW(Math.max(320, Math.round(el.clientWidth - 32)));
+    fit();
+    const ro = new ResizeObserver(fit); ro.observe(el);
+    return () => ro.disconnect();
+  }, [open]);
   if (!P) return null;
 
   let body;
@@ -44,7 +56,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
               : P.canal ? "North to south along the California Aqueduct. Point along the profile to find that spot on the map. A screening tool: where to look closer, not damage or capacity."
               : "Point along the profile to find that spot on the map. Drag the numbered ends to move the line."}
           </p>
-          <svg viewBox={`0 0 ${PW} ${PH}`} preserveAspectRatio="none" className="chart w-full h-[132px] block"
+          <svg viewBox={`0 0 ${PW} ${PH}`} width={PW} height={PH} className="chart block max-w-full"
             onMouseMove={(e) => { const f = frac(e); setReadFrac(f); onProbe(at(f).p); }}
             onMouseLeave={() => { setReadFrac(null); onProbe(null); }}
             onClick={(e) => { const p = at(frac(e)); const i = cellAt(D, ...p.p); if (i >= 0) onPick(i); }}>
@@ -77,7 +89,7 @@ export function ProfilePanel({ D, S, valueAt, onClose, onProbe, onPick }) {
     }
   }
   return (
-    <section aria-label="Cross-section" className="relative border-t border-hair bg-deck px-4 pt-3 pb-2">
+    <section ref={box} aria-label="Cross-section" className="relative shrink-0 border-t border-hair bg-deck px-4 pt-3 pb-2">
       <button onClick={onClose} aria-label="Close cross-section" className="absolute right-3 top-2.5 p-1.5 rounded-md text-mute hover:text-ink hover:bg-deck-2"><X size={16} /></button>
       <h3 className="font-display text-[16px] font-semibold flex items-center gap-2 mb-1 pr-10">
         <Route size={16} className="text-accent" />
@@ -149,7 +161,7 @@ export function Limits({ D, onClose }) {
         ))}
         <h3 className="font-display text-[18px] font-semibold mt-5 mb-2 text-accent-2">Keyboard</h3>
         <ul className="grid grid-cols-2 gap-x-6 gap-y-1.5 text-[14px]">
-          {[["1–7", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["S", "Swipe date A against B"], ["P", "Cross-section"], ["W", "Walkthrough"], ["F", "Crop fields"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
+          {[["1–7", "Switch views"], ["Space", "Play the record"], ["← →", "Step one pass"], ["G", "GPS check"], ["Ctrl K", "Search everything"], ["L", "Radar lens"], ["D", "3D"], ["P", "Cross-section"], ["W", "Walkthrough"], ["F", "Crop fields"], ["Shift-click", "Compare a second spot"], ["Esc", "Close or cancel"]].map(([k, d]) => (
             <li key={k} className="flex items-center gap-2"><kbd className="font-sans text-[12px] font-semibold border border-hair-2 border-b-2 rounded px-1.5 py-0.5 bg-space">{k}</kbd><span className="text-ink/85">{d}</span></li>
           ))}
         </ul>

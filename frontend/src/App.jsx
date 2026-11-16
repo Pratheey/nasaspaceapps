@@ -1,5 +1,5 @@
 import { Suspense, lazy, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { ScanSearch, Search, Play, BookOpen as BookIcon, SplitSquareHorizontal, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes, AudioLines } from "lucide-react";
+import { ScanSearch, Search, Play, BookOpen as BookIcon, Activity, Box, CalendarRange, Info, Layers, Route, Satellite, Share2, Tags, Waves, MapPin, Compass, BookOpen, MousePointerClick, Sprout, Droplets, Home, EyeOff, Shapes, AudioLines } from "lucide-react";
 import FieldCard from "./components/FieldCard.jsx";
 import ToolsMenu from "./components/ToolsMenu.jsx";
 import ViewMenu from "./components/ViewMenu.jsx";
@@ -82,7 +82,6 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
   const [S, setS] = useState(() => initialState(D));
   const set = useCallback((patch) => setS((s) => {
     const next = { ...s, ...(typeof patch === "function" ? patch(s) : patch) };
-    if (next.mode !== "pair" || next.relief) next.swipe = null;
     return next;
   }), []);
   const Sref = useRef(S); Sref.current = S;
@@ -100,7 +99,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
   useEffect(() => { if (S.sel >= 0) setPanel(true); }, [S.sel]);
   // The map has to re-measure itself when the panel opens or closes.
   // The same when the timeline appears or disappears (it only shows in Time-lapse, Two dates and while playing).
-  const showTimeline = S.mode === "breathe" || S.mode === "pair" || S.playing;
+  const showTimeline = true; // always on screen: it is how people find Play and the dates
   useEffect(() => { const r = requestAnimationFrame(() => mapRef.current?.resize()); return () => cancelAnimationFrame(r); }, [panel, showTimeline]);
   // Switching GPS check on brings the whole frame (and so every station in it) into view, once, unless the walkthrough
   // is steering or the switch came from clicking a station (which flies to that station instead).
@@ -130,12 +129,12 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
     return () => clearTimeout(id);
   }, [spot]); // eslint-disable-line
   const openDance = () => { set({ playing: false }); onDance?.(); };
-  const setMode = useCallback((m) => set((s) => ({ mode: m, playing: m === "breathe" ? s.playing : false, swipe: m === "pair" ? s.swipe : null })), [set]);
+  const setMode = useCallback((m) => set((s) => ({ mode: m, playing: m === "breathe" ? s.playing : false, })), [set]);
   const actions = useMemo(() => ({
     select,
     clearSel: () => { stopListening(); set({ sel: -1, listenK: null }); },
     setPin: (i) => set({ pin: i, awaitPin: false }),
-    showPair: (a, b) => set({ k1: a, k2: b, mode: "pair", swipe: null, playing: false }),
+    showPair: (a, b) => set({ k1: a, k2: b, mode: "pair", playing: false }),
     scrubTo: (k) => set({ cursor: k, mode: "breathe", playing: false }),
     csv: () => downloadCSV(D, Sref.current.sel, (t) => fitAt(D, Sref.current.sel, t), stationAt(Sref.current.sel)),
     toggleListen: () => {
@@ -155,10 +154,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
   const onStation = useCallback((st) => { gpsOnForStation(); select(st.cell_index); }, [select, set]); // eslint-disable-line
   const onProfilePoint = useCallback((ll) => set((s) => (s.profile?.a && !s.profile.b ? { profile: { a: s.profile.a, b: ll }, drawing: false } : { profile: { a: ll } })), [set]);
   const onProfileDrag = useCallback((key, ll) => set((s) => ({ profile: { ...s.profile, [key]: ll } })), [set]);
-  const valueAt = useCallback((lng, lat) => { const i = cellAt(D, lng, lat); return i < 0 ? null : cellValue(D, S, i); }, [D, S.mode, S.k1, S.k2, S.cursor, S.swipe]); // eslint-disable-line
-  const toggleSwipe = () => set((s) => s.swipe != null ? { swipe: null } : {
-    swipe: (D.bbox.west + D.bbox.east) / 2, mode: "pair", relief: false, lens: false, playing: false,
-  });
+  const valueAt = useCallback((lng, lat) => { const i = cellAt(D, lng, lat); return i < 0 ? null : cellValue(D, S, i); }, [D, S.mode, S.k1, S.k2, S.cursor]); // eslint-disable-line
   const closeProfile = () => {
     mapRef.current?.showProbe(null);
     set({ profile: null, drawing: false });
@@ -222,7 +218,6 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
       ...fastest.slice(0, 3).map(([i, v], n) => ({ id: "f" + i, group: "Sinking fastest", label: placeName(i), hint: cm(v), icon: Activity, run: () => select(i, { fly: true }) })),
       ...MODES.map((m) => ({ id: "m" + m.id, group: "Views", label: m.name, key: m.key, icon: MODE_ICONS[m.id], run: () => setMode(m.id) })),
       { id: "t-play", group: "Tools", label: "Play the record", key: "Space", icon: Play, run: togglePlay },
-      { id: "t-swipe", group: "Tools", label: "Swipe date A against date B", key: "S", icon: SplitSquareHorizontal, run: toggleSwipe },
       { id: "t-lens", group: "Tools", label: "Radar lens", key: "L", icon: ScanSearch, run: () => set({ lens: true, relief: false }) },
       { id: "t-3d", group: "Tools", label: "3D view", key: "D", icon: Box, run: () => set({ relief: true, lens: false }) },
       { id: "t-prof", group: "Tools", label: "Draw a cross-section", key: "P", icon: Route, run: toggleProfile },
@@ -258,7 +253,6 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
       else if (k === "g") set({ gps: !s.gps });
       else if (k === "d") set({ relief: !s.relief, lens: false });
       else if (k === "l") set({ lens: !s.lens, relief: false });
-      else if (k === "s") toggleSwipe();
       else if (k === "p") toggleProfile();
       else if (k === "a" && D.canal) toggleCanal();
       else if (k === "w") goStep(0);
@@ -324,13 +318,14 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
       </header>
 
       <main className={`flex-1 min-h-0 grid ${panel ? "grid-cols-[minmax(0,1fr)_clamp(360px,32vw,440px)]" : "grid-cols-[minmax(0,1fr)]"} max-lg:flex max-lg:flex-col`}>
-        <div className="min-h-0 flex flex-col">
-          <div className="@container relative flex-1 min-h-[420px] overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]">
+        <div className="min-h-0 flex flex-col lg:overflow-y-auto">
+          {/* The map gives up height while a cross-section is open, so the timeline (A and B) is never squeezed out. */}
+          <div className={`@container relative flex-1 ${S.profile ? "min-h-[200px]" : "min-h-[420px]"} overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]`}>
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
-              onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onSwipe={(lon) => set({ swipe: lon })} onField={(f) => set({ field: f })} />
+              onProfilePoint={onProfilePoint} onProfileDrag={onProfileDrag} onHover={setHover} onField={(f) => set({ field: f })} />
             {S.fields && <FieldCard field={S.field} onClose={() => set({ field: null })} />}
 
-            <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-10 flex max-w-[calc(100%-5.5rem)] rounded-lg border border-hair-2 bg-space/95">
+            <div role="toolbar" aria-label="Map tools" className="absolute top-3.5 left-4 z-20 flex max-w-[calc(100%-5.5rem)] rounded-lg border border-hair-2 bg-space/95">
               {/* One button for search and "Go to": the command bar lists every place and GPS station first (two clicks). */}
               <button onClick={() => setCmd(true)} title="Search or go to a place or GPS station (Ctrl+K)" aria-label="Search or go to a place, GPS station, view or tool"
                 className="inline-flex items-center gap-2 px-3 py-2 text-[14px] text-ink/90 hover:bg-deck-2 border-r border-hair-2">
@@ -339,7 +334,6 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
               <ToolsMenu tools={[
                 { icon: Route, label: "Cross-section", hint: "Draw a line, see the ground along it", on: !!S.profile && !S.profile.canal, act: toggleProfile, key: "P" },
                 ...(D.canal ? [{ icon: Droplets, label: "California Aqueduct", hint: "Motion along the canal", on: !!S.profile?.canal, act: toggleCanal, key: "A" }] : []),
-                { icon: SplitSquareHorizontal, label: "Swipe compare", hint: "Two dates side by side", on: S.swipe != null, act: toggleSwipe, key: "S" },
                 { icon: Box, label: "3D view", hint: "Sinking shown as depth", on: S.relief, act: () => set({ relief: !S.relief, lens: false }), key: "D" },
                 { icon: Sprout, label: "Crop fields", hint: "Polarization and coverage", on: S.fields, act: () => set({ fields: !S.fields, field: null }), key: "F" },
                 { icon: ScanSearch, label: "Radar lens", hint: "Fringes under the cursor", on: S.lens, act: () => set({ lens: !S.lens, relief: false }), key: "L" },
@@ -353,13 +347,12 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
               </button>
             </div>
 
-            {S.drawing && !S.profile?.a && (
-              <p className="absolute top-[66px] left-4 z-10 rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
-            )}
-
-            {S.tour < 0 && !(S.drawing && !S.profile?.a) && (
+            {S.tour < 0 && (
               <div className={`pointer-events-none absolute top-[66px] left-4 z-10 flex flex-col items-start gap-1 ${S.fields ? "max-w-[calc(100%-26rem)] max-sm:max-w-[calc(100%-9rem)]" : "max-w-[calc(100%-9rem)]"}`}>
-                <p className="rounded-md border border-hair-2 bg-space/90 px-3 py-1.5 text-[13.5px] leading-snug text-ink">{toolCaption(S) || viewCaption(D, S)}</p>
+                {S.drawing && !S.profile?.a && (
+                  <p className="rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
+                )}
+                <p className="rounded-md border border-hair-2 bg-space/90 px-3 py-1.5 text-[13.5px] leading-snug text-ink">{toolCaption(S, D) || viewCaption(D, S)}</p>
                 {!clicked && S.sel < 0 && !S.drawing && !S.profile && (
                   <p className="rounded-md bg-space/80 px-3 py-1 text-[12.5px] text-mute">Click anywhere to see how that spot moved</p>
                 )}
@@ -399,8 +392,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
           )}
           {showTimeline && (
             <Timeline D={D} S={S} trace={S.sel >= 0 ? D.values[S.sel] : null}
-              onScrub={(k) => set({ cursor: k, mode: "breathe", playing: false })}
-              onPair={(key, k) => set((s) => ({ [key]: key === "k1" ? Math.max(0, Math.min(k, s.k2 - 1)) : Math.min(N - 1, Math.max(k, s.k1 + 1)) }))}
+              onPair={(key, k) => set((s) => ({ mode: "pair", playing: false, [key]: key === "k1" ? Math.max(0, Math.min(k, s.k2 - 1)) : Math.min(N - 1, Math.max(k, s.k1 + 1)) }))}
               onPlay={togglePlay} onStep={step} />
           )}
         </div>
@@ -424,7 +416,7 @@ function Explorer({ D, onStory, startTour, onDance, spot }) {
 function initialState(D) {
   const N = D.dates.length;
   const S = { mode: "net", sel: -1, pin: -1, k1: 0, k2: N - 1, cursor: N - 1, gps: false, split: false, playing: false,
-    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, swipe: null, lens: false, fields: false, field: null };
+    relief: false, drawing: false, profile: null, awaitPin: false, tour: -1, listenK: null, lens: false, fields: false, field: null };
   const h = readHash();
   const int = (x, lo, hi) => { const n = parseInt(x, 10); return isNaN(n) ? null : Math.max(lo, Math.min(hi, n)); };
   if (MODES.some((m) => m.id === h.mode)) S.mode = h.mode;
@@ -438,10 +430,6 @@ function initialState(D) {
   if (!S.relief && h.lens === "1") S.lens = true;
   if (h.fields === "1") { S.fields = true; if (h.field) S.field = { field_id: h.field }; }
   if (h.split === "1") S.split = true;
-  if (S.mode === "pair" && !S.relief && h.swipe != null) {
-    const swipe = Number(h.swipe);
-    if (Number.isFinite(swipe) && swipe >= D.bbox.west && swipe <= D.bbox.east) S.swipe = swipe;
-  }
   if (h.prof) {
     const parts = h.prof.split(",");
     const q = parts.map(Number);

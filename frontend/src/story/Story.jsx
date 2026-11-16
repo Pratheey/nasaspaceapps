@@ -91,7 +91,7 @@ function Hero({ D, onExplore, onDance }) {
   const y = useScrollY();
   const fade = Math.max(0, 1 - y / 700);
   return (
-    <section className="relative h-[100svh] min-h-[640px] overflow-hidden">
+    <section className="relative min-h-[max(100svh,640px)] overflow-hidden">
       <div className="absolute inset-0" style={{ transform: `translate3d(0, ${y * 0.35}px, 0) scale(${1.08 + y * 0.0002})` }}>
         <NasaImage srcs={IMAGES.orbitCalifornia} alt="Artist's concept of the NISAR satellite in orbit over central and Northern California"
           className="absolute inset-0 w-full h-full object-cover object-[65%_40%]"
@@ -101,7 +101,7 @@ function Hero({ D, onExplore, onDance }) {
       <div className="absolute inset-0 bg-[linear-gradient(90deg,#161514_0%,rgba(22,21,20,.86)_34%,rgba(22,21,20,.25)_70%,rgba(22,21,20,.1)_100%)]" />
       <div className="absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-space to-transparent" />
 
-      <div className="relative h-full flex flex-col justify-center pt-24 max-sm:pt-36 pb-10 px-6 md:px-14 max-w-[1400px] mx-auto" style={{ opacity: fade }}>
+      <div className="relative min-h-[max(100svh,640px)] flex flex-col justify-center pt-24 max-sm:pt-36 pb-10 px-6 md:px-14 max-w-[1400px] mx-auto" style={{ opacity: fade }}>
         <div className="intro-in relative z-10 max-w-[720px]">
           <p className="text-[15px] text-mute flex items-center gap-2"><Radar size={16} /> NASA Space Apps 2026, Dancing with the SARs</p>
           <h1 className="font-display font-bold leading-[1] tracking-[-0.015em] text-[clamp(38px,5vw,76px)] mt-5">
