@@ -119,7 +119,7 @@ function Hero({ D, onExplore, onDance }) {
               <ArrowDown size={17} /> Read the story
             </button>
             {onDance && (
-              <button onClick={onDance} className="inline-flex items-center gap-2 rounded-full border border-hair-2 bg-space/40 backdrop-blur px-6 py-3 hover:border-accent/60 hover:text-accent-2 transition">
+              <button onClick={onDance} className="inline-flex items-center gap-2 rounded-full bg-gradient-to-r from-[#FF8232] to-[#E15F2D] text-[#161514] font-semibold px-6 py-3 shadow-[0_0_34px_rgba(255,130,50,.45)] hover:shadow-[0_0_46px_rgba(255,130,50,.7)] hover:brightness-110 transition">
                 <Sparkles size={17} /> Watch the dance
               </button>
             )}
