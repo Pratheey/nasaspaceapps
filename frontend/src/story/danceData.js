@@ -80,9 +80,9 @@ export function prepareDance(D, { heightFrac, headingDeg }) {
   if (shaped) {
     const comes = meanSeries[N - 1] > meanSeries[lo];
     parts = [
-      { start: 0, text: `${seasonWords(d[0], d[hi])}: water returns and the ground rises.` },
-      { start: hi, text: `${seasonWords(d[hi], d[lo])}: pumping lowers the water and the ground settles.` },
-      { start: lo, text: comes ? `${seasonWords(d[lo], d[N - 1])}: some places come back. Others do not.` : `${seasonWords(d[lo], d[N - 1])}: the ground stays low in most places.` },
+      { start: 0, text: `${seasonWords(d[0], d[hi])}: the average measured position moves toward the satellite.` },
+      { start: hi, text: `${seasonWords(d[hi], d[lo])}: the average measured position moves away from the satellite.` },
+      { start: lo, text: comes ? `${seasonWords(d[lo], d[N - 1])}: the average moves back toward the satellite.` : `${seasonWords(d[lo], d[N - 1])}: the average stays below its earlier high.` },
     ];
     shape = "seasonal";
   } else {
