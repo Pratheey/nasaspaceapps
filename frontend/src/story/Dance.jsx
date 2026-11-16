@@ -9,7 +9,7 @@ import { prepareDance } from "./danceData.js";
 import { createDanceAudio } from "./danceAudio.js";
 
 /* ---------- tuning constants ---------- */
-const PASS_SEC = 1.15;              // seconds per radar pass (26 passes = 25 s of motion)
+const PASS_SEC = 1.15;              // seconds per beat: one 12-day revisit (a missing pass is a silent beat)
 const SWEEP_SEC = 0.35;           // the radar swath crosses the field in this time
 const END_SETTLE_SEC = 0.8;       // hold on the last pass before the net-change frame
 const END_MORPH_SEC = 2.2;        // ease into the net-change frame
@@ -38,8 +38,8 @@ const ZOOM_MIN = 0.6, ZOOM_MAX = 2.6;
 const CAM_DIST_KM = 280;          // perspective strength (smaller = stronger)
 const FIT_W_KM = 150, FIT_H_KM = 120; // the field plus swing and height must fit in this many km of canvas
 const PICK_PX = 12;
-const PAD_GAIN = 0.05, DRONE_GAIN = 0.03, SOLO_GAIN = 0.035, TICK_GAIN = 0.06;
-const PAD_BASE_HZ = 130.8, DRONE_BASE_HZ = 110, SOLO_BASE_HZ = 392, TICK_HZ = 1320;
+const PAD_GAIN = 0.035, DRONE_GAIN = 0.03, SOLO_GAIN = 0.035, NOTE_GAIN = 0.11;
+const PAD_BASE_HZ = 130.81, DRONE_BASE_HZ = 65.41, SOLO_BASE_HZ = 261.63, NOTE_BASE_HZ = 261.63; // all C: every voice stays in one scale
 const DPR_CAP = 1.5;             // device-pixel-ratio cap for both canvases
 const LITE_FRAME_MS = 30;        // frames slower than this (under ~33 fps) switch off glow and streaks switch off glow and streaks
 const REF_SPACING_PX = 6;         // cell spacing on screen at which the look was tuned (a laptop-sized window)
@@ -58,7 +58,26 @@ function DanceInner({ D, onClose, onOpenSpot }) {
   const P = useMemo(() => prepareDance(D, { heightFrac: HEIGHT_FRAC, headingDeg: TRACK_HEADING_DEG }), [D]);
   const N = P.N;
   const reduce = useMemo(reduceMotionQuery, []);
-  const PLAY_END = (N - 1) * PASS_SEC, T1 = PLAY_END + END_SETTLE_SEC, T2 = T1 + END_MORPH_SEC, T3 = T2 + END_HOLD_SEC, LOOP = T3 + END_RETURN_SEC;
+  // Beats follow the calendar: the usual gap between passes is one beat, and a longer gap (a missing pass)
+  // takes proportionally more beats, so the tempo never changes and a gap in the data is a rest.
+  const beats = useMemo(() => {
+    const day = (k) => Date.parse(D.dates[k]) / 864e5;
+    const gaps = []; for (let k = 1; k < N; k++) gaps.push(day(k) - day(k - 1));
+    const unit = [...gaps].sort((a, b) => a - b)[gaps.length >> 1] || 1;
+    const slot = [0]; gaps.forEach((g) => slot.push(slot[slot.length - 1] + Math.max(1, Math.round(g / unit))));
+    const passAt = new Array(slot[N - 1] + 1).fill(-1); slot.forEach((sl, k) => { passAt[sl] = k; });
+    return { slot, passAt, total: slot[N - 1] };
+  }, [D, N]);
+  const tOfClock = (c) => { // clock seconds -> fractional pass index
+    const sl = beats.slot, x = clamp(c / PASS_SEC, 0, beats.total);
+    let k = 0; while (k < N - 2 && sl[k + 1] <= x) k++;
+    return k + (x - sl[k]) / (sl[k + 1] - sl[k]);
+  };
+  const clockOfT = (t) => { // fractional pass index -> clock seconds
+    const sl = beats.slot, k = clamp(Math.floor(t), 0, N - 2);
+    return (sl[k] + (clamp(t, 0, N - 1) - k) * (sl[k + 1] - sl[k])) * PASS_SEC;
+  };
+  const PLAY_END = beats.total * PASS_SEC, T1 = PLAY_END + END_SETTLE_SEC, T2 = T1 + END_MORPH_SEC, T3 = T2 + END_HOLD_SEC, LOOP = T3 + END_RETURN_SEC;
   const NET_CLOCK = T2 + 0.5;
 
   const wrapRef = useRef(null), canvasRef = useRef(null), glRef = useRef(null), fpsRef = useRef(null), trackRef = useRef(null), fillRef = useRef(null), headRef = useRef(null);
@@ -92,16 +111,16 @@ function DanceInner({ D, onClose, onOpenSpot }) {
   const toggleSound = () => {
     const e = E.current;
     if (e.audio) { stopSound(); return; }
-    const a = createDanceAudio({ padGain: PAD_GAIN, droneGain: DRONE_GAIN, soloGain: SOLO_GAIN, tickGain: TICK_GAIN, padBaseHz: PAD_BASE_HZ, droneBaseHz: DRONE_BASE_HZ, soloBaseHz: SOLO_BASE_HZ, tickHz: TICK_HZ, padCutoffHz: 900 });
+    const a = createDanceAudio({ padGain: PAD_GAIN, droneGain: DRONE_GAIN, soloGain: SOLO_GAIN, noteGain: NOTE_GAIN, padBaseHz: PAD_BASE_HZ, droneBaseHz: DRONE_BASE_HZ, soloBaseHz: SOLO_BASE_HZ, noteBaseHz: NOTE_BASE_HZ, padCutoffHz: 900 });
     if (a) { e.audio = a; setSoundOn(true); }
   };
   const toggleHidden = () => setHidden((h) => { const nh = !h; if (nh) setNote(true); return nh; });
   const stepPass = (d) => {
     const e = E.current, c = e.clock;
     setPlaying(false);
-    const cur = c > PLAY_END ? N - 1 : Math.round(c / PASS_SEC);
-    if (d > 0) e.clock = cur >= N - 1 ? NET_CLOCK : (cur + 1) * PASS_SEC;
-    else e.clock = c > PLAY_END ? PLAY_END : Math.max(0, cur - 1) * PASS_SEC;
+    const cur = c > PLAY_END ? N - 1 : Math.round(tOfClock(c));
+    if (d > 0) e.clock = cur >= N - 1 ? NET_CLOCK : clockOfT(cur + 1);
+    else e.clock = c > PLAY_END ? PLAY_END : clockOfT(Math.max(0, cur - 1));
   };
   A.current = { setPlaying, toggleSound, toggleHidden, stepPass, onClose, setSel, hidden, showControls: () => setHidden(false) };
 
@@ -350,7 +369,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       e.speed += ((e.playing ? 1 : 0) - e.speed) * Math.min(1, dt * 6);
       const c = e.clock;
       let t, em = 0, q = 0;
-      if (c <= PLAY_END) t = c / PASS_SEC;
+      if (c <= PLAY_END) t = tOfClock(c);
       else {
         t = N1;
         if (c > T1) { if (c < T2) em = ease((c - T1) / END_MORPH_SEC); else if (c < T3) em = 1; else { q = ease((c - T3) / END_RETURN_SEC); em = 1 - q; } }
@@ -358,10 +377,14 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       const inEnd = c > T1;
 
       // beat
-      const bk = c <= PLAY_END ? Math.min(N1, Math.floor(c / PASS_SEC + 1e-6)) : N1;
+      const bk = c <= PLAY_END ? Math.min(beats.total, Math.floor(c / PASS_SEC + 1e-6)) : beats.total;
       const bp = c - bk * PASS_SEC;
-      if (bk !== e.lastBeat) { if (e.playing && e.lastBeat !== -1) e.audio?.tick(); e.lastBeat = bk; }
-      const beatOn = e.playing && bp < SWEEP_SEC + 0.5 && c <= PLAY_END + SWEEP_SEC + 0.5;
+      const bPass = beats.passAt[bk]; // the pass that lands on this beat, or -1: no pass that day, so a rest
+      if (bk !== e.lastBeat) {
+        if (e.playing && e.lastBeat !== -1 && bPass >= 0) e.audio?.note(clamp((P.meanSeries[bPass] - P.meanLo) / (P.meanHi - P.meanLo || 1), 0, 1));
+        e.lastBeat = bk;
+      }
+      const beatOn = e.playing && bPass >= 0 && bp < SWEEP_SEC + 0.5 && c <= PLAY_END + SWEEP_SEC + 0.5;
       const sweepS = -0.06 + (bp / SWEEP_SEC) * 1.3; // 0 = south edge, 1 = north edge (the track heads north)
 
       // readout, caption, progress (React state only changes a few times a loop)
@@ -554,7 +577,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
       if (e.audio && now - audioAt > 90) {
         audioAt = now;
         const mk = Math.min(N1 - 1e-6, t), mi = Math.floor(mk), mf = ease(mk - mi);
-        const mean = P.meanSeries[mi] + (P.meanSeries[mi + 1] - P.meanSeries[mi]) * mf;
+        const mean = P.meanSeries[Math.min(N1, Math.floor(t + 1e-6))]; // held at the latest pass, so the pad agrees with the plucked note
         const share = P.shareSeries[mi] + (P.shareSeries[mi + 1] - P.shareSeries[mi]) * mf;
         e.audio.update({ level: e.speed, pad: clamp((mean - P.meanLo) / (P.meanHi - P.meanLo || 1), 0, 1), drone: clamp(share, 0, 1), solo: sel >= 0 ? clamp(selPos / (2 * domain) + 0.5, 0, 1) : null });
       }
@@ -574,7 +597,7 @@ function DanceInner({ D, onClose, onOpenSpot }) {
   const scrub = (ev) => {
     const r = trackRef.current.getBoundingClientRect(), f = clamp((ev.clientX - r.left) / r.width, 0, 1);
     setPlaying(false);
-    E.current.clock = f > 0.995 ? NET_CLOCK : f * PLAY_END;
+    E.current.clock = f > 0.995 ? NET_CLOCK : clockOfT(f * (N - 1));
   };
   const onTrackDown = (ev) => { ev.currentTarget.setPointerCapture(ev.pointerId); scrub(ev); };
   const onTrackMove = (ev) => { if (ev.buttons) scrub(ev); };

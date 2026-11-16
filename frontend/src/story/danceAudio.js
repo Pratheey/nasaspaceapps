@@ -1,4 +1,12 @@
 // WebAudio voices for "The dance". No files. Created only from a click; every change is ramped.
+// Every pitch is snapped to a five-note (major pentatonic) scale, so the measurements play as a tune:
+// one plucked note per radar pass, and silence where a pass is missing.
+const PENTA = [0, 2, 4, 7, 9]; // semitones above the base note
+/** norm 0..1 -> a scale note between baseHz and `octaves` octaves above it. */
+export function scaleHz(baseHz, norm, octaves = 2) {
+  const steps = 5 * octaves, i = Math.round(Math.min(1, Math.max(0, norm)) * steps);
+  return baseHz * Math.pow(2, (12 * Math.floor(i / 5) + PENTA[i % 5]) / 12);
+}
 export function createDanceAudio(o) {
   const AC = typeof window !== "undefined" && (window.AudioContext || window.webkitAudioContext);
   if (!AC) return null;
@@ -32,22 +40,23 @@ export function createDanceAudio(o) {
     update({ pad: p, drone: d, solo: s, level = 1 }) {
       if (stopped) return;
       ramp(master.gain, level, 0.12); // fades out when paused, back in on play
-      const f = o.padBaseHz * Math.pow(2, p);
-      pad.os.forEach((x) => ramp(x.frequency, f, 0.35));
-      ramp(drone.os[0].frequency, o.droneBaseHz * Math.pow(2, -d), 0.5);
+      const f = scaleHz(o.padBaseHz, p);
+      pad.os.forEach((x) => ramp(x.frequency, f, 0.06));
+      ramp(drone.os[0].frequency, scaleHz(o.droneBaseHz, 1 - d, 1), 0.08);
       if (s == null) ramp(solo.g.gain, 0, 0.25);
-      else { ramp(solo.os[0].frequency, o.soloBaseHz * Math.pow(2, s), 0.2); ramp(solo.g.gain, o.soloGain, 0.25); }
+      else { ramp(solo.os[0].frequency, scaleHz(o.soloBaseHz, s), 0.05); ramp(solo.g.gain, o.soloGain, 0.25); }
     },
-    tick() {
+    // One plucked note per radar pass. norm 0..1 = where the valley's mean ground sits in its range.
+    note(norm) {
       if (stopped) return;
       const t = ctx.currentTime, x = ctx.createOscillator(), g = ctx.createGain();
-      x.type = "sine"; x.frequency.value = o.tickHz;
+      x.type = "triangle"; x.frequency.value = scaleHz(o.noteBaseHz, norm);
       g.gain.setValueAtTime(0.0001, t);
-      g.gain.exponentialRampToValueAtTime(o.tickGain, t + 0.006);
-      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.1);
+      g.gain.exponentialRampToValueAtTime(o.noteGain, t + 0.012);
+      g.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
       x.connect(g); g.connect(master);
       x.onended = () => { try { x.disconnect(); g.disconnect(); } catch { /* already gone */ } };
-      x.start(t); x.stop(t + 0.12);
+      x.start(t); x.stop(t + 0.95);
     },
     stop() {
       if (stopped) return;
