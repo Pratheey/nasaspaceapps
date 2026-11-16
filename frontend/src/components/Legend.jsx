@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { legendGradient, fringeGradient, LABEL_COLORS, rgb, FRINGE_M } from "../lib/colors.js";
 import { cm, fmtShort } from "../lib/fmt.js";
 import { viewTitle } from "../lib/view.js";
@@ -9,10 +10,23 @@ const Hatch = () => (
 );
 
 export default function Legend({ D, S, domain }) {
+  const [open, setOpen] = useState(true);
   const prov = D.synthetic ? "Synthetic data" : `${D.meta.product_maturity[0].toUpperCase()}${D.meta.product_maturity.slice(1)} NISAR data`;
+  if (!open) {
+    return (
+      <button type="button" onClick={() => setOpen(true)} aria-label="Show the map legend"
+        className="rounded-full border border-hair-2 bg-space/90 backdrop-blur px-3 py-1.5 text-[13px] text-ink/90 hover:text-ink shadow-[0_10px_40px_rgba(0,0,0,.45)]">
+        Show legend
+      </button>
+    );
+  }
   return (
     <div className="w-[300px] max-md:w-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur px-3.5 py-3 text-[13px] shadow-[0_10px_40px_rgba(0,0,0,.45)]">
-      <h3 className="font-display text-[15.5px] font-semibold mb-2">{S.swipe != null ? `Ground on ${fmtShort(D.dates[S.k1])} (left) and ${fmtShort(D.dates[S.k2])} (right)` : viewTitle(D, S, fmtShort)}</h3>
+      <div className="flex items-start gap-2 mb-2">
+        <h3 className="font-display text-[15.5px] font-semibold flex-1 min-w-0">{S.swipe != null ? `Ground on ${fmtShort(D.dates[S.k1])} (left) and ${fmtShort(D.dates[S.k2])} (right)` : viewTitle(D, S, fmtShort)}</h3>
+        <button type="button" onClick={() => setOpen(false)} aria-label="Hide the map legend" title="Hide legend"
+          className="-mr-1 -mt-0.5 shrink-0 w-6 h-6 grid place-items-center rounded text-mute hover:text-ink hover:bg-white/10 text-[18px] leading-none">×</button>
+      </div>
       {S.mode === "labels" ? (
         <ul className="space-y-1.5">
           {["1", "2", "3"].map((k) => (

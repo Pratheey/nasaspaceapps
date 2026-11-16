@@ -61,7 +61,12 @@ function Explorer({ D, onStory, startTour }) {
   const [limits, setLimits] = useState(false);
   const [flash, setFlash] = useState(null);
   const [cmd, setCmd] = useState(false);
+  const [panel, setPanel] = useState(true); // right-hand overview/inspector panel
   const steps = useMemo(() => tourSteps(D), [D]);
+  // Clicking a spot brings the panel back, so its details are never hidden.
+  useEffect(() => { if (S.sel >= 0) setPanel(true); }, [S.sel]);
+  // The map has to re-measure itself when the panel opens or closes.
+  useEffect(() => { const r = requestAnimationFrame(() => mapRef.current?.resize()); return () => cancelAnimationFrame(r); }, [panel]);
 
   const stationAt = useCallback((i) => D.stations.find((s) => s.cell_index === i), [D]);
   const placeName = useCallback((i) => { const st = stationAt(i); const b = cellBounds(D, i); return st ? `GPS station ${st.station}` : `${b.lat.toFixed(2)}° N, ${Math.abs(b.lng).toFixed(2)}° W`; }, [D, stationAt]);
@@ -254,7 +259,7 @@ function Explorer({ D, onStory, startTour }) {
         </div>
       </header>
 
-      <main className="flex-1 min-h-0 grid grid-cols-[minmax(0,1fr)_clamp(360px,32vw,440px)] max-lg:flex max-lg:flex-col">
+      <main className={`flex-1 min-h-0 grid ${panel ? "grid-cols-[minmax(0,1fr)_clamp(360px,32vw,440px)]" : "grid-cols-[minmax(0,1fr)]"} max-lg:flex max-lg:flex-col`}>
         <div className="min-h-0 flex flex-col">
           <div className="@container relative flex-1 min-h-[420px] overflow-hidden max-lg:flex-none max-lg:h-[62svh] max-lg:min-h-[360px]">
             <MapView ref={mapRef} D={D} S={S} domain={domain} onCell={onCell} onStation={onStation}
@@ -296,6 +301,13 @@ function Explorer({ D, onStory, startTour }) {
               <p className="absolute top-[66px] left-4 z-10 rounded-md bg-accent text-space text-[13.5px] font-semibold px-3 py-1.5">Click the first end of your line on the map</p>
             )}
 
+            {!panel && (
+              <button type="button" onClick={() => setPanel(true)} aria-label="Show the side panel"
+                className="absolute top-[84px] right-3 z-10 rounded-full border border-hair-2 bg-space/90 backdrop-blur px-3 py-1.5 text-[13px] text-ink/90 hover:text-ink shadow-[0_10px_40px_rgba(0,0,0,.45)]">
+                Show panel
+              </button>
+            )}
+
             {S.tour < 0 && (
               <div className="absolute left-4 bottom-4 z-10 max-lg:hidden">
                 <Legend D={D} S={S} domain={domain} />
@@ -326,9 +338,13 @@ function Explorer({ D, onStory, startTour }) {
             onPlay={togglePlay} onStep={step} />
         </div>
 
-        <div className="min-h-0 min-w-0 overflow-hidden border-l border-hair bg-deck/40 max-lg:border-l-0 max-lg:border-t max-lg:overflow-visible">
-          <Inspector D={D} S={S} set={set} actions={actions} stationAt={stationAt} placeName={placeName} />
-        </div>
+        {panel && (
+          <div className="relative min-h-0 min-w-0 overflow-hidden border-l border-hair bg-deck/40 max-lg:border-l-0 max-lg:border-t max-lg:overflow-visible">
+            <button type="button" onClick={() => setPanel(false)} aria-label="Hide the side panel" title="Hide panel (click a spot to bring it back)"
+              className="absolute top-2 right-2 z-10 w-7 h-7 grid place-items-center rounded-md text-ink/70 hover:text-ink hover:bg-deck-2 text-[20px] leading-none">×</button>
+            <Inspector D={D} S={S} set={set} actions={actions} stationAt={stationAt} placeName={placeName} />
+          </div>
+        )}
       </main>
 
       {cmd && <CommandBar open={cmd} onClose={() => setCmd(false)} items={commandItems()} />}
