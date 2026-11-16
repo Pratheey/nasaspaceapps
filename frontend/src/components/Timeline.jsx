@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Pause, Play, StepBack, StepForward } from "lucide-react";
 import { fmtDate, fmtShort } from "../lib/fmt.js";
 import { linePath } from "../lib/chart.js";
@@ -40,9 +40,24 @@ export default function Timeline({ D, S, trace, onPair, onScrub, onPlay, onStep 
     const lo = Math.min(0, ...ok), hi = Math.max(0, ...ok), sp = hi - lo || 1;
     tracePath = linePath(trace.map((x, k) => x == null ? null : [frac(k) * 1000, 6 + (1 - (x - lo) / sp) * 40]));
   }
+  // Month labels: one per month, dropped when it would run into the previous one at this width.
+  const [trackW, setTrackW] = useState(900);
+  useEffect(() => {
+    const el = ref.current; if (!el) return;
+    const fit = () => setTrackW(el.clientWidth);
+    fit(); const ro = new ResizeObserver(fit); ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+  const monthText = (k) => `${fmtShort(D.dates[k]).split(" ")[1]}${D.dates[k].getUTCMonth() === 0 ? ` ${D.dates[k].getUTCFullYear()}` : ""}`;
   const months = [];
-  let lastM = -1;
-  D.dates.forEach((d, k) => { if (d.getUTCMonth() !== lastM) { lastM = d.getUTCMonth(); if (!months.length || k - months[months.length - 1] >= 2) months.push(k); } });
+  let lastM = -1, edge = -Infinity; // edge: right end of the last label, in px
+  D.dates.forEach((d, k) => {
+    if (d.getUTCMonth() === lastM) return;
+    lastM = d.getUTCMonth();
+    const x = 20 + (trackW - 40) * frac(k), w = monthText(k).length * 7 + 4;
+    if (x < edge + 10) return;
+    months.push(k); edge = x + w;
+  });
   const days = Math.round((D.dates[S.k2] - D.dates[S.k1]) / 864e5);
   const gaps = trace ? trace.filter((x) => x == null).length : 0; // passes with no measurement at the selected spot
 
@@ -86,15 +101,15 @@ export default function Timeline({ D, S, trace, onPair, onScrub, onPlay, onStep 
           );
         })}
         {months.map((k) => (
-          <span key={k} style={{ left: left(k) }} className="absolute top-[42px] -translate-x-[2px] text-[11.5px] text-mute whitespace-nowrap max-sm:[&:nth-of-type(even)]:hidden">
-            {fmtShort(D.dates[k]).split(" ")[1]}{D.dates[k].getUTCMonth() === 0 ? ` ${D.dates[k].getUTCFullYear()}` : ""}
+          <span key={k} style={{ left: left(k) }} className="absolute top-[44px] -translate-x-[2px] text-[11.5px] text-mute whitespace-nowrap">
+            {monthText(k)}
           </span>
         ))}
         {!S.playing && [["k1", "A"], ["k2", "B"]].map(([key, name]) => (
           <span key={key} role="slider" tabIndex={0} style={{ left: left(S[key]) }}
             aria-label={`Date ${name}`} aria-valuemin={0} aria-valuemax={N - 1} aria-valuenow={S[key]} aria-valuetext={fmtDate(D.dates[S[key]])}
             onKeyDown={(e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); e.stopPropagation(); onPair(key, S[key] + d); } }}
-            className={`absolute top-[2px] -translate-x-1/2 ${S.mode === "pair" ? "" : "opacity-70 hover:opacity-100"} bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(157,176,138,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[22px] after:-ml-px after:bg-accent`}>
+            className={`absolute top-[2px] -translate-x-1/2 ${S.mode === "pair" ? "" : "opacity-70 hover:opacity-100"} bg-accent text-space font-display font-bold text-[12px] leading-none px-1.5 py-1 rounded cursor-grab shadow-[0_0_14px_rgba(157,176,138,.55)] after:content-[''] after:absolute after:left-1/2 after:top-full after:w-[2px] after:h-[13px] after:-ml-px after:bg-accent`}>
             {name}
           </span>
         ))}
