@@ -4,8 +4,9 @@ import { fmtDate, fmtShort } from "../lib/fmt.js";
 import { linePath } from "../lib/chart.js";
 
 // The orbit track: one mark per NISAR pass, 12 days apart. Gaps are missed passes.
-// Dates A and B always sit on the track and can always be dragged; moving either opens Two dates.
-export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
+// Dates A and B sit on the track and can be dragged (moving either opens Two dates).
+// While the time-lapse plays they step aside, so only the moving pass marker shows.
+export default function Timeline({ D, S, trace, onPair, onScrub, onPlay, onStep }) {
   const ref = useRef(null);
   const drag = useRef(null);
   const N = D.dates.length;
@@ -23,6 +24,7 @@ export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
   const down = (e) => {
     ref.current.setPointerCapture(e.pointerId);
     const k = nearest(e);
+    if (S.playing) { drag.current = null; onScrub(k); return; } // during playback a click pauses on that pass
     drag.current = Math.abs(k - S.k1) <= Math.abs(k - S.k2) ? "k1" : "k2"; // grab the nearer of A and B
     onPair(drag.current, k);
   };
@@ -42,6 +44,7 @@ export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
   let lastM = -1;
   D.dates.forEach((d, k) => { if (d.getUTCMonth() !== lastM) { lastM = d.getUTCMonth(); if (!months.length || k - months[months.length - 1] >= 2) months.push(k); } });
   const days = Math.round((D.dates[S.k2] - D.dates[S.k1]) / 864e5);
+  const gaps = trace ? trace.filter((x) => x == null).length : 0; // passes with no measurement at the selected spot
 
   return (
     <section aria-label="Radar passes" className="shrink-0 border-t border-hair bg-deck/80 backdrop-blur px-3 pt-2 pb-1">
@@ -56,9 +59,14 @@ export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
           {S.mode === "pair"
             ? <>Comparing <span className="text-ink">{fmtDate(D.dates[S.k1])}</span> with <span className="text-ink">{fmtDate(D.dates[S.k2])}</span>, {days} days apart. Drag A or B.</>
             : S.mode === "breathe"
-              ? <><span className="font-mono text-ink">pass {String(S.cursor + 1).padStart(2, "0")}/{N}</span>, <span className="font-mono text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}. Drag A or B to compare any two dates.</>
+              ? <><span className="font-mono text-ink">pass {String(S.cursor + 1).padStart(2, "0")}/{N}</span>, <span className="font-mono text-ink">{fmtDate(D.dates[S.cursor])}</span>: ground position compared with {fmtShort(D.dates[0])}. {S.playing ? "Click the timeline to pause on a pass." : "Drag A or B to compare any two dates."}</>
               : <>{N} radar passes on a 12-day schedule. Press Play to watch the valley move, or drag A or B to compare any two dates.</>}
         </p>
+        {gaps > 0 && (
+          <p className="ml-auto pl-3 shrink-0 text-[12.5px] text-mute max-md:hidden">
+            <span className="inline-block align-middle w-[2px] h-[9px] rounded-full bg-ink/15 mr-1.5" />Faint marks: no measurement at this spot ({gaps} of {N} passes), so its line stops there.
+          </p>
+        )}
       </div>
       <div ref={ref} onPointerDown={down} onPointerMove={move} onLostPointerCapture={() => (drag.current = null)}
         className="relative h-[64px] cursor-pointer select-none touch-none">
@@ -71,9 +79,10 @@ export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
         {D.dates.map((d, k) => {
           const inPair = S.mode === "pair" && k >= S.k1 && k <= S.k2;
           const now = S.mode !== "pair" && k === S.cursor && (S.mode === "breathe" || S.playing);
+          const miss = trace != null && trace[k] == null;
           return (
-            <span key={k} title={fmtDate(d)} style={{ left: left(k) }}
-              className={`absolute -translate-x-1/2 rounded-full transition-all ${now ? "top-[19px] w-[5px] h-[17px] bg-accent shadow-[0_0_10px_#9DB08A]" : inPair ? "top-[22px] w-[3px] h-[11px] bg-accent-2" : "top-[23px] w-[2px] h-[9px] bg-ink/45"}`} />
+            <span key={k} title={miss ? `${fmtDate(d)}: no measurement at this spot` : fmtDate(d)} style={{ left: left(k) }}
+              className={`absolute -translate-x-1/2 rounded-full transition-all ${now ? "top-[19px] w-[5px] h-[17px] bg-accent shadow-[0_0_10px_#9DB08A]" : miss ? "top-[23px] w-[2px] h-[9px] bg-ink/15" : inPair ? "top-[22px] w-[3px] h-[11px] bg-accent-2" : "top-[23px] w-[2px] h-[9px] bg-ink/45"}`} />
           );
         })}
         {months.map((k) => (
@@ -81,7 +90,7 @@ export default function Timeline({ D, S, trace, onPair, onPlay, onStep }) {
             {fmtShort(D.dates[k]).split(" ")[1]}{D.dates[k].getUTCMonth() === 0 ? ` ${D.dates[k].getUTCFullYear()}` : ""}
           </span>
         ))}
-        {[["k1", "A"], ["k2", "B"]].map(([key, name]) => (
+        {!S.playing && [["k1", "A"], ["k2", "B"]].map(([key, name]) => (
           <span key={key} role="slider" tabIndex={0} style={{ left: left(S[key]) }}
             aria-label={`Date ${name}`} aria-valuemin={0} aria-valuemax={N - 1} aria-valuenow={S[key]} aria-valuetext={fmtDate(D.dates[S[key]])}
             onKeyDown={(e) => { const d = e.key === "ArrowRight" ? 1 : e.key === "ArrowLeft" ? -1 : 0; if (d) { e.preventDefault(); e.stopPropagation(); onPair(key, S[key] + d); } }}
