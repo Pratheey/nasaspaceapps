@@ -1,7 +1,6 @@
 import { CROP_COLORS, loadRadar } from "../lib/radar.js";
 import { motionPatterns, PATTERN_COLORS } from "../lib/patterns.js";
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from "react";
-import { fmtShort } from "../lib/fmt.js";
 import * as maplibregl from "maplibre-gl";
 import workerUrl from "maplibre-gl/dist/maplibre-gl-worker.mjs?url";
 import { cellAt, cellBounds } from "../lib/data.js";
@@ -70,8 +69,8 @@ function cartoStyle(key) {
 }
 
 /** The map. Imperative inside (MapLibre), declarative outside (props in, events out). */
-const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onSwipe, onField }, ref) {
-  const [, setTick] = useState(0); // re-render the swipe handle when the camera moves
+const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoint, onProfileDrag, onHover, onStation, onField }, ref) {
+  const [, setTick] = useState(0); // re-render once the map is ready
   const [unavailable, setUnavailable] = useState(false);
   const el = useRef(null);
   const map = useRef(null);
@@ -250,7 +249,6 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
       if (latest.current.S.lens) drawLens(e.point);
     });
     m.on("mouseout", () => { latest.current.onHover(null); drawLens(null); });
-    m.on("move", () => latest.current.S.swipe != null && setTick((t) => t + 1));
     return () => {
       ready.current = false;
       map.current = null;
@@ -313,7 +311,7 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
     };
     if (ready.current) draw(); else m.once("bg:ready", draw);
     return () => { m.off("bg:ready", draw); };
-  }, [D, S.mode, S.k1, S.k2, S.cursor, S.relief, S.swipe, domain]);
+  }, [D, S.mode, S.k1, S.k2, S.cursor, S.relief, domain]);
 
   // camera for 3D
   useEffect(() => {
@@ -383,32 +381,11 @@ const MapView = forwardRef(function MapView({ D, S, domain, onCell, onProfilePoi
   }, [S.profile]);
 
   // MapLibre's own CSS sets position: relative on the container, so size it from a wrapper
-  const sx = S.swipe != null && map.current && ready.current ? map.current.project([S.swipe, (D.bbox.north + D.bbox.south) / 2]).x : null;
-  const moveSwipe = (lon) => onSwipe(Math.max(D.bbox.west, Math.min(D.bbox.east, lon)));
-  const dragSwipe = (e) => {
-    const m = map.current;
-    if (!m || !e.currentTarget.hasPointerCapture(e.pointerId)) return;
-    const host = el.current.getBoundingClientRect();
-    moveSwipe(m.unproject([e.clientX - host.left, host.height / 2]).lng);
-  };
   return (
     <div className="absolute inset-0">
       <div ref={el} className="w-full h-full" />
       {unavailable && <p role="status" className="absolute inset-x-4 top-28 rounded-md border border-hair-2 bg-space p-4 text-ink">The interactive map needs WebGL. You can still read the story and open station records from the search menu.</p>}
       <canvas ref={lens} className="absolute inset-0 w-full h-full pointer-events-none z-[4]" aria-hidden="true" />
-      {sx != null && (
-        <div className="absolute top-0 bottom-0 z-[5] w-0" style={{ left: sx }}>
-          <div className="absolute inset-y-0 -left-px w-[2px] bg-accent shadow-[0_0_14px_#9DB08A]" />
-          <button onPointerDown={(e) => e.currentTarget.setPointerCapture(e.pointerId)} onPointerMove={dragSwipe}
-            onKeyDown={(e) => {
-              const step = e.key === "ArrowLeft" ? -1 : e.key === "ArrowRight" ? 1 : 0;
-              if (step) { e.preventDefault(); e.stopPropagation(); moveSwipe(S.swipe + step * D.meta.grid.step_deg); }
-            }} aria-label="Drag or use arrow keys to compare date A and date B"
-            className="absolute top-1/2 -translate-y-1/2 -translate-x-1/2 w-9 h-9 rounded-full bg-accent text-space grid place-items-center cursor-ew-resize touch-none shadow-[0_0_20px_rgba(157,176,138,.6)] font-display font-bold text-[13px]">A|B</button>
-          <span className="absolute top-1/2 -translate-y-1/2 right-7 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">A: {fmtShort(D.dates[S.k1])}</span>
-          <span className="absolute top-1/2 -translate-y-1/2 left-7 whitespace-nowrap rounded-md bg-space/90 border border-hair-2 px-2 py-1 text-[12.5px]">B: {fmtShort(D.dates[S.k2])}</span>
-        </div>
-      )}
     </div>
   );
 });

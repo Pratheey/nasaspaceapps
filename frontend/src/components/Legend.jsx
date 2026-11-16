@@ -23,7 +23,7 @@ export default function Legend({ D, S, domain }) {
   return (
     <div className="w-[300px] max-md:w-auto rounded-lg border border-hair-2 bg-space/90 backdrop-blur px-3.5 py-3 text-[13px] shadow-[0_10px_40px_rgba(0,0,0,.45)]">
       <div className="flex items-start gap-2 mb-2">
-        <h3 className="font-display text-[15.5px] font-semibold flex-1 min-w-0">{S.swipe != null ? `Ground on ${fmtShort(D.dates[S.k1])} (left) and ${fmtShort(D.dates[S.k2])} (right)` : viewTitle(D, S, fmtShort)}</h3>
+        <h3 className="font-display text-[15.5px] font-semibold flex-1 min-w-0">{viewTitle(D, S, fmtShort)}</h3>
         <button type="button" onClick={() => setOpen(false)} aria-label="Hide the map legend" title="Hide legend"
           className="-mr-1 -mt-0.5 shrink-0 w-6 h-6 grid place-items-center rounded text-mute hover:text-ink hover:bg-white/10 text-[18px] leading-none">×</button>
       </div>

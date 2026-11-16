@@ -71,12 +71,12 @@ export function downloadCSV(D, i, fitAt, station) {
 }
 
 /* Shareable state in the URL hash. */
-const KEYS = ["mode", "a", "b", "t", "cell", "pin", "gps", "relief", "prof", "swipe", "lens", "fields", "field", "split"];
+const KEYS = ["mode", "a", "b", "t", "cell", "pin", "gps", "relief", "prof", "lens", "fields", "field", "split"];
 export function writeHash(S) {
   const o = {
     mode: S.mode, a: S.k1, b: S.k2, t: S.cursor, cell: S.sel, pin: S.pin,
     gps: S.gps || null, relief: S.relief || null, lens: S.lens || null,
-    fields: S.fields || null, field: S.field?.field_id, split: S.split || null, swipe: S.swipe,
+    fields: S.fields || null, field: S.field?.field_id, split: S.split || null,
   };
   if (S.profile?.b) o.prof = [...S.profile.a, ...S.profile.b].map((n) => n.toFixed(4)).join(",");
   const q = new URLSearchParams(Object.entries(o)
