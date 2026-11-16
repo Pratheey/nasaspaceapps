@@ -1,13 +1,12 @@
-"""Build the app's 'before NISAR' history at the GPS stations from OPERA DISP-S1 (context only).
+"""Build context-only OPERA history. Run: python3 context/history/opera_history.py.
 
-Reads data/processed/opera_disp_s1_f36542.csv (Sentinel-1 ascending, all 14 stations; see data/README.md
-section 'opera_disp_s1'). For each granule the station value is re-referenced to P304 in the same granule
-(as the NISAR stack is), and segments that share a new reference date are chained onto the running series.
-Writes frontend/public/context/opera_history.json. Never mixed with NISAR values.
-
-    python3 context/history/opera_history.py
+Use unfiltered displacement only where recommended_mask == 1, at both the station
+and P304. Keep rejected dates as gaps; never join disconnected reference segments.
+See data/README.md and https://docs.asf.alaska.edu/datasets/disp_usage/.
 """
-import csv, json
+import csv
+import json
+import math
 from collections import defaultdict
 from pathlib import Path
 
@@ -16,34 +15,55 @@ SRC = ROOT / "data" / "processed" / "opera_disp_s1_f36542.csv"
 OUT = ROOT / "frontend" / "public" / "context" / "opera_history.json"
 REF = "P304"
 
-rows = [r for r in csv.DictReader(open(SRC, encoding="utf-8")) if r["point_type"] == "station" and r["displacement_m"]]
-by_gran = defaultdict(dict)
-for r in rows:
-    by_gran[(r["ref_date"], r["sec_date"])][r["point_id"]] = float(r["displacement_m"])
-stations = sorted({r["point_id"] for r in rows} - {REF})
-out = {}
-for st in stations:
-    cum = {}
-    for (ref, sec) in sorted(by_gran, key=lambda k: (k[1], k[0])):
-        g = by_gran[(ref, sec)]
-        if st not in g or REF not in g:
+
+def build_history(rows, min_dates=21):
+    by_gran = defaultdict(dict)
+    stations = set()
+    for row in rows:
+        if row["point_type"] != "station":
             continue
-        d = g[st] - g[REF]
-        if not cum:
-            cum[ref] = 0.0
-        if ref not in cum:
-            continue  # cannot chain this segment
-        cum[sec] = cum[ref] + d
-    dates = sorted(cum)
-    if len(dates) > 20:
-        out[st] = {"dates": dates, "los_m": [round(cum[t], 4) for t in dates]}
-OUT.parent.mkdir(parents=True, exist_ok=True)
-OUT.write_text(json.dumps({
-    "is_synthetic": False, "context_only": True,
-    "product": "OPERA L3 DISP-S1 v1.0 (Sentinel-1 C-band), frame F36542 ascending, unfiltered displacement",
-    "reference_station": REF,
-    "sign": "positive = toward the satellite (Sentinel-1 line of sight, not NISAR's)",
-    "note": "Context only. Different satellite, wavelength and viewing direction from NISAR; never compared value for value.",
-    "stations": out}, separators=(",", ":")), encoding="utf-8")
-for st, v in out.items():
-    print(st, v["dates"][0], v["dates"][-1], len(v["dates"]), round(v["los_m"][-1] * 100, 1), "cm")
+        stations.add(row["point_id"])
+        granule = by_gran[(row["ref_date"], row["sec_date"])]
+        try:
+            value = float(row["displacement_m"])
+            good = float(row["recommended_mask"]) == 1 and math.isfinite(value)
+        except (ValueError, TypeError):
+            good = False
+        if good:
+            granule[row["point_id"]] = value
+    out = {}
+    for station in sorted(stations - {REF}):
+        cum, attempted = {}, set()
+        for ref, sec in sorted(by_gran, key=lambda pair: (pair[1], pair[0])):
+            granule = by_gran[(ref, sec)]
+            attempted.add(sec)
+            if station not in granule or REF not in granule:
+                continue
+            if not cum:
+                cum[ref] = 0.0
+            if ref in cum:
+                cum[sec] = cum[ref] + granule[station] - granule[REF]
+        if len(cum) >= min_dates:
+            dates = sorted(set(cum) | {d for d in attempted if d >= min(cum)})
+            out[station] = {"dates": dates, "los_m": [round(cum[d], 4) if d in cum else None for d in dates]}
+    return {
+        "is_synthetic": False, "context_only": True,
+        "product": "OPERA L3 DISP-S1 v1.0 (Sentinel-1 C-band), frame F36542 ascending, unfiltered displacement",
+        "quality_filter": "recommended_mask == 1 at both the station and P304; rejected or unconnected dates stay null",
+        "reference_station": REF,
+        "sign": "positive = toward the satellite (Sentinel-1 line of sight, not NISAR's)",
+        "note": "Context only. Different satellite, wavelength and viewing direction from NISAR; never compared value for value.",
+        "stations": out,
+    }
+
+
+def main():
+    with SRC.open(encoding="utf-8", newline="") as source:
+        result = build_history(csv.DictReader(source))
+    OUT.parent.mkdir(parents=True, exist_ok=True)
+    OUT.write_text(json.dumps(result, separators=(",", ":"), allow_nan=False), encoding="utf-8")
+    print(f"Wrote quality-filtered history for {len(result['stations'])} stations")
+
+
+if __name__ == "__main__":
+    main()
