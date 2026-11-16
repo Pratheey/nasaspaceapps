@@ -172,13 +172,16 @@ def solve_geometry(asc_e, asc_u, desc_e, desc_u):
 
 def station_intervals(table, names, indices):
     """Sum consecutive LOS increments from the data lane's station samples."""
+    if table.duplicated(["station", "pair"]).any():
+        raise ValueError("Duplicate station/pair rows cannot define a radar interval")
     shape = (len(indices) - 1, len(names))
     los, east, up = (np.full(shape, np.nan) for _ in range(3))
     for i, (start, end) in enumerate(zip(indices, indices[1:])):
         subset = table[table.pair.between(start + 1, end)]
         for j, name in enumerate(names):
             station = subset[subset.station == name]
-            if len(station) != end - start or not (station.valid == 1).all():
+            if (set(station.pair) != set(range(start + 1, end + 1))
+                    or not (station.valid == 1).all()):
                 continue
             relative = station.los_disp_m - station.ref_tie_m
             if relative.notna().all():
