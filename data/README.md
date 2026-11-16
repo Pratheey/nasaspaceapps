@@ -465,6 +465,7 @@ data/.venv/Scripts/python data/scripts/qa_stations_vs_gps.py --track 34 --frame 
 
 ## 7. Changelog
 
+- **2026-11-15, local review:** `build_stack.py --iono-only` now records `tropo_applied=0` and `set_applied=0`, matching the selected ionosphere-only displacement layer. Full-correction flags remain those of the input pair. Verified by writing and reopening tiny synthetic stacks in both modes; the frozen real stack and station tables were not regenerated.
 - **v1, 2026-11-14.** Track 034 / Frame 020 stack with a constant 50 m height for the troposphere, tide and LOS cubes. `interim/stack_t034_f020.nc`, uploaded to the Drive.
 - **v2, 2026-11-14.** Terrain heights from Copernicus GLO-90. `interim/stack_t034_f020_v2.nc` and `interim/stack_t042_f070.nc`. The station tables and self-check summaries in `processed/` now reflect v2.
 - **v3, 2026-11-14 (data freeze).** `interim/stack_t034_f020_v3.nc` (426 MB, git-ignored, goes on the Drive). v2 re-tied to P304 with the cleaned series `gps/processed/gps_los.csv` instead of raw NGL. Everything else is the same. A single pair's tie changes by at most 3.29 mm; the net change of every pixel is +3.2 mm against v2. The four station and QA files in `processed/` were regenerated from v3. v2 is superseded; v1 and v2 stay on the Drive unchanged. Track 042 was not rebuilt. Ismail and Daniel rerun on v3.
